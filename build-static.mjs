@@ -2,9 +2,11 @@ import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist", { recursive: true });
+await mkdir("dist/client", { recursive: true });
 
 for (const entry of ["index.html", "assets", "scripts", "styles"]) {
   await cp(entry, `dist/${entry}`, { recursive: true });
+  await cp(entry, `dist/client/${entry}`, { recursive: true });
 }
 
 await mkdir("dist/server", { recursive: true });
