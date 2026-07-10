@@ -1,0 +1,9 @@
+{
+  "name": "petforge-studio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node build-static.mjs"
+  },
+  "dependencies": {}
+}

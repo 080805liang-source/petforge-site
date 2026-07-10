@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="桌宠工坊：上传图片，定制交互和快捷菜单，生成你的专属桌面宠物。">
+    <title>桌宠工坊 | 定制你的桌面小伙伴</title>
+    <link rel="stylesheet" href="styles/main.css">
+  </head>
+  <body>
+    <header class="site-header" data-glass>
+      <a class="brand" href="#top" aria-label="桌宠工坊首页">
+        <span class="brand-mark">P</span>
+        <span>桌宠工坊</span>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <a href="#studio">开始制作</a>
+        <a href="#features">功能</a>
+        <a href="#flow">流程</a>
+        <a href="#faq">说明</a>
+      </nav>
+      <a class="nav-cta" href="#studio">上传图片</a>
+    </header>
+
+    <main id="top">
+      <section class="hero-section" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Desktop Pet Creator</p>
+          <h1 id="hero-title">上传图片，生成你的专属桌宠。</h1>
+          <p class="hero-lead">
+            定制外观、点击反应和快捷菜单，让浏览器、游戏、文件夹和常用工具都能从桌宠身边启动。
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#studio">开始制作</a>
+            <a class="button secondary" href="#features">查看能力</a>
+          </div>
+          <div class="trust-row" aria-label="核心特性">
+            <span>本地优先</span>
+            <span>可拖拽</span>
+            <span>快捷启动</span>
+          </div>
+        </div>
+
+        <div class="hero-stage" aria-label="3D 桌宠生成预览">
+          <div class="scene-card" data-tilt>
+            <div class="desktop-window">
+              <div class="window-bar">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="pet-preview-space">
+                <img class="hero-pet" src="assets/sample-pet.png" alt="桌面宠物预览">
+                <div class="speech-bubble">今天想让我帮你打开什么？</div>
+                <div class="quick-menu">
+                  <button type="button">Edge</button>
+                  <button type="button">Steam</button>
+                  <button type="button">WeGame</button>
+                </div>
+              </div>
+            </div>
+            <div class="floating-card card-left">
+              <strong>01</strong>
+              <span>上传图片</span>
+            </div>
+            <div class="floating-card card-right">
+              <strong>02</strong>
+              <span>添加功能</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="studio-section" id="studio" aria-labelledby="studio-title">
+        <div class="section-heading">
+          <p class="eyebrow">Build Studio</p>
+          <h2 id="studio-title">在一个面板里完成第一版桌宠设定</h2>
+          <p>先生成可保存的制作配置，后续接入打包后端后就能直接导出 Windows 桌宠程序。</p>
+        </div>
+
+        <div class="builder-shell">
+          <div class="builder-panel upload-panel">
+            <label class="upload-zone" for="pet-image">
+              <input id="pet-image" type="file" accept="image/png,image/jpeg,image/webp">
+              <span class="upload-icon">+</span>
+              <strong>拖入或选择宠物图片</strong>
+              <small>支持 PNG、JPG、WEBP。推荐透明 PNG。</small>
+            </label>
+
+            <div class="field-grid">
+              <label>
+                桌宠名字
+                <input id="pet-name" type="text" value="蓝耳猫娘" maxlength="24">
+              </label>
+              <label>
+                点击台词
+                <input id="pet-line" type="text" value="我在，今天也一起工作吧。" maxlength="42">
+              </label>
+            </div>
+
+            <div class="range-row">
+              <label for="pet-size">显示大小</label>
+              <input id="pet-size" type="range" min="70" max="140" value="100">
+              <output id="size-output" for="pet-size">100%</output>
+            </div>
+
+            <div class="range-row">
+              <label for="pet-opacity">透明度</label>
+              <input id="pet-opacity" type="range" min="72" max="100" value="96">
+              <output id="opacity-output" for="pet-opacity">96%</output>
+            </div>
+
+            <div class="field-grid two-columns">
+              <label>
+                初始状态
+                <select id="pet-status">
+                  <option value="companion">陪伴中</option>
+                  <option value="working">工作中</option>
+                  <option value="resting">休息中</option>
+                  <option value="sleeping">睡觉中</option>
+                </select>
+              </label>
+              <label>
+                点击动画
+                <select id="pet-animation">
+                  <option value="jump">轻跳</option>
+                  <option value="shake">摇摆</option>
+                  <option value="glow">发光</option>
+                  <option value="none">无动画</option>
+                </select>
+              </label>
+              <label>
+                气泡风格
+                <select id="bubble-style">
+                  <option value="soft">柔和白</option>
+                  <option value="glass">玻璃感</option>
+                  <option value="dark">深色</option>
+                </select>
+              </label>
+              <label>
+                初始位置
+                <select id="pet-position">
+                  <option value="bottom-right">右下角</option>
+                  <option value="bottom-left">左下角</option>
+                  <option value="center">屏幕中央</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="builder-panel preview-panel">
+            <div class="preview-desktop" data-preview-shell>
+              <div class="preview-topbar">
+                <span>Live Preview</span>
+                <span id="preview-status">陪伴中</span>
+              </div>
+              <div class="preview-body">
+                <img id="preview-pet" src="assets/sample-pet.png" alt="你的桌宠预览">
+                <div id="preview-bubble" class="preview-bubble">我在，今天也一起工作吧。</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="builder-panel config-panel">
+            <h3>快捷菜单</h3>
+            <div class="toggle-list" aria-label="快捷菜单功能">
+              <label><input type="checkbox" value="打开浏览器" checked> 打开浏览器</label>
+              <label><input type="checkbox" value="打开 Steam" checked> 打开 Steam</label>
+              <label><input type="checkbox" value="打开 WeGame"> 打开 WeGame</label>
+              <label><input type="checkbox" value="打开哔哩哔哩"> 打开哔哩哔哩</label>
+              <label><input type="checkbox" value="打开文件夹"> 打开文件夹</label>
+              <label><input type="checkbox" value="休息提醒"> 休息提醒</label>
+              <label><input id="always-on-top" type="checkbox" value="窗口置顶" checked> 窗口置顶</label>
+              <label><input id="pet-shadow" type="checkbox" value="桌面阴影" checked> 桌面阴影</label>
+            </div>
+
+            <div class="custom-shortcut">
+              <h4>自定义快捷入口</h4>
+              <label>
+                显示名称
+                <input id="custom-label" type="text" value="打开我的工具" maxlength="18">
+              </label>
+              <label>
+                类型
+                <select id="custom-type">
+                  <option value="url">网址</option>
+                  <option value="file">软件或文件</option>
+                  <option value="folder">文件夹</option>
+                </select>
+              </label>
+              <label>
+                目标地址
+                <input id="custom-target" type="text" value="https://www.bilibili.com" maxlength="260">
+              </label>
+            </div>
+
+            <button id="build-package" class="button primary wide" type="button">生成 Windows 程序包</button>
+            <button id="export-config" class="button primary wide" type="button">导出制作配置</button>
+            <p id="build-status" class="panel-note" role="status">无需后端，浏览器会直接生成可下载的 zip 程序包。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="features-section" id="features" aria-labelledby="features-title">
+        <div class="section-heading">
+          <p class="eyebrow">What It Makes</p>
+          <h2 id="features-title">不是宠物图鉴，而是每个人自己的桌宠工厂</h2>
+        </div>
+        <div class="feature-grid">
+          <article>
+            <span class="feature-index">A</span>
+            <h3>图片变桌宠</h3>
+            <p>上传喜欢的角色、宠物或头像，生成透明桌面伴侣预览。</p>
+          </article>
+          <article>
+            <span class="feature-index">B</span>
+            <h3>交互动作</h3>
+            <p>配置点击台词、跳跃反馈、状态气泡和拖拽行为。</p>
+          </article>
+          <article>
+            <span class="feature-index">C</span>
+            <h3>快捷启动</h3>
+            <p>把浏览器、游戏、视频站、控制面板和文件夹放进右键菜单。</p>
+          </article>
+          <article>
+            <span class="feature-index">D</span>
+            <h3>插件扩展</h3>
+            <p>未来支持提醒、番茄钟、AI 聊天、状态系统和更多桌面行为。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="transition-section" aria-label="3D 跳转展示">
+        <div class="cube-wrap" aria-hidden="true">
+          <div class="jump-cube">
+            <span>上传</span>
+            <span>预览</span>
+            <span>配置</span>
+            <span>生成</span>
+          </div>
+        </div>
+        <div>
+          <p class="eyebrow">3D Jump</p>
+          <h2>页面切换像从工作台跳进生成器。</h2>
+          <p>导航跳转时，预览桌面会产生轻微 3D 翻转；用户能感到自己正在进入一个制作空间，而不是阅读普通说明页。</p>
+        </div>
+      </section>
+
+      <section class="flow-section" id="flow" aria-labelledby="flow-title">
+        <div class="section-heading">
+          <p class="eyebrow">Flow</p>
+          <h2 id="flow-title">用户只需要四步</h2>
+        </div>
+        <ol class="flow-list">
+          <li><strong>上传图片</strong><span>选择自己喜欢的角色或宠物图。</span></li>
+          <li><strong>调整外观</strong><span>确认大小、气泡和桌面预览效果。</span></li>
+          <li><strong>添加功能</strong><span>勾选浏览器、游戏、文件夹、提醒等快捷入口。</span></li>
+          <li><strong>生成桌宠</strong><span>导出配置，后续连接打包服务生成可运行程序。</span></li>
+        </ol>
+      </section>
+
+      <section class="faq-section" id="faq" aria-labelledby="faq-title">
+        <div class="section-heading">
+          <p class="eyebrow">Notes</p>
+          <h2 id="faq-title">第一版边界</h2>
+        </div>
+        <div class="faq-grid">
+          <article>
+            <h3>网页能直接运行桌宠吗？</h3>
+            <p>不能。网页负责定制和生成配置，真正的 Windows 桌宠需要下载到电脑本地运行。</p>
+          </article>
+          <article>
+            <h3>现在能生成什么？</h3>
+            <p>可以上传图片、实时预览、配置菜单，并在浏览器里生成 Windows zip 程序包。</p>
+          </article>
+          <article>
+            <h3>下一步补什么？</h3>
+            <p>后续可以继续升级为 exe 打包、账号作品库、在线模板市场和插件系统。</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="scripts/main.js" defer></script>
+  </body>
+</html>
