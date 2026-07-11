@@ -129,22 +129,22 @@
               <span>02</span>
               <div><p>BEHAVIOUR</p><h3>功能与出口</h3></div>
             </div>
-            <div class="toggle-list" aria-label="快捷菜单功能">
-              <label><input type="checkbox" value="打开浏览器" checked><span>打开浏览器</span><i></i></label>
-              <label><input type="checkbox" value="打开 Steam" checked><span>打开 Steam</span><i></i></label>
-              <label><input type="checkbox" value="打开 WeGame"><span>打开 WeGame</span><i></i></label>
-              <label><input type="checkbox" value="打开哔哩哔哩"><span>打开哔哩哔哩</span><i></i></label>
-              <label><input type="checkbox" value="打开文件夹"><span>打开文件夹</span><i></i></label>
-              <label><input type="checkbox" value="休息提醒"><span>休息提醒</span><i></i></label>
-              <label><input id="always-on-top" type="checkbox" value="窗口置顶" checked><span>始终置顶</span><i></i></label>
-              <label><input id="pet-shadow" type="checkbox" value="桌面阴影" checked><span>桌面阴影</span><i></i></label>
+            <div class="display-options" aria-label="桌宠显示设置">
+              <p class="minor-heading">桌宠显示</p>
+              <div class="toggle-list">
+                <label><input id="always-on-top" type="checkbox" checked><span>始终置顶</span><i></i></label>
+                <label><input id="pet-shadow" type="checkbox" checked><span>桌面阴影</span><i></i></label>
+              </div>
             </div>
 
             <div class="custom-shortcut">
-              <p class="minor-heading">自定义入口</p>
-              <label>显示名称<input id="custom-label" type="text" value="打开我的工具" maxlength="18"></label>
-              <label>类型<select id="custom-type"><option value="url">网址</option><option value="file">软件或文件</option><option value="folder">文件夹</option></select></label>
-              <label>目标地址<input id="custom-target" type="text" value="https://www.bilibili.com" maxlength="260"></label>
+              <p class="minor-heading">快捷入口</p>
+              <label>常用软件<select id="shortcut-template"><option value="">选择常用软件</option><option value="微信">微信</option><option value="QQ">QQ</option><option value="飞书">飞书</option><option value="钉钉">钉钉</option><option value="企业微信">企业微信</option><option value="WPS Office">WPS Office</option><option value="Microsoft Office">Microsoft Office</option><option value="Steam">Steam</option><option value="Epic Games">Epic Games</option><option value="网易云音乐">网易云音乐</option><option value="VS Code">VS Code</option><option value="Discord">Discord</option><option value="自定义">自定义</option></select></label>
+              <label>显示名称<input id="custom-label" type="text" placeholder="例如：打开微信" maxlength="18"></label>
+              <label>类型<select id="custom-type"><option value="file">软件或文件</option><option value="folder">文件夹</option><option value="url">网址</option></select></label>
+              <label>目标地址<input id="custom-target" type="text" placeholder="填写软件路径、文件夹或网址" maxlength="260"></label>
+              <button id="add-shortcut" class="button secondary wide" type="button">添加快捷入口 <span aria-hidden="true">+</span></button>
+              <div id="shortcut-list" class="shortcut-list" aria-live="polite"></div>
             </div>
 
             <div class="action-stack">

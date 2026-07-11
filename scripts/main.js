@@ -21,6 +21,9 @@ const petPosition = document.querySelector("#pet-position");
 const customLabel = document.querySelector("#custom-label");
 const customType = document.querySelector("#custom-type");
 const customTarget = document.querySelector("#custom-target");
+const shortcutTemplate = document.querySelector("#shortcut-template");
+const addShortcutButton = document.querySelector("#add-shortcut");
+const shortcutList = document.querySelector("#shortcut-list");
 const alwaysOnTop = document.querySelector("#always-on-top");
 const petShadow = document.querySelector("#pet-shadow");
 const exportButton = document.querySelector("#export-config");
@@ -29,6 +32,7 @@ const buildStatus = document.querySelector("#build-status");
 const encoder = new TextEncoder();
 
 let currentImageName = "";
+let customShortcuts = [];
 
 const PET_APP_SOURCE = String.raw`# -*- coding: utf-8 -*-
 import json
@@ -93,12 +97,9 @@ class DesktopPet:
         self.menu = tk.Menu(self.root, tearoff=False)
         self.menu.add_command(label="说一句话", command=lambda: self.show_bubble(self.config.get("clickLine", "Ready."), 2200))
         self.menu.add_separator()
-        for item in self.config.get("quickMenu", []):
-            if item not in ("窗口置顶", "桌面阴影"):
-                self.menu.add_command(label=item, command=lambda label=item: self.run_quick_action(label))
-        shortcut = self.config.get("customShortcut") or {}
-        if shortcut.get("label") and shortcut.get("target"):
-            self.menu.add_command(label=shortcut["label"], command=lambda: self.open_target(shortcut.get("type", "url"), shortcut.get("target", "")))
+        for shortcut in self.config.get("customShortcuts", []):
+            if shortcut.get("label") and shortcut.get("target"):
+                self.menu.add_command(label=shortcut["label"], command=lambda item=shortcut: self.open_target(item.get("type", "file"), item.get("target", "")))
         self.menu.add_separator()
         self.menu.add_command(label="退出桌宠", command=self.root.destroy)
 
@@ -149,21 +150,6 @@ class DesktopPet:
             self.canvas.delete(item_id)
         self.bubble_ids = []
 
-    def run_quick_action(self, label):
-        actions = {
-            "打开浏览器": lambda: webbrowser.open("https://www.bing.com"),
-            "打开 Steam": lambda: subprocess.Popen(["cmd", "/c", "start", "", "steam://open/main"], shell=False),
-            "打开 WeGame": lambda: subprocess.Popen(["cmd", "/c", "start", "", "wegame://"], shell=False),
-            "打开哔哩哔哩": lambda: webbrowser.open("https://www.bilibili.com"),
-            "打开文件夹": lambda: os.startfile(BASE_DIR),
-            "休息提醒": lambda: self.show_bubble("该休息一下啦。", 2600),
-        }
-        try:
-            actions.get(label, lambda: None)()
-            self.show_bubble(f"已执行：{label}", 1800)
-        except Exception as exc:
-            self.show_bubble(f"启动失败：{exc}", 2600)
-
     def open_target(self, target_type, target):
         try:
             if target_type == "url":
@@ -188,11 +174,6 @@ function setStatus(message, type = "") {
   buildStatus.classList.toggle("is-success", type === "success");
 }
 
-function getEnabledFeatures() {
-  return [...document.querySelectorAll(".toggle-list input:checked")]
-    .map((input) => input.value);
-}
-
 function getConfig() {
   return {
     name: petName.value.trim() || "Untitled Pet",
@@ -206,14 +187,62 @@ function getConfig() {
     position: petPosition.value,
     alwaysOnTop: Boolean(alwaysOnTop.checked),
     shadow: Boolean(petShadow.checked),
-    quickMenu: getEnabledFeatures(),
-    customShortcut: {
-      label: customLabel.value.trim(),
-      type: customType.value,
-      target: customTarget.value.trim()
-    },
+    customShortcuts,
     generatedAt: new Date().toISOString()
   };
+}
+
+function renderShortcuts() {
+  if (!shortcutList) return;
+  shortcutList.replaceChildren();
+  if (!customShortcuts.length) {
+    const empty = document.createElement("p");
+    empty.className = "shortcut-empty";
+    empty.textContent = "尚未添加快捷入口";
+    shortcutList.append(empty);
+    return;
+  }
+
+  customShortcuts.forEach((shortcut) => {
+    const row = document.createElement("div");
+    row.className = "shortcut-item";
+    const text = document.createElement("span");
+    text.textContent = shortcut.label;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "shortcut-remove";
+    remove.dataset.shortcutId = shortcut.id;
+    remove.setAttribute("aria-label", `移除 ${shortcut.label}`);
+    remove.textContent = "×";
+    remove.addEventListener("click", () => {
+      customShortcuts = customShortcuts.filter((item) => item.id !== shortcut.id);
+      renderShortcuts();
+      setStatus("快捷入口已移除。");
+    });
+    row.append(text, remove);
+    shortcutList.append(row);
+  });
+}
+
+function addCustomShortcut() {
+  const label = customLabel?.value.trim();
+  const target = customTarget?.value.trim();
+  if (!label || !target) {
+    setStatus("请填写快捷入口的名称和目标地址。", "error");
+    return;
+  }
+
+  customShortcuts.push({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    label,
+    type: customType.value,
+    target
+  });
+  customLabel.value = "";
+  customTarget.value = "";
+  if (shortcutTemplate) shortcutTemplate.value = "";
+  renderShortcuts();
+  setStatus("快捷入口已加入桌宠右键菜单。", "success");
 }
 
 function downloadBlob(blob, filename) {
@@ -438,6 +467,15 @@ petImage?.addEventListener("change", () => {
 
 previewEmpty?.addEventListener("click", () => petImage?.click());
 
+shortcutTemplate?.addEventListener("change", () => {
+  if (!shortcutTemplate.value) return;
+  customLabel.value = `打开${shortcutTemplate.value}`;
+  customTarget.value = "";
+  customTarget.focus();
+});
+
+addShortcutButton?.addEventListener("click", addCustomShortcut);
+
 exportButton?.addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(getConfig(), null, 2)], {
     type: "application/json;charset=utf-8"
@@ -461,3 +499,4 @@ buildButton?.addEventListener("click", async () => {
 });
 
 updatePreview();
+renderShortcuts();

@@ -106,17 +106,12 @@ class DesktopPet:
         self.menu.add_command(label="说一句话", command=lambda: self.show_bubble(self.config.get("clickLine", "Ready."), 2200))
         self.menu.add_separator()
 
-        for item in self.config.get("quickMenu", []):
-            if item in ("窗口置顶", "桌面阴影"):
-                continue
-            self.menu.add_command(label=item, command=lambda label=item: self.run_quick_action(label))
-
-        shortcut = self.config.get("customShortcut") or {}
-        if shortcut.get("label") and shortcut.get("target"):
-            self.menu.add_command(
-                label=shortcut["label"],
-                command=lambda: self.open_target(shortcut.get("type", "url"), shortcut.get("target", "")),
-            )
+        for shortcut in self.config.get("customShortcuts", []):
+            if shortcut.get("label") and shortcut.get("target"):
+                self.menu.add_command(
+                    label=shortcut["label"],
+                    command=lambda item=shortcut: self.open_target(item.get("type", "file"), item.get("target", "")),
+                )
 
         self.menu.add_separator()
         self.menu.add_command(label="退出桌宠", command=self.root.destroy)
@@ -175,26 +170,6 @@ class DesktopPet:
         for item_id in self.bubble_ids:
             self.canvas.delete(item_id)
         self.bubble_ids.clear()
-
-    def run_quick_action(self, label):
-        actions = {
-            "打开浏览器": lambda: webbrowser.open("https://www.bing.com"),
-            "打开 Steam": lambda: self.open_url("steam://open/main"),
-            "打开 WeGame": lambda: self.open_url("wegame://"),
-            "打开哔哩哔哩": lambda: webbrowser.open("https://www.bilibili.com"),
-            "打开文件夹": lambda: os.startfile(BASE_DIR),
-            "休息提醒": lambda: self.show_bubble("该休息一下啦。", 2600),
-        }
-        action = actions.get(label)
-        if action:
-            try:
-                action()
-                self.show_bubble(f"已执行：{label}", 1800)
-            except Exception as exc:
-                self.show_bubble(f"启动失败：{exc}", 2600)
-
-    def open_url(self, url):
-        subprocess.Popen(["cmd", "/c", "start", "", url], shell=False)
 
     def open_target(self, target_type, target):
         try:
