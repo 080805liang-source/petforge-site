@@ -3,6 +3,8 @@
 const body = document.body;
 const previewPet = document.querySelector("#preview-pet");
 const previewBubble = document.querySelector("#preview-bubble");
+const previewEmpty = document.querySelector("#preview-empty");
+const previewStatus = document.querySelector("#preview-status");
 const petImage = document.querySelector("#pet-image");
 const petName = document.querySelector("#pet-name");
 const petLine = document.querySelector("#pet-line");
@@ -25,7 +27,7 @@ const buildStatus = document.querySelector("#build-status");
 const sceneCard = document.querySelector("[data-tilt]");
 const encoder = new TextEncoder();
 
-let currentImageName = "sample-pet.png";
+let currentImageName = "";
 
 const PET_APP_SOURCE = String.raw`# -*- coding: utf-8 -*-
 import json
@@ -235,6 +237,12 @@ function updatePreview() {
     ? "drop-shadow(0 26px 28px rgba(23, 32, 31, 0.2))"
     : "none";
   previewBubble.textContent = petLine.value.trim() || "Ready.";
+  previewBubble.hidden = !petImage.files?.[0];
+  previewEmpty.hidden = Boolean(petImage.files?.[0]);
+  previewPet.hidden = !petImage.files?.[0];
+  if (previewStatus) {
+    previewStatus.textContent = petStatus.options[petStatus.selectedIndex].text;
+  }
   previewBubble.classList.toggle("style-glass", bubbleStyle.value === "glass");
   previewBubble.classList.toggle("style-dark", bubbleStyle.value === "dark");
   sizeOutput.textContent = `${size}%`;
@@ -350,8 +358,7 @@ async function getPetPngBytes(config) {
   if (petImage.files?.[0]) {
     return blobToPngBytes(petImage.files[0], config.size);
   }
-  const response = await fetch("assets/sample-pet.png");
-  return blobToPngBytes(await response.blob(), config.size);
+  throw new Error("请先上传你的桌宠图片");
 }
 
 function packageReadme(config) {
@@ -418,14 +425,21 @@ petImage?.addEventListener("change", () => {
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     previewPet.src = String(reader.result);
+    previewPet.hidden = false;
+    previewBubble.hidden = false;
+    previewEmpty.hidden = true;
+    buildButton.disabled = false;
+    setStatus("图片已载入。现在可以继续调试外观与功能。", "success");
   });
   reader.readAsDataURL(file);
 });
 
-[petLine, petSize, petOpacity, bubbleStyle, petShadow].forEach((control) => {
+[petLine, petSize, petOpacity, petStatus, bubbleStyle, petShadow].forEach((control) => {
   control?.addEventListener("input", updatePreview);
   control?.addEventListener("change", updatePreview);
 });
+
+previewEmpty?.addEventListener("click", () => petImage?.click());
 
 exportButton?.addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(getConfig(), null, 2)], {

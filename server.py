@@ -19,7 +19,6 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent
 BUILDS_DIR = ROOT / "builds"
 DIST_DIR = ROOT / "dist"
-SAMPLE_IMAGE = ROOT / "assets" / "sample-pet.png"
 PORT = 8765
 HOST = "0.0.0.0"
 
@@ -228,9 +227,8 @@ def write_text(path: Path, content: str) -> None:
 
 def prepare_image(source, target: Path, config: dict) -> None:
     if source is None:
-        image = Image.open(SAMPLE_IMAGE)
-    else:
-        image = Image.open(source)
+        raise ValueError("A desktop pet image is required")
+    image = Image.open(source)
 
     image = image.convert("RGBA")
     size_percent = int(config.get("size") or 100)
