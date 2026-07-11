@@ -3,3 +3,6 @@ dist/
 dist-site/
 __pycache__/
 *.pyc
+build-pyinstaller/
+test-run/
+tools/

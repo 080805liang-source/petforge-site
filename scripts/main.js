@@ -34,139 +34,6 @@ const encoder = new TextEncoder();
 let currentImageName = "";
 let customShortcuts = [];
 
-const PET_APP_SOURCE = String.raw`# -*- coding: utf-8 -*-
-import json
-import os
-import subprocess
-import webbrowser
-import tkinter as tk
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
-IMAGE_PATH = os.path.join(BASE_DIR, "assets", "pet.png")
-
-def load_config():
-    with open(CONFIG_PATH, "r", encoding="utf-8") as file:
-        return json.load(file)
-
-class DesktopPet:
-    def __init__(self):
-        self.config = load_config()
-        self.root = tk.Tk()
-        self.root.title(self.config.get("name", "Desktop Pet"))
-        self.root.overrideredirect(True)
-        self.root.attributes("-transparentcolor", "#ff00ff")
-        self.root.attributes("-topmost", bool(self.config.get("alwaysOnTop", True)))
-        self.root.attributes("-alpha", max(0.25, min(1.0, self.config.get("opacity", 96) / 100)))
-        self.photo = tk.PhotoImage(file=IMAGE_PATH)
-        self.width = self.photo.width() + 80
-        self.height = self.photo.height() + 96
-        self.canvas = tk.Canvas(self.root, width=self.width, height=self.height, bg="#ff00ff", highlightthickness=0)
-        self.canvas.pack()
-        if self.config.get("shadow", True):
-            self.canvas.create_oval(34, self.photo.height() + 42, self.width - 34, self.photo.height() + 76, fill="#222222", outline="", stipple="gray25")
-        self.pet_id = self.canvas.create_image(self.width // 2, self.photo.height() // 2 + 28, image=self.photo)
-        self.bubble_ids = []
-        self.drag_start = (0, 0)
-        self.place_window()
-        self.build_menu()
-        self.bind_events()
-        self.show_bubble(self.status_text(), 1800)
-
-    def status_text(self):
-        return {
-            "companion": "陪伴中",
-            "working": "工作中",
-            "resting": "休息中",
-            "sleeping": "睡觉中",
-        }.get(self.config.get("status"), "陪伴中")
-
-    def place_window(self):
-        screen_w = self.root.winfo_screenwidth()
-        screen_h = self.root.winfo_screenheight()
-        position = self.config.get("position", "bottom-right")
-        if position == "bottom-left":
-            x, y = 48, screen_h - self.height - 72
-        elif position == "center":
-            x, y = (screen_w - self.width) // 2, (screen_h - self.height) // 2
-        else:
-            x, y = screen_w - self.width - 72, screen_h - self.height - 72
-        self.root.geometry(f"{self.width}x{self.height}+{max(0, x)}+{max(0, y)}")
-
-    def build_menu(self):
-        self.menu = tk.Menu(self.root, tearoff=False)
-        self.menu.add_command(label="说一句话", command=lambda: self.show_bubble(self.config.get("clickLine", "Ready."), 2200))
-        self.menu.add_separator()
-        for shortcut in self.config.get("customShortcuts", []):
-            if shortcut.get("label") and shortcut.get("target"):
-                self.menu.add_command(label=shortcut["label"], command=lambda item=shortcut: self.open_target(item.get("type", "file"), item.get("target", "")))
-        self.menu.add_separator()
-        self.menu.add_command(label="退出桌宠", command=self.root.destroy)
-
-    def bind_events(self):
-        self.canvas.bind("<ButtonPress-1>", self.start_drag)
-        self.canvas.bind("<B1-Motion>", self.drag)
-        self.canvas.bind("<ButtonRelease-1>", self.left_click)
-        self.canvas.bind("<Button-3>", self.open_menu)
-        self.root.bind("<Escape>", lambda _event: self.root.destroy())
-
-    def start_drag(self, event):
-        self.drag_start = (event.x, event.y)
-
-    def drag(self, event):
-        self.root.geometry(f"+{self.root.winfo_x() + event.x - self.drag_start[0]}+{self.root.winfo_y() + event.y - self.drag_start[1]}")
-
-    def left_click(self, _event):
-        self.animate()
-        self.show_bubble(self.config.get("clickLine", "Ready."), 2400)
-
-    def open_menu(self, event):
-        self.menu.tk_popup(event.x_root, event.y_root)
-
-    def animate(self):
-        mode = self.config.get("clickAnimation", "jump")
-        if mode == "shake":
-            for index, offset in enumerate([-9, 9, -7, 7, 0]):
-                self.root.after(index * 55, lambda value=offset: self.canvas.move(self.pet_id, value, 0))
-        elif mode == "glow":
-            glow = self.canvas.create_oval(20, 18, self.width - 20, self.photo.height() + 52, outline="#77d9bd", width=4)
-            self.root.after(260, lambda: self.canvas.delete(glow))
-        elif mode != "none":
-            for index, offset in enumerate([-18, -12, 18, 12, 0]):
-                self.root.after(index * 55, lambda value=offset: self.canvas.move(self.pet_id, 0, value))
-
-    def show_bubble(self, text, duration):
-        self.clear_bubble()
-        safe_text = str(text)[:48]
-        fill = "#17201f" if self.config.get("bubbleStyle") == "dark" else "#ffffff"
-        ink = "#ffffff" if self.config.get("bubbleStyle") == "dark" else "#17201f"
-        rect = self.canvas.create_rectangle(12, 10, min(self.width - 12, 278), 72, fill=fill, outline="#dfe6df")
-        label = self.canvas.create_text(26, 24, text=safe_text, anchor="nw", fill=ink, width=230, font=("Microsoft YaHei UI", 10, "bold"))
-        self.bubble_ids = [rect, label]
-        self.root.after(duration, self.clear_bubble)
-
-    def clear_bubble(self):
-        for item_id in self.bubble_ids:
-            self.canvas.delete(item_id)
-        self.bubble_ids = []
-
-    def open_target(self, target_type, target):
-        try:
-            if target_type == "url":
-                webbrowser.open(target)
-            else:
-                os.startfile(target)
-            self.show_bubble("已打开自定义入口", 1800)
-        except Exception as exc:
-            self.show_bubble(f"打开失败：{exc}", 2600)
-
-    def run(self):
-        self.root.mainloop()
-
-if __name__ == "__main__":
-    DesktopPet().run()
-`;
-
 function setStatus(message, type = "") {
   if (!buildStatus) return;
   buildStatus.textContent = message;
@@ -394,33 +261,39 @@ async function getPetPngBytes(config) {
 function packageReadme(config) {
   return `# ${config.name}
 
-这是由 PET FORGE 生成的 Windows 桌宠项目包。
+这是由 PET FORGE 生成的 Windows 桌宠应用包。
 
 运行方式：
 
 1. 解压整个 zip。
-2. 双击 run_desktop_pet.bat。
+2. 双击 PetForge.exe。
 
 说明：
 
-- 当前包使用 Python/Tkinter 运行桌宠。
-- 如果电脑没有 Python，请先安装 Python 3。
+- PetForge.exe 已包含运行环境，不需要安装 Python。
 - 右键桌宠可以打开快捷菜单。
 - 左键拖拽可以移动桌宠。
 - 左键点击会触发台词和动画。
 `;
 }
 
+async function getDesktopAppBytes() {
+  const response = await fetch(new URL("assets/PetForge.exe", document.baseURI), { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error("Windows 应用文件暂时不可用，请稍后再试");
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
 async function buildPackageInBrowser() {
   const config = getConfig();
   const name = safeName(config.name);
-  const pngBytes = await getPetPngBytes(config);
+  const [pngBytes, appBytes] = await Promise.all([getPetPngBytes(config), getDesktopAppBytes()]);
   const entries = [
     { name: "README.md", data: packageReadme(config) },
-    { name: "run_desktop_pet.bat", data: "@echo off\r\ncd /d %~dp0\\app\r\npy -3 desktop_pet.pyw || pythonw desktop_pet.pyw || python desktop_pet.pyw\r\n" },
-    { name: "app/config.json", data: JSON.stringify(config, null, 2) },
-    { name: "app/desktop_pet.pyw", data: PET_APP_SOURCE },
-    { name: "app/assets/pet.png", data: pngBytes }
+    { name: "PetForge.exe", data: appBytes },
+    { name: "config.json", data: JSON.stringify(config, null, 2) },
+    { name: "assets/pet.png", data: pngBytes }
   ];
   return { name, blob: createZip(entries) };
 }
@@ -485,12 +358,12 @@ exportButton?.addEventListener("click", () => {
 
 buildButton?.addEventListener("click", async () => {
   buildButton.disabled = true;
-  setStatus("正在生成 Windows 桌宠项目包...");
+  setStatus("正在组装 Windows 桌宠应用...");
 
   try {
     const result = await buildPackageInBrowser();
     downloadBlob(result.blob, `${result.name}-windows-pet.zip`);
-    setStatus("项目包已生成并开始下载。解压后双击 run_desktop_pet.bat 运行。", "success");
+    setStatus("Windows 应用包已生成。解压后直接双击 PetForge.exe。", "success");
   } catch (error) {
     setStatus(`生成失败：${error.message}`, "error");
   } finally {
