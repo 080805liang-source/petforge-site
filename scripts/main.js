@@ -2,6 +2,8 @@
 
 const body = document.body;
 const previewPet = document.querySelector("#preview-pet");
+const heroUserPet = document.querySelector("#hero-user-pet");
+const heroAssetStatus = document.querySelector("#hero-asset-status");
 const previewBubble = document.querySelector("#preview-bubble");
 const previewEmpty = document.querySelector("#preview-empty");
 const previewStatus = document.querySelector("#preview-status");
@@ -24,7 +26,6 @@ const petShadow = document.querySelector("#pet-shadow");
 const exportButton = document.querySelector("#export-config");
 const buildButton = document.querySelector("#build-package");
 const buildStatus = document.querySelector("#build-status");
-const sceneCard = document.querySelector("[data-tilt]");
 const encoder = new TextEncoder();
 
 let currentImageName = "";
@@ -364,7 +365,7 @@ async function getPetPngBytes(config) {
 function packageReadme(config) {
   return `# ${config.name}
 
-这是由桌宠工坊生成的 Windows 桌宠程序包。
+这是由 PET FORGE 生成的 Windows 桌宠项目包。
 
 运行方式：
 
@@ -395,26 +396,19 @@ async function buildPackageInBrowser() {
   return { name, blob: createZip(entries) };
 }
 
-document.querySelectorAll('a[href^="#"]').forEach((link) => {
-  link.addEventListener("click", () => {
-    body.classList.remove("is-jumping");
-    void body.offsetWidth;
-    body.classList.add("is-jumping");
-    window.setTimeout(() => body.classList.remove("is-jumping"), 760);
-  });
-});
-
-if (sceneCard) {
-  sceneCard.addEventListener("pointermove", (event) => {
-    const rect = sceneCard.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width - 0.5;
-    const y = (event.clientY - rect.top) / rect.height - 0.5;
-    sceneCard.style.transform = `rotateX(${7 - y * 8}deg) rotateY(${-13 + x * 12}deg)`;
-  });
-
-  sceneCard.addEventListener("pointerleave", () => {
-    sceneCard.style.transform = "";
-  });
+const slides = [...document.querySelectorAll("[data-slide]")];
+const slideLinks = [...document.querySelectorAll(".slide-rail a")];
+if (slides.length && "IntersectionObserver" in window) {
+  const slideObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      entry.target.classList.toggle("is-active", entry.isIntersecting);
+      if (!entry.isIntersecting) return;
+      slideLinks.forEach((link) => {
+        link.classList.toggle("is-current", link.getAttribute("href") === `#${entry.target.id || "top"}`);
+      });
+    });
+  }, { threshold: 0.54 });
+  slides.forEach((slide) => slideObserver.observe(slide));
 }
 
 petImage?.addEventListener("change", () => {
@@ -426,6 +420,9 @@ petImage?.addEventListener("change", () => {
   reader.addEventListener("load", () => {
     previewPet.src = String(reader.result);
     previewPet.hidden = false;
+    heroUserPet.src = String(reader.result);
+    heroUserPet.hidden = false;
+    heroAssetStatus.textContent = "角色已进入创作舱";
     previewBubble.hidden = false;
     previewEmpty.hidden = true;
     buildButton.disabled = false;
@@ -450,12 +447,12 @@ exportButton?.addEventListener("click", () => {
 
 buildButton?.addEventListener("click", async () => {
   buildButton.disabled = true;
-  setStatus("正在生成 Windows 桌宠程序包...");
+  setStatus("正在生成 Windows 桌宠项目包...");
 
   try {
     const result = await buildPackageInBrowser();
     downloadBlob(result.blob, `${result.name}-windows-pet.zip`);
-    setStatus("程序包已生成并开始下载。解压后双击 run_desktop_pet.bat 运行。", "success");
+    setStatus("项目包已生成并开始下载。解压后双击 run_desktop_pet.bat 运行。", "success");
   } catch (error) {
     setStatus(`生成失败：${error.message}`, "error");
   } finally {

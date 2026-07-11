@@ -4,28 +4,35 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="上传自己的图片，定制交互与快捷菜单，生成专属 Windows 桌宠。">
-    <title>ORBIT PETS | 你的桌面陪伴计划</title>
+    <title>PET FORGE | 你的桌面陪伴计划</title>
     <link rel="stylesheet" href="styles/main.css">
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#top" aria-label="ORBIT PETS 首页">
+      <a class="brand" href="#top" aria-label="PET FORGE 首页">
         <span class="brand-mark" aria-hidden="true"></span>
-        <span>ORBIT PETS</span>
+        <span>PET FORGE</span>
       </a>
       <nav class="nav-links" aria-label="主导航">
         <a href="#studio">创作台</a>
-        <a href="#systems">能力</a>
-        <a href="#how-it-works">流程</a>
+        <a href="#systems">连接</a>
+        <a href="#how-it-works">交付</a>
       </nav>
       <a class="nav-cta" href="#studio">开始创作 <span aria-hidden="true">↓</span></a>
     </header>
 
+    <nav class="slide-rail" aria-label="桌宠创作阶段">
+      <a href="#top" class="is-current"><b>01</b><span>载入</span></a>
+      <a href="#studio"><b>02</b><span>塑造</span></a>
+      <a href="#systems"><b>03</b><span>连接</span></a>
+      <a href="#how-it-works"><b>04</b><span>交付</span></a>
+    </nav>
+
     <main id="top">
-      <section class="hero-section" aria-labelledby="hero-title">
+      <section class="hero-section page-slide is-active" data-slide aria-labelledby="hero-title">
         <div class="hero-copy">
           <p class="eyebrow"><span></span> PERSONAL DESKTOP COMPANION</p>
-          <h1 id="hero-title">把一张图片，<br>送进你的桌面轨道。</h1>
+          <h1 id="hero-title">让你的角色，<br>来到你的桌面。</h1>
           <p class="hero-lead">不提供预设角色。上传你自己的图片，设置它的动作、语气和快捷功能，然后生成只属于你的桌宠。</p>
           <div class="hero-actions">
             <a class="button primary" href="#studio">创建我的桌宠 <span aria-hidden="true">→</span></a>
@@ -34,30 +41,29 @@
           <div class="hero-data" aria-label="网站特点">
             <div><strong>01</strong><span>上传你的角色</span></div>
             <div><strong>02</strong><span>实时调试互动</span></div>
-            <div><strong>03</strong><span>生成 Windows 包</span></div>
+            <div><strong>03</strong><span>导出 Windows 项目包</span></div>
           </div>
         </div>
 
-        <div class="hero-orbit" aria-label="深空创作环境">
-          <img src="assets/orion-nebula.jpg" alt="猎户座星云，作为创作环境背景">
+        <div class="hero-orbit" aria-label="桌宠创作展示舱">
+          <img src="assets/creator-studio-3d.png" alt="空的 3D 桌宠创作展示舱">
+          <img id="hero-user-pet" class="hero-user-pet" alt="你上传的桌宠" hidden>
           <div class="hero-shade"></div>
-          <div class="orbit-line orbit-one"></div>
-          <div class="orbit-line orbit-two"></div>
-          <div class="orbit-node node-one"></div>
-          <div class="orbit-node node-two"></div>
+          <div class="hero-plane plane-one"></div>
+          <div class="hero-plane plane-two"></div>
           <div class="launch-readout">
             <span class="readout-dot"></span>
-            <span>WORKSPACE ONLINE</span>
-            <strong>等待你的第一个角色</strong>
+            <span>CREATION CHAMBER</span>
+            <strong id="hero-asset-status">等待你的第一个角色</strong>
           </div>
           <div class="hero-empty-card">
             <span class="empty-symbol">＋</span>
-            <p>没有预设宠物<br>这里将出现你的作品</p>
+            <p>没有预设宠物<br>你的图片将进入创作舱</p>
           </div>
         </div>
       </section>
 
-      <section class="studio-section" id="studio" aria-labelledby="studio-title">
+      <section class="studio-section page-slide" data-slide id="studio" aria-labelledby="studio-title">
         <div class="studio-topline">
           <div>
             <p class="eyebrow light"><span></span> CREATE / 01</p>
@@ -104,8 +110,8 @@
             <div class="preview-label"><span>LIVE ENVIRONMENT</span><span id="preview-status">陪伴中</span></div>
             <div class="preview-desktop" data-preview-shell>
               <div class="desktop-grid"></div>
-              <div class="desktop-stars" aria-hidden="true"></div>
-              <div class="desktop-topbar"><span></span><span>ORBIT / PREVIEW</span><span>WIN</span></div>
+              <div class="desktop-surface" aria-hidden="true"></div>
+              <div class="desktop-topbar"><span></span><span>PET FORGE / PREVIEW</span><span>WIN</span></div>
               <div id="preview-empty" class="preview-empty">
                 <span>＋</span>
                 <strong>把你的图片放进这里</strong>
@@ -142,41 +148,41 @@
             </div>
 
             <div class="action-stack">
-              <button id="build-package" class="button primary wide" type="button" disabled>生成 Windows 程序包 <span aria-hidden="true">→</span></button>
+              <button id="build-package" class="button primary wide" type="button" disabled>生成 Windows 项目包 <span aria-hidden="true">→</span></button>
               <button id="export-config" class="button secondary wide" type="button">导出制作配置</button>
             </div>
-            <p id="build-status" class="panel-note" role="status">请先上传你的桌宠图片，再生成程序包。</p>
+            <p id="build-status" class="panel-note" role="status">请先上传你的桌宠图片，再生成项目包。</p>
           </section>
         </div>
       </section>
 
-      <section class="systems-section" id="systems" aria-labelledby="systems-title">
+      <section class="systems-section page-slide" data-slide id="systems" aria-labelledby="systems-title">
         <div class="section-intro">
-          <p class="eyebrow"><span></span> DESIGNED TO BECOME YOURS</p>
-          <h2 id="systems-title">不是一只默认宠物。<br>是你自己的桌面角色。</h2>
+          <p class="eyebrow"><span></span> CONNECT / 03</p>
+          <h2 id="systems-title">让它不只存在。<br>还能够替你行动。</h2>
         </div>
         <div class="systems-list">
           <article><span>01</span><div><h3>从你的图片开始</h3><p>不展示模板角色。上传后，预览和生成包只使用你的素材。</p></div></article>
           <article><span>02</span><div><h3>让互动变得有用</h3><p>把浏览器、游戏、工具或文件夹变成桌宠右键菜单里的快捷入口。</p></div></article>
-          <article><span>03</span><div><h3>为 Windows 桌面准备</h3><p>导出桌宠程序包，在电脑桌面上拖动、点击和使用你的自定义功能。</p></div></article>
+          <article><span>03</span><div><h3>为 Windows 桌面准备</h3><p>导出桌宠项目包，在电脑桌面上拖动、点击和使用你的自定义功能。</p></div></article>
         </div>
       </section>
 
-      <section class="process-section" id="how-it-works" aria-labelledby="process-title">
+      <section class="process-section page-slide" data-slide id="how-it-works" aria-labelledby="process-title">
         <div class="process-visual" aria-hidden="true"><span></span><span></span><span></span></div>
         <div>
-          <p class="eyebrow light"><span></span> FLIGHT PLAN</p>
+          <p class="eyebrow light"><span></span> DELIVER / 04</p>
           <h2 id="process-title">从一张图，<br>到桌面上的陪伴。</h2>
           <ol class="process-list">
             <li><b>上传</b><span>选择你希望它成为的样子。</span></li>
             <li><b>调试</b><span>设定语气、动画、外观与快捷功能。</span></li>
-            <li><b>发射</b><span>下载你的 Windows 桌宠程序包。</span></li>
+            <li><b>交付</b><span>下载你的 Windows 桌宠项目包。</span></li>
           </ol>
         </div>
       </section>
     </main>
 
-    <footer><span>ORBIT PETS</span><span>YOUR CHARACTER. YOUR DESKTOP.</span><span>© 2026</span></footer>
+    <footer><span>PET FORGE</span><span>YOUR CHARACTER. YOUR DESKTOP.</span><span>© 2026</span></footer>
     <script src="scripts/main.js" defer></script>
   </body>
 </html>
