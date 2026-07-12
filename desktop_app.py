@@ -128,6 +128,7 @@ class DesktopPet:
                     command=lambda item=shortcut: self.open_target(
                         item.get("type", "file"),
                         item.get("target", ""),
+                        item.get("fallback", ""),
                     ),
                 )
         self.menu.add_separator()
@@ -210,7 +211,7 @@ class DesktopPet:
             self.canvas.delete(item_id)
         self.bubble_ids = []
 
-    def open_target(self, target_type: str, target: object) -> None:
+    def open_target(self, target_type: str, target: object, fallback: object = "") -> None:
         try:
             value = os.path.expandvars(str(target).strip())
             if target_type == "url":
@@ -219,7 +220,12 @@ class DesktopPet:
                 os.startfile(value)
             self.show_bubble("已打开快捷入口", 1800)
         except OSError as exc:
-            self.show_bubble(f"打开失败：{exc}", 2600)
+            fallback_url = str(fallback).strip()
+            if fallback_url:
+                webbrowser.open(fallback_url)
+                self.show_bubble("未找到客户端，已打开官网", 2200)
+            else:
+                self.show_bubble(f"打开失败：{exc}", 2600)
 
     def run(self) -> None:
         self.root.mainloop()

@@ -34,6 +34,24 @@ const encoder = new TextEncoder();
 let currentImageName = "";
 let customShortcuts = [];
 
+const commonShortcutPresets = {
+  "浏览器": { label: "打开浏览器", type: "url", target: "https://www.baidu.com/" },
+  "抖音": { label: "打开抖音", type: "url", target: "https://www.douyin.com/" },
+  "哔哩哔哩": { label: "打开哔哩哔哩", type: "url", target: "https://www.bilibili.com/" },
+  "QQ": { label: "打开 QQ", type: "protocol", target: "tencent://", fallback: "https://im.qq.com/" },
+  "微信": { label: "打开微信", type: "protocol", target: "weixin://", fallback: "https://weixin.qq.com/" },
+  "飞书": { label: "打开飞书", type: "url", target: "https://www.feishu.cn/" },
+  "钉钉": { label: "打开钉钉", type: "url", target: "https://www.dingtalk.com/" },
+  "企业微信": { label: "打开企业微信", type: "url", target: "https://work.weixin.qq.com/" },
+  "WPS Office": { label: "打开 WPS Office", type: "protocol", target: "wps://", fallback: "https://www.wps.cn/" },
+  "Microsoft Office": { label: "打开 Microsoft Office", type: "url", target: "https://www.microsoft365.com/" },
+  "Steam": { label: "打开 Steam", type: "protocol", target: "steam://open/main", fallback: "https://store.steampowered.com/" },
+  "Epic Games": { label: "打开 Epic Games", type: "protocol", target: "com.epicgames.launcher://apps", fallback: "https://store.epicgames.com/" },
+  "网易云音乐": { label: "打开网易云音乐", type: "protocol", target: "orpheus://", fallback: "https://music.163.com/" },
+  "VS Code": { label: "打开 VS Code", type: "protocol", target: "vscode://", fallback: "https://code.visualstudio.com/" },
+  "Discord": { label: "打开 Discord", type: "protocol", target: "discord://", fallback: "https://discord.com/app" }
+};
+
 function setStatus(message, type = "") {
   if (!buildStatus) return;
   buildStatus.textContent = message;
@@ -91,20 +109,30 @@ function renderShortcuts() {
   });
 }
 
-function addCustomShortcut() {
-  const label = customLabel?.value.trim();
-  const target = customTarget?.value.trim();
+function addShortcut({ label, type, target, fallback = "" }) {
   if (!label || !target) {
     setStatus("请填写快捷入口的名称和目标地址。", "error");
-    return;
+    return false;
+  }
+  if (customShortcuts.some((shortcut) => shortcut.label === label || shortcut.target === target)) {
+    setStatus(`${label} 已在桌宠右键菜单中。`, "error");
+    return false;
   }
 
   customShortcuts.push({
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     label,
-    type: customType.value,
-    target
+    type,
+    target,
+    fallback
   });
+  return true;
+}
+
+function addCustomShortcut() {
+  const label = customLabel?.value.trim();
+  const target = customTarget?.value.trim();
+  if (!addShortcut({ label, type: customType.value, target })) return;
   customLabel.value = "";
   customTarget.value = "";
   if (shortcutTemplate) shortcutTemplate.value = "";
@@ -343,10 +371,25 @@ petImage?.addEventListener("change", () => {
 previewEmpty?.addEventListener("click", () => petImage?.click());
 
 shortcutTemplate?.addEventListener("change", () => {
-  if (!shortcutTemplate.value) return;
-  customLabel.value = `打开${shortcutTemplate.value}`;
-  customTarget.value = "";
-  customTarget.focus();
+  const preset = commonShortcutPresets[shortcutTemplate.value];
+  if (preset) {
+    customLabel.value = preset.label;
+    customType.value = preset.type;
+    customTarget.value = preset.target;
+    if (addShortcut(preset)) {
+      customLabel.value = "";
+      customTarget.value = "";
+      shortcutTemplate.value = "";
+      renderShortcuts();
+      setStatus(`${preset.label} 已加入桌宠右键菜单。`, "success");
+    }
+    return;
+  }
+  if (shortcutTemplate.value === "自定义") {
+    customLabel.value = "";
+    customTarget.value = "";
+    customLabel.focus();
+  }
 });
 
 addShortcutButton?.addEventListener("click", addCustomShortcut);
