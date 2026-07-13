@@ -22,6 +22,7 @@ const customLabel = document.querySelector("#custom-label");
 const customType = document.querySelector("#custom-type");
 const customTarget = document.querySelector("#custom-target");
 const shortcutTemplate = document.querySelector("#shortcut-template");
+const manualShortcutFields = document.querySelector("#manual-shortcut-fields");
 const addShortcutButton = document.querySelector("#add-shortcut");
 const shortcutList = document.querySelector("#shortcut-list");
 const alwaysOnTop = document.querySelector("#always-on-top");
@@ -36,20 +37,20 @@ let customShortcuts = [];
 
 const commonShortcutPresets = {
   "浏览器": { label: "打开浏览器", type: "url", target: "https://www.baidu.com/" },
-  "抖音": { label: "打开抖音", type: "url", target: "https://www.douyin.com/" },
-  "哔哩哔哩": { label: "打开哔哩哔哩", type: "url", target: "https://www.bilibili.com/" },
-  "QQ": { label: "打开 QQ", type: "protocol", target: "tencent://", fallback: "https://im.qq.com/" },
-  "微信": { label: "打开微信", type: "protocol", target: "weixin://", fallback: "https://weixin.qq.com/" },
-  "飞书": { label: "打开飞书", type: "url", target: "https://www.feishu.cn/" },
-  "钉钉": { label: "打开钉钉", type: "url", target: "https://www.dingtalk.com/" },
-  "企业微信": { label: "打开企业微信", type: "url", target: "https://work.weixin.qq.com/" },
-  "WPS Office": { label: "打开 WPS Office", type: "protocol", target: "wps://", fallback: "https://www.wps.cn/" },
+  "抖音": { label: "打开抖音", type: "app", target: "snssdk1128://", fallback: "https://www.douyin.com/", appPaths: ["%LocalAppData%\\Douyin\\Douyin.exe", "%ProgramFiles%\\Douyin\\Douyin.exe"] },
+  "哔哩哔哩": { label: "打开哔哩哔哩", type: "app", target: "bilibili://", fallback: "https://www.bilibili.com/", appPaths: ["%LocalAppData%\\Programs\\bilibili\\bilibili.exe", "%ProgramFiles%\\bilibili\\bilibili.exe"] },
+  "QQ": { label: "打开 QQ", type: "app", target: "tencent://", fallback: "https://im.qq.com/", appPaths: ["%ProgramFiles%\\Tencent\\QQNT\\QQ.exe", "%ProgramFiles(x86)%\\Tencent\\QQNT\\QQ.exe", "%ProgramFiles%\\Tencent\\QQ\\QQ.exe", "%ProgramFiles(x86)%\\Tencent\\QQ\\QQ.exe", "%LocalAppData%\\Tencent\\QQ\\QQ.exe"] },
+  "微信": { label: "打开微信", type: "app", target: "weixin://", fallback: "https://weixin.qq.com/", appPaths: ["%ProgramFiles%\\Tencent\\WeChat\\WeChat.exe", "%ProgramFiles(x86)%\\Tencent\\WeChat\\WeChat.exe", "%LocalAppData%\\Tencent\\WeChat\\WeChat.exe"] },
+  "飞书": { label: "打开飞书", type: "app", target: "feishu://", fallback: "https://www.feishu.cn/", appPaths: ["%LocalAppData%\\Programs\\Feishu\\Feishu.exe", "%LocalAppData%\\Feishu\\Feishu.exe", "%ProgramFiles%\\Feishu\\Feishu.exe"] },
+  "钉钉": { label: "打开钉钉", type: "app", target: "dingtalk://", fallback: "https://www.dingtalk.com/", appPaths: ["%LocalAppData%\\DingTalk\\DingTalk.exe", "%ProgramFiles(x86)%\\DingDing\\DingTalk.exe", "%ProgramFiles%\\DingDing\\DingTalk.exe"] },
+  "企业微信": { label: "打开企业微信", type: "app", target: "wxwork://", fallback: "https://work.weixin.qq.com/", appPaths: ["%ProgramFiles%\\Tencent\\WeChat\\WXWork\\WXWork.exe", "%ProgramFiles(x86)%\\Tencent\\WeChat\\WXWork\\WXWork.exe"] },
+  "WPS Office": { label: "打开 WPS Office", type: "app", target: "wps://", fallback: "https://www.wps.cn/", appPaths: ["%ProgramFiles%\\kingsoft\\WPS Office\\ksolaunch.exe", "%ProgramFiles(x86)%\\kingsoft\\WPS Office\\ksolaunch.exe"] },
   "Microsoft Office": { label: "打开 Microsoft Office", type: "url", target: "https://www.microsoft365.com/" },
-  "Steam": { label: "打开 Steam", type: "protocol", target: "steam://open/main", fallback: "https://store.steampowered.com/" },
-  "Epic Games": { label: "打开 Epic Games", type: "protocol", target: "com.epicgames.launcher://apps", fallback: "https://store.epicgames.com/" },
-  "网易云音乐": { label: "打开网易云音乐", type: "protocol", target: "orpheus://", fallback: "https://music.163.com/" },
-  "VS Code": { label: "打开 VS Code", type: "protocol", target: "vscode://", fallback: "https://code.visualstudio.com/" },
-  "Discord": { label: "打开 Discord", type: "protocol", target: "discord://", fallback: "https://discord.com/app" }
+  "Steam": { label: "打开 Steam", type: "app", target: "steam://open/main", fallback: "https://store.steampowered.com/", appPaths: ["%ProgramFiles(x86)%\\Steam\\steam.exe", "%ProgramFiles%\\Steam\\steam.exe"] },
+  "Epic Games": { label: "打开 Epic Games", type: "app", target: "com.epicgames.launcher://apps", fallback: "https://store.epicgames.com/", appPaths: ["%ProgramFiles%\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe", "%ProgramFiles(x86)%\\Epic Games\\Launcher\\Portal\\Binaries\\Win32\\EpicGamesLauncher.exe"] },
+  "网易云音乐": { label: "打开网易云音乐", type: "app", target: "orpheus://", fallback: "https://music.163.com/", appPaths: ["%ProgramFiles%\\Netease\\CloudMusic\\cloudmusic.exe", "%ProgramFiles(x86)%\\Netease\\CloudMusic\\cloudmusic.exe"] },
+  "VS Code": { label: "打开 VS Code", type: "app", target: "vscode://", fallback: "https://code.visualstudio.com/", appPaths: ["%LocalAppData%\\Programs\\Microsoft VS Code\\Code.exe", "%ProgramFiles%\\Microsoft VS Code\\Code.exe"] },
+  "Discord": { label: "打开 Discord", type: "app", target: "discord://", fallback: "https://discord.com/app", appPaths: ["%LocalAppData%\\Discord\\Update.exe"] }
 };
 
 function setStatus(message, type = "") {
@@ -109,7 +110,7 @@ function renderShortcuts() {
   });
 }
 
-function addShortcut({ label, type, target, fallback = "" }) {
+function addShortcut({ label, type, target, fallback = "", appPaths = [] }) {
   if (!label || !target) {
     setStatus("请填写快捷入口的名称和目标地址。", "error");
     return false;
@@ -124,7 +125,8 @@ function addShortcut({ label, type, target, fallback = "" }) {
     label,
     type,
     target,
-    fallback
+    fallback,
+    appPaths
   });
   return true;
 }
@@ -136,6 +138,7 @@ function addCustomShortcut() {
   customLabel.value = "";
   customTarget.value = "";
   if (shortcutTemplate) shortcutTemplate.value = "";
+  if (manualShortcutFields) manualShortcutFields.hidden = true;
   renderShortcuts();
   setStatus("快捷入口已加入桌宠右键菜单。", "success");
 }
@@ -373,22 +376,21 @@ previewEmpty?.addEventListener("click", () => petImage?.click());
 shortcutTemplate?.addEventListener("change", () => {
   const preset = commonShortcutPresets[shortcutTemplate.value];
   if (preset) {
-    customLabel.value = preset.label;
-    customType.value = preset.type;
-    customTarget.value = preset.target;
     if (addShortcut(preset)) {
-      customLabel.value = "";
-      customTarget.value = "";
       shortcutTemplate.value = "";
+      if (manualShortcutFields) manualShortcutFields.hidden = true;
       renderShortcuts();
       setStatus(`${preset.label} 已加入桌宠右键菜单。`, "success");
     }
     return;
   }
   if (shortcutTemplate.value === "自定义") {
+    if (manualShortcutFields) manualShortcutFields.hidden = false;
     customLabel.value = "";
     customTarget.value = "";
     customLabel.focus();
+  } else if (manualShortcutFields) {
+    manualShortcutFields.hidden = true;
   }
 });
 

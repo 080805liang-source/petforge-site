@@ -139,11 +139,13 @@
 
             <div class="custom-shortcut">
               <p class="minor-heading">快捷入口</p>
-              <label>常用入口<select id="shortcut-template"><option value="">选择常用入口</option><option value="浏览器">浏览器</option><option value="抖音">抖音</option><option value="哔哩哔哩">哔哩哔哩</option><option value="QQ">QQ</option><option value="微信">微信</option><option value="飞书">飞书</option><option value="钉钉">钉钉</option><option value="企业微信">企业微信</option><option value="WPS Office">WPS Office</option><option value="Microsoft Office">Microsoft Office</option><option value="Steam">Steam</option><option value="Epic Games">Epic Games</option><option value="网易云音乐">网易云音乐</option><option value="VS Code">VS Code</option><option value="Discord">Discord</option><option value="自定义">自定义</option></select></label>
-              <label>显示名称<input id="custom-label" type="text" placeholder="例如：打开微信" maxlength="18"></label>
-              <label>类型<select id="custom-type"><option value="file">软件或文件</option><option value="folder">文件夹</option><option value="url">网址</option><option value="protocol">应用协议</option></select></label>
-              <label>目标地址<input id="custom-target" type="text" placeholder="填写软件路径、文件夹或网址" maxlength="260"></label>
-              <button id="add-shortcut" class="button secondary wide" type="button">添加快捷入口 <span aria-hidden="true">+</span></button>
+              <label>常用入口<select id="shortcut-template"><option value="">选择常用入口</option><option value="浏览器">浏览器</option><option value="抖音">抖音</option><option value="哔哩哔哩">哔哩哔哩</option><option value="QQ">QQ</option><option value="微信">微信</option><option value="飞书">飞书</option><option value="钉钉">钉钉</option><option value="企业微信">企业微信</option><option value="WPS Office">WPS Office</option><option value="Microsoft Office">Microsoft Office</option><option value="Steam">Steam</option><option value="Epic Games">Epic Games</option><option value="网易云音乐">网易云音乐</option><option value="VS Code">VS Code</option><option value="Discord">Discord</option><option value="自定义">自定义入口</option></select></label>
+              <div id="manual-shortcut-fields" class="manual-shortcut-fields" hidden>
+                <label>显示名称<input id="custom-label" type="text" placeholder="例如：打开微信" maxlength="18"></label>
+                <label>类型<select id="custom-type"><option value="file">软件或文件</option><option value="folder">文件夹</option><option value="url">网址</option><option value="protocol">应用协议</option></select></label>
+                <label>目标地址<input id="custom-target" type="text" placeholder="填写软件路径、文件夹或网址" maxlength="260"></label>
+                <button id="add-shortcut" class="button secondary wide" type="button">添加快捷入口 <span aria-hidden="true">+</span></button>
+              </div>
               <div id="shortcut-list" class="shortcut-list" aria-live="polite"></div>
             </div>
 

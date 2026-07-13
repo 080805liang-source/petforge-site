@@ -129,6 +129,7 @@ class DesktopPet:
                         item.get("type", "file"),
                         item.get("target", ""),
                         item.get("fallback", ""),
+                        item.get("appPaths", []),
                     ),
                 )
         self.menu.add_separator()
@@ -211,8 +212,21 @@ class DesktopPet:
             self.canvas.delete(item_id)
         self.bubble_ids = []
 
-    def open_target(self, target_type: str, target: object, fallback: object = "") -> None:
+    def open_target(
+        self,
+        target_type: str,
+        target: object,
+        fallback: object = "",
+        app_paths: object = (),
+    ) -> None:
         try:
+            if target_type == "app":
+                for raw_path in app_paths if isinstance(app_paths, list) else ():
+                    app_path = Path(os.path.expandvars(str(raw_path).strip()))
+                    if app_path.is_file():
+                        os.startfile(str(app_path))
+                        self.show_bubble("已打开本机软件", 1800)
+                        return
             value = os.path.expandvars(str(target).strip())
             if target_type == "url":
                 webbrowser.open(value)
