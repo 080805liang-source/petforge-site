@@ -8,6 +8,7 @@ const previewBubble = document.querySelector("#preview-bubble");
 const previewEmpty = document.querySelector("#preview-empty");
 const previewStatus = document.querySelector("#preview-status");
 const petImage = document.querySelector("#pet-image");
+const stylePresets = [...document.querySelectorAll(".style-preset")];
 const petName = document.querySelector("#pet-name");
 const petLine = document.querySelector("#pet-line");
 const petSize = document.querySelector("#pet-size");
@@ -34,6 +35,10 @@ const encoder = new TextEncoder();
 
 let currentImageName = "";
 let customShortcuts = [];
+let selectedStyle = "original";
+let styledPetBlob = null;
+let previewImageUrl = "";
+let styleRequestId = 0;
 
 const commonShortcutPresets = {
   "浏览器": { label: "打开浏览器", type: "url", target: "https://www.baidu.com/" },
@@ -73,6 +78,7 @@ function getConfig() {
     position: petPosition.value,
     alwaysOnTop: Boolean(alwaysOnTop.checked),
     shadow: Boolean(petShadow.checked),
+    visualStyle: selectedStyle,
     customShortcuts,
     generatedAt: new Date().toISOString()
   };
@@ -284,9 +290,141 @@ async function blobToPngBytes(blob, sizePercent) {
   }
 }
 
+function limitImageSize(width, height) {
+  const longestSide = 1600;
+  const scale = Math.min(1, longestSide / Math.max(width, height));
+  return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
+}
+
+function posterize(context, width, height, levels) {
+  const imageData = context.getImageData(0, 0, width, height);
+  const step = 255 / (levels - 1);
+  for (let index = 0; index < imageData.data.length; index += 4) {
+    if (!imageData.data[index + 3]) continue;
+    imageData.data[index] = Math.round(imageData.data[index] / step) * step;
+    imageData.data[index + 1] = Math.round(imageData.data[index + 1] / step) * step;
+    imageData.data[index + 2] = Math.round(imageData.data[index + 2] / step) * step;
+  }
+  context.putImageData(imageData, 0, 0);
+}
+
+function addComicInk(context, width, height) {
+  const imageData = context.getImageData(0, 0, width, height);
+  const { data } = imageData;
+  const luminance = (index) => data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114;
+  for (let y = 0; y < height - 1; y += 1) {
+    for (let x = 0; x < width - 1; x += 1) {
+      const index = (y * width + x) * 4;
+      if (!data[index + 3]) continue;
+      const right = index + 4;
+      const below = index + width * 4;
+      if (Math.abs(luminance(index) - luminance(right)) + Math.abs(luminance(index) - luminance(below)) > 112) {
+        data[index] = 15;
+        data[index + 1] = 23;
+        data[index + 2] = 34;
+      }
+    }
+  }
+  context.putImageData(imageData, 0, 0);
+}
+
+async function renderStyle(blob, style) {
+  if (style === "original") return blob;
+  const sourceUrl = URL.createObjectURL(blob);
+  try {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = sourceUrl;
+    await image.decode();
+    const size = limitImageSize(image.naturalWidth, image.naturalHeight);
+    const canvas = document.createElement("canvas");
+    canvas.width = size.width;
+    canvas.height = size.height;
+    const context = canvas.getContext("2d", { willReadFrequently: style === "comic" || style === "toon" });
+
+    if (style === "pixel") {
+      const pixelScale = Math.max(1, Math.ceil(Math.max(size.width, size.height) / 112));
+      const smallWidth = Math.max(1, Math.round(size.width / pixelScale));
+      const smallHeight = Math.max(1, Math.round(size.height / pixelScale));
+      const smallCanvas = document.createElement("canvas");
+      smallCanvas.width = smallWidth;
+      smallCanvas.height = smallHeight;
+      smallCanvas.getContext("2d").drawImage(image, 0, 0, smallWidth, smallHeight);
+      context.imageSmoothingEnabled = false;
+      context.drawImage(smallCanvas, 0, 0, smallWidth, smallHeight, 0, 0, size.width, size.height);
+    } else {
+      const filters = {
+        toon: "saturate(1.32) contrast(1.12) brightness(1.07)",
+        comic: "saturate(1.24) contrast(1.28)",
+        chrome: "saturate(.62) contrast(1.2) brightness(1.12)",
+        neon: "saturate(1.72) contrast(1.24) brightness(.96)"
+      };
+      context.filter = filters[style] || "none";
+      context.drawImage(image, 0, 0, size.width, size.height);
+      context.filter = "none";
+    }
+
+    if (style === "toon") posterize(context, size.width, size.height, 7);
+    if (style === "comic") {
+      posterize(context, size.width, size.height, 5);
+      addComicInk(context, size.width, size.height);
+    }
+    if (style === "chrome" || style === "neon") {
+      const sheen = context.createLinearGradient(0, 0, size.width, size.height);
+      if (style === "chrome") {
+        sheen.addColorStop(0, "rgba(102, 225, 255, .42)");
+        sheen.addColorStop(.48, "rgba(255, 255, 255, .08)");
+        sheen.addColorStop(1, "rgba(255, 102, 186, .38)");
+      } else {
+        sheen.addColorStop(0, "rgba(70, 233, 255, .34)");
+        sheen.addColorStop(.52, "rgba(32, 24, 92, .1)");
+        sheen.addColorStop(1, "rgba(255, 51, 187, .4)");
+      }
+      context.globalCompositeOperation = "source-atop";
+      context.fillStyle = sheen;
+      context.fillRect(0, 0, size.width, size.height);
+      context.globalCompositeOperation = "source-over";
+    }
+
+    return await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("风格处理失败")), "image/png"));
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
+}
+
+function showStyledPet(blob) {
+  if (previewImageUrl) URL.revokeObjectURL(previewImageUrl);
+  previewImageUrl = URL.createObjectURL(blob);
+  previewPet.src = previewImageUrl;
+  heroUserPet.src = previewImageUrl;
+  previewPet.hidden = false;
+  heroUserPet.hidden = false;
+  previewBubble.hidden = false;
+  previewEmpty.hidden = true;
+}
+
+async function applySelectedStyle() {
+  const source = petImage.files?.[0];
+  if (!source) return;
+  const requestId = ++styleRequestId;
+  setStatus(selectedStyle === "original" ? "图片已载入。" : "正在生成风格化桌宠...");
+  try {
+    const result = await renderStyle(source, selectedStyle);
+    if (requestId !== styleRequestId) return;
+    styledPetBlob = selectedStyle === "original" ? null : result;
+    showStyledPet(result);
+    heroAssetStatus.textContent = selectedStyle === "original" ? "角色已进入创作舱" : "风格已应用到角色";
+    buildButton.disabled = false;
+    setStatus(selectedStyle === "original" ? "图片已载入。现在可以继续调试外观与功能。" : "风格已应用，生成包会使用当前效果。", "success");
+    updatePreview();
+  } catch (error) {
+    setStatus(`风格处理失败：${error.message}`, "error");
+  }
+}
+
 async function getPetPngBytes(config) {
-  if (petImage.files?.[0]) {
-    return blobToPngBytes(petImage.files[0], config.size);
+  if (styledPetBlob || petImage.files?.[0]) {
+    return blobToPngBytes(styledPetBlob || petImage.files[0], config.size);
   }
   throw new Error("请先上传你的桌宠图片");
 }
@@ -351,19 +489,20 @@ petImage?.addEventListener("change", () => {
   if (!file) return;
 
   currentImageName = file.name;
-  const reader = new FileReader();
-  reader.addEventListener("load", () => {
-    previewPet.src = String(reader.result);
-    previewPet.hidden = false;
-    heroUserPet.src = String(reader.result);
-    heroUserPet.hidden = false;
-    heroAssetStatus.textContent = "角色已进入创作舱";
-    previewBubble.hidden = false;
-    previewEmpty.hidden = true;
-    buildButton.disabled = false;
-    setStatus("图片已载入。现在可以继续调试外观与功能。", "success");
+  styledPetBlob = null;
+  applySelectedStyle();
+});
+
+stylePresets.forEach((preset) => {
+  preset.addEventListener("click", () => {
+    selectedStyle = preset.dataset.style || "original";
+    stylePresets.forEach((item) => {
+      const selected = item === preset;
+      item.classList.toggle("is-selected", selected);
+      item.setAttribute("aria-pressed", String(selected));
+    });
+    applySelectedStyle();
   });
-  reader.readAsDataURL(file);
 });
 
 [petLine, petSize, petOpacity, petStatus, bubbleStyle, petShadow].forEach((control) => {
