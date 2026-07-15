@@ -32,6 +32,7 @@ const exportButton = document.querySelector("#export-config");
 const buildButton = document.querySelector("#build-package");
 const buildStatus = document.querySelector("#build-status");
 const encoder = new TextEncoder();
+const supabaseConfig = window.PETFORGE_SUPABASE;
 
 let currentImageName = "";
 let customShortcuts = [];
@@ -559,3 +560,47 @@ buildButton?.addEventListener("click", async () => {
 
 updatePreview();
 renderShortcuts();
+async function loadWorkshopTemplate() {
+  const templateId = new URLSearchParams(window.location.search).get("template");
+  if (!templateId || !supabaseConfig) return;
+  setStatus("正在载入工坊桌宠...");
+  try {
+    const response = await fetch(`${supabaseConfig.url}/rest/v1/workshop_pets?id=eq.${encodeURIComponent(templateId)}&is_public=eq.true&select=title,image_path,config`, {
+      headers: { apikey: supabaseConfig.publishableKey, Authorization: `Bearer ${supabaseConfig.publishableKey}` }
+    });
+    const records = await response.json();
+    if (!response.ok || !records?.[0]) throw new Error("未找到这个工坊作品");
+    const template = records[0];
+    const templateConfig = template.config || {};
+    petName.value = templateConfig.name || template.title;
+    petLine.value = templateConfig.clickLine || petLine.value;
+    petSize.value = templateConfig.size || petSize.value;
+    petOpacity.value = templateConfig.opacity || petOpacity.value;
+    petStatus.value = templateConfig.status || petStatus.value;
+    petAnimation.value = templateConfig.clickAnimation || petAnimation.value;
+    bubbleStyle.value = templateConfig.bubbleStyle || bubbleStyle.value;
+    petPosition.value = templateConfig.position || petPosition.value;
+    alwaysOnTop.checked = templateConfig.alwaysOnTop !== false;
+    petShadow.checked = templateConfig.shadow !== false;
+    customShortcuts = Array.isArray(templateConfig.customShortcuts) ? templateConfig.customShortcuts : [];
+    selectedStyle = templateConfig.visualStyle || "original";
+    stylePresets.forEach((preset) => {
+      const selected = preset.dataset.style === selectedStyle;
+      preset.classList.toggle("is-selected", selected);
+      preset.setAttribute("aria-pressed", String(selected));
+    });
+    const imageResponse = await fetch(`${supabaseConfig.url}/storage/v1/object/public/${supabaseConfig.bucket}/${template.image_path}`);
+    if (!imageResponse.ok) throw new Error("无法读取这个作品的图片");
+    const imageBlob = await imageResponse.blob();
+    const imageFile = new File([imageBlob], template.image_path.split("/").pop() || "pet.png", { type: imageBlob.type || "image/png" });
+    const transfer = new DataTransfer();
+    transfer.items.add(imageFile);
+    petImage.files = transfer.files;
+    petImage.dispatchEvent(new Event("change"));
+    renderShortcuts();
+    updatePreview();
+  } catch (error) {
+    setStatus(`工坊作品载入失败：${error.message}`, "error");
+  }
+}
+loadWorkshopTemplate();

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="PET FORGE 创意工坊：发现、关注并使用全球创作者的桌面宠物。">
+    <title>PET FORGE Workshop</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/workshop.css">
+    <script src="scripts/supabase-config.js"></script>
+    <script type="module" src="scripts/workshop.js"></script>
+  </head>
+  <body class="workshop-body">
+    <header class="site-header workshop-header">
+      <a class="brand" href="index.html" aria-label="返回 PET FORGE 首页"><span>P</span><b>PET FORGE</b></a>
+      <nav class="nav-links" aria-label="主导航"><a href="index.html#studio">创作桌宠</a><a class="is-active" href="workshop.html">创意工坊</a></nav>
+      <div class="header-actions"><button id="auth-trigger" class="nav-cta" type="button">登录</button><button id="publish-trigger" class="icon-command" type="button" aria-label="发布桌宠" title="发布桌宠">＋</button></div>
+    </header>
+
+    <main>
+      <section class="workshop-hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> PET FORGE / WORKSHOP</p>
+          <h1>把桌面宠物，<br>交给更多人。</h1>
+          <p>发现全球创作者的桌宠作品。关注喜欢的创作者，一键把作品带回你的创作台。</p>
+          <div class="hero-actions"><button id="hero-publish" class="button primary" type="button">发布你的桌宠 <span aria-hidden="true">→</span></button><a class="button secondary" href="#workshop-feed">浏览作品</a></div>
+        </div>
+        <div class="workshop-orbit" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><div class="orbit-core"><span>PF</span><small>CREATOR<br>NETWORK</small></div><div class="orbit-tag tag-one">PIXEL</div><div class="orbit-tag tag-two">TOON</div><div class="orbit-tag tag-three">Y2K</div></div>
+      </section>
+
+      <section id="workshop-feed" class="workshop-feed" aria-labelledby="feed-title">
+        <div class="feed-toolbar"><div><p class="eyebrow"><span></span> DISCOVER / 01</p><h2 id="feed-title">创意工坊</h2></div><div class="feed-controls"><label class="search-control"><span aria-hidden="true">⌕</span><input id="workshop-search" type="search" placeholder="搜索作品或创作者"></label><select id="workshop-sort" aria-label="排序"><option value="latest">最新发布</option><option value="popular">最受欢迎</option></select></div></div>
+        <p id="workshop-status" class="workshop-status" role="status">正在连接创意工坊...</p>
+        <div id="workshop-grid" class="workshop-grid" aria-live="polite"></div>
+        <div id="workshop-empty" class="workshop-empty" hidden><span>01</span><h3>等待第一位创作者</h3><p>上传一张图片和你的制作配置，让它成为工坊里的第一个桌宠。</p><button id="empty-publish" class="button primary" type="button">发布第一个作品 <span aria-hidden="true">→</span></button></div>
+      </section>
+    </main>
+
+    <dialog id="auth-dialog" class="workshop-dialog">
+      <form id="auth-form" method="dialog">
+        <div class="dialog-heading"><div><p class="eyebrow"><span></span> ACCOUNT</p><h2 id="auth-title">登录创意工坊</h2></div><button class="dialog-close" value="cancel" aria-label="关闭" title="关闭" type="submit">×</button></div>
+        <label>邮箱<input id="auth-email" type="email" autocomplete="email" required></label>
+        <label>密码<input id="auth-password" type="password" autocomplete="current-password" minlength="6" required></label>
+        <label id="auth-name-field" hidden>显示名称<input id="auth-name" type="text" maxlength="32"></label>
+        <button id="auth-submit" class="button primary wide" type="button">登录</button>
+        <button id="auth-mode" class="text-command" type="button">创建账号</button>
+        <p id="auth-status" class="dialog-status" role="status"></p>
+      </form>
+    </dialog>
+
+    <dialog id="publish-dialog" class="workshop-dialog publish-dialog">
+      <form id="publish-form" method="dialog">
+        <div class="dialog-heading"><div><p class="eyebrow"><span></span> PUBLISH / 02</p><h2>发布桌宠</h2></div><button class="dialog-close" value="cancel" aria-label="关闭" title="关闭" type="submit">×</button></div>
+        <label>作品名称<input id="publish-title" type="text" maxlength="80" required placeholder="给它一个名字"></label>
+        <label>作品说明<textarea id="publish-description" maxlength="600" rows="3" placeholder="它适合怎样的桌面？"></textarea></label>
+        <label>桌宠图片<input id="publish-image" type="file" accept="image/png,image/jpeg,image/webp" required></label>
+        <label>制作配置 <input id="publish-config" type="file" accept="application/json,.json"></label>
+        <div class="publish-foot"><p>未上传配置时，使用默认桌宠设置。</p><button id="publish-submit" class="button primary" type="button">发布到工坊 <span aria-hidden="true">→</span></button></div>
+        <p id="publish-status" class="dialog-status" role="status"></p>
+      </form>
+    </dialog>
+
+    <footer><span>PET FORGE</span><span>CREATED BY PEOPLE, FOR DESKTOPS.</span><span>© 2026</span></footer>
+  </body>
+</html>
