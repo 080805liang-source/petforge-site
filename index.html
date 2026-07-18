@@ -6,6 +6,7 @@
     <meta name="description" content="上传自己的图片，定制交互与快捷菜单，生成专属 Windows 桌宠。">
     <title>PET FORGE | 你的桌面陪伴计划</title>
     <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/membership.css">
   </head>
   <body>
     <header class="site-header">
@@ -19,7 +20,7 @@
         <a href="#how-it-works">交付</a>
         <a href="workshop.html">创意工坊</a>
       </nav>
-      <a class="nav-cta" href="#studio">开始创作 <span aria-hidden="true">↓</span></a>
+      <button class="nav-cta" type="button" data-member-open>登录 / 开通 VIP</button>
     </header>
 
     <nav class="slide-rail" aria-label="桌宠创作阶段">
@@ -83,7 +84,7 @@
               <div><p>CHARACTER</p><h3>角色与状态</h3></div>
             </div>
 
-            <label class="upload-zone" for="pet-image">
+            <label class="upload-zone" for="pet-image" data-membership-required>
               <input id="pet-image" type="file" accept="image/png,image/jpeg,image/webp">
               <span class="upload-icon" aria-hidden="true">↑</span>
               <strong>上传你的桌宠图片</strong>
@@ -166,8 +167,8 @@
             </div>
 
             <div class="action-stack">
-              <button id="build-package" class="button primary wide" type="button" disabled>生成 Windows 桌宠应用 <span aria-hidden="true">→</span></button>
-              <button id="export-config" class="button secondary wide" type="button">导出制作配置</button>
+              <button id="build-package" class="button primary wide" type="button" disabled data-membership-required>生成 Windows 桌宠应用 <span aria-hidden="true">→</span></button>
+              <button id="export-config" class="button secondary wide" type="button" data-membership-required>导出制作配置</button>
             </div>
             <p id="build-status" class="panel-note" role="status">请先上传你的桌宠图片，再生成 Windows 应用包。</p>
           </section>
@@ -200,8 +201,34 @@
       </section>
     </main>
 
+    <dialog id="membership-dialog" class="membership-dialog" aria-labelledby="membership-title">
+      <button class="membership-close" type="button" data-member-close aria-label="关闭">×</button>
+      <section id="membership-auth" class="membership-panel">
+        <p class="eyebrow"><span></span> PET FORGE MEMBERSHIP</p>
+        <h2 id="membership-title">把桌宠，带到<br><em>你的 Windows 桌面。</em></h2>
+        <div class="membership-switch" role="group" aria-label="账号操作"><button class="is-active" type="button" data-member-mode="login">登录</button><button type="button" data-member-mode="signup">注册</button></div>
+        <form id="membership-auth-form">
+          <label>邮箱<input id="membership-email" type="email" autocomplete="email" placeholder="name@example.com" required></label>
+          <label>密码<input id="membership-password" type="password" autocomplete="current-password" minlength="8" placeholder="至少 8 位" required></label>
+          <button id="membership-auth-submit" class="button primary wide" type="submit">登录 <span>→</span></button>
+        </form>
+        <p id="membership-auth-note" class="membership-note" role="status"></p>
+      </section>
+      <section id="membership-vip" class="membership-panel" hidden>
+        <p class="eyebrow"><span></span> VIP ACCESS</p>
+        <h2 id="membership-vip-title">开通 PET FORGE VIP</h2>
+        <p id="membership-vip-status" class="membership-intro">输入购买后获得的兑换码，即可开始创作并生成桌宠应用。</p>
+        <form id="membership-redeem-form">
+          <label>VIP 兑换码<input id="membership-code" autocomplete="off" placeholder="例如：PF-XXXX-XXXX" required></label>
+          <button class="button primary wide" type="submit">兑换 VIP <span>✦</span></button>
+        </form>
+        <button id="membership-signout" class="membership-text-button" type="button">退出当前账号</button>
+        <p id="membership-redeem-note" class="membership-note" role="status"></p>
+      </section>
+    </dialog>
     <footer><span>PET FORGE</span><span>YOUR CHARACTER. YOUR DESKTOP.</span><span>© 2026</span></footer>
     <script src="scripts/supabase-config.js"></script>
+    <script type="module" src="scripts/membership.js"></script>
     <script src="scripts/main.js" defer></script>
   </body>
 </html>
