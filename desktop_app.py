@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import json
+import math
 import os
+import random
 import sys
 import webbrowser
 from pathlib import Path
@@ -67,8 +69,9 @@ class DesktopPet:
             highlightthickness=0,
         )
         self.canvas.pack()
+        self.shadow_id: int | None = None
         if self.config.get("shadow", True):
-            self.canvas.create_oval(
+            self.shadow_id = self.canvas.create_oval(
                 34,
                 self.photo.height() + 42,
                 self.width - 34,
@@ -77,18 +80,27 @@ class DesktopPet:
                 outline="",
                 stipple="gray25",
             )
+        self.pet_base_x = self.width // 2
+        self.pet_base_y = self.photo.height() // 2 + 28
         self.pet_id = self.canvas.create_image(
-            self.width // 2,
-            self.photo.height() // 2 + 28,
+            self.pet_base_x,
+            self.pet_base_y,
             image=self.photo,
         )
         self.bubble_ids: list[int] = []
         self.drag_start = (0, 0)
         self.dragged = False
+        self.idle_phase = 0
+        self.motion_active = False
+        self.pending_click: str | None = None
+        self.double_click_pending = False
+        self.aura_id: int | None = None
+        self.bubble_token = 0
         self.place_window()
         self.build_menu()
         self.bind_events()
-        self.show_bubble(self.status_text(), 1800)
+        self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
+        self.root.after(120, self.idle)
 
     def status_text(self) -> str:
         return {
@@ -112,10 +124,12 @@ class DesktopPet:
 
     def build_menu(self) -> None:
         self.menu = tk.Menu(self.root, tearoff=False)
+        self.menu.add_command(label="和我互动", command=self.interact)
         self.menu.add_command(
-            label="说一句话",
-            command=lambda: self.show_bubble(self.config.get("clickLine", "你好。"), 2200),
+            label="看看我现在的状态",
+            command=lambda: self.show_bubble(self.status_text(), 2200),
         )
+        self.menu.add_command(label="显示互动说明", command=lambda: self.show_bubble("单击互动 · 双击亲近 · 拖动移动", 2600))
         shortcuts = self.config.get("customShortcuts", [])
         if shortcuts:
             self.menu.add_separator()
@@ -133,13 +147,18 @@ class DesktopPet:
                     ),
                 )
         self.menu.add_separator()
+        self.menu.add_command(label="隐藏 10 秒", command=self.hide_temporarily)
+        self.menu.add_command(label="切换始终置顶", command=self.toggle_topmost)
         self.menu.add_command(label="退出桌宠", command=self.root.destroy)
 
     def bind_events(self) -> None:
         self.canvas.bind("<ButtonPress-1>", self.start_drag)
         self.canvas.bind("<B1-Motion>", self.drag)
         self.canvas.bind("<ButtonRelease-1>", self.release_left)
+        self.canvas.bind("<Double-Button-1>", self.double_click)
         self.canvas.bind("<Button-3>", self.open_menu)
+        self.canvas.bind("<Enter>", self.on_hover)
+        self.canvas.bind("<Leave>", self.on_leave)
         self.root.bind("<Escape>", lambda _event: self.root.destroy())
 
     def start_drag(self, event: tk.Event) -> None:
@@ -150,22 +169,54 @@ class DesktopPet:
         dx, dy = event.x - self.drag_start[0], event.y - self.drag_start[1]
         if abs(dx) > 4 or abs(dy) > 4:
             self.dragged = True
+            self.cancel_pending_click()
         self.root.geometry(f"+{self.root.winfo_x() + dx}+{self.root.winfo_y() + dy}")
 
     def release_left(self, _event: tk.Event) -> None:
-        if not self.dragged:
-            self.animate()
-            self.show_bubble(self.config.get("clickLine", "你好。"), 2400)
+        if self.dragged:
+            self.dragged = False
+            return
+        if self.double_click_pending:
+            self.double_click_pending = False
+            return
+        self.cancel_pending_click()
+        self.pending_click = self.root.after(210, self.interact)
+
+    def double_click(self, _event: tk.Event) -> None:
+        self.cancel_pending_click()
+        self.double_click_pending = True
+        self.interact(close=True)
+
+    def cancel_pending_click(self) -> None:
+        if self.pending_click is not None:
+            self.root.after_cancel(self.pending_click)
+            self.pending_click = None
 
     def open_menu(self, event: tk.Event) -> None:
         self.menu.tk_popup(event.x_root, event.y_root)
 
-    def animate(self) -> None:
+    def interaction_text(self, close: bool = False) -> str:
+        custom_line = str(self.config.get("clickLine", "你好，我在这里。"))[:48]
+        if self.config.get("status") == "sleeping":
+            return random.choice(["我醒啦，陪你一会儿。", "轻轻点我就好。", custom_line])
+        messages = [custom_line, "今天也陪着你。", "收到你的互动啦。", "要不要一起完成一件小事？"]
+        if close:
+            messages.extend(["好开心，贴贴！", "我们是最好的搭档。"])
+        return random.choice(messages)
+
+    def interact(self, close: bool = False) -> None:
+        self.pending_click = None
+        self.animate(close=close)
+        self.spawn_particles(close=close)
+        self.show_bubble(self.interaction_text(close), 2400)
+
+    def animate(self, close: bool = False) -> None:
+        if self.motion_active:
+            return
+        self.motion_active = True
         mode = self.config.get("clickAnimation", "jump")
         if mode == "shake":
-            offsets = [-9, 9, -7, 7, 0]
-            for index, offset in enumerate(offsets):
-                self.root.after(index * 55, lambda value=offset: self.canvas.move(self.pet_id, value, 0))
+            offsets = [(-10, 0), (10, 0), (-7, 0), (7, 0), (0, 0)]
         elif mode == "glow":
             glow = self.canvas.create_oval(
                 20,
@@ -176,12 +227,78 @@ class DesktopPet:
                 width=4,
             )
             self.root.after(260, lambda: self.canvas.delete(glow))
-        elif mode != "none":
-            offsets = [-18, -12, 18, 12, 0]
-            for index, offset in enumerate(offsets):
-                self.root.after(index * 55, lambda value=offset: self.canvas.move(self.pet_id, 0, value))
+            offsets = [(0, -5), (0, 0)]
+        elif mode == "none":
+            offsets = [(0, 0)]
+        else:
+            lift = -28 if close else -18
+            offsets = [(0, lift), (0, lift - 8), (0, -8), (0, 0)]
+        self.play_motion(offsets)
+
+    def play_motion(self, offsets: list[tuple[int, int]], index: int = 0) -> None:
+        if index >= len(offsets):
+            self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y)
+            self.motion_active = False
+            return
+        x_offset, y_offset = offsets[index]
+        self.canvas.coords(self.pet_id, self.pet_base_x + x_offset, self.pet_base_y + y_offset)
+        self.root.after(70, lambda: self.play_motion(offsets, index + 1))
+
+    def idle(self) -> None:
+        self.idle_phase += 1
+        if not self.motion_active and not self.dragged:
+            bob = int(math.sin(self.idle_phase / 5) * 3)
+            self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y + bob)
+        self.root.after(120, self.idle)
+
+    def spawn_particles(self, close: bool = False) -> None:
+        symbols = ["✦", "♥", "·"] if close else ["✦", "·", "+"]
+        for _ in range(5 if close else 3):
+            particle = self.canvas.create_text(
+                self.pet_base_x + random.randint(-42, 42),
+                self.pet_base_y + random.randint(-28, 18),
+                text=random.choice(symbols),
+                fill=random.choice(["#8ce4ff", "#ffb9dd", "#fff1a6"]),
+                font=("Segoe UI Symbol", 13, "bold"),
+            )
+            self.rise_particle(particle, random.randint(-3, 3), 0)
+
+    def rise_particle(self, particle: int, horizontal: int, step: int) -> None:
+        if step >= 8:
+            self.canvas.delete(particle)
+            return
+        self.canvas.move(particle, horizontal, -5)
+        self.root.after(55, lambda: self.rise_particle(particle, horizontal, step + 1))
+
+    def on_hover(self, _event: tk.Event) -> None:
+        if self.aura_id is None:
+            self.aura_id = self.canvas.create_oval(
+                18, 18, self.width - 18, self.photo.height() + 52,
+                outline="#8ddcff", width=2,
+            )
+            self.canvas.tag_lower(self.aura_id, self.pet_id)
+
+    def on_leave(self, _event: tk.Event) -> None:
+        if self.aura_id is not None:
+            self.canvas.delete(self.aura_id)
+            self.aura_id = None
+
+    def hide_temporarily(self) -> None:
+        self.root.withdraw()
+        self.root.after(10000, self.restore_after_hide)
+
+    def restore_after_hide(self) -> None:
+        self.root.deiconify()
+        self.show_bubble("我回来啦。", 1800)
+
+    def toggle_topmost(self) -> None:
+        current = bool(self.root.attributes("-topmost"))
+        self.root.attributes("-topmost", not current)
+        self.show_bubble("已始终置顶" if not current else "已取消始终置顶", 1800)
 
     def show_bubble(self, text: object, duration: int) -> None:
+        self.bubble_token += 1
+        token = self.bubble_token
         self.clear_bubble()
         safe_text = str(text)[:48]
         dark = self.config.get("bubbleStyle") == "dark"
@@ -205,7 +322,11 @@ class DesktopPet:
             font=("Microsoft YaHei UI", 10, "bold"),
         )
         self.bubble_ids = [rect, label]
-        self.root.after(duration, self.clear_bubble)
+        self.root.after(duration, lambda: self.clear_bubble_if_current(token))
+
+    def clear_bubble_if_current(self, token: int) -> None:
+        if token == self.bubble_token:
+            self.clear_bubble()
 
     def clear_bubble(self) -> None:
         for item_id in self.bubble_ids:
