@@ -459,10 +459,20 @@ async function getDesktopAppBytes() {
   return new Uint8Array(await response.arrayBuffer());
 }
 
+async function sha256Hex(bytes) {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function buildPackageInBrowser() {
   const config = getConfig();
   const name = safeName(config.name);
-  const [pngBytes, appBytes] = await Promise.all([getPetPngBytes(config), getDesktopAppBytes()]);
+  const pngBytes = await getPetPngBytes(config);
+  const fingerprint = await sha256Hex(pngBytes);
+  const license = await window.PetForgeMembership?.issueDesktopLicense(fingerprint);
+  if (!license?.licenseId) throw new Error("Unable to create desktop pet authorization. Please try again.");
+  config.license = { id: license.licenseId, fingerprint };
+  const appBytes = await getDesktopAppBytes();
   const entries = [
     { name: "README.md", data: packageReadme(config) },
     { name: "PetForge.exe", data: appBytes },

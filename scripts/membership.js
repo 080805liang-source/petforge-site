@@ -72,8 +72,12 @@ async function refreshMembership() {
   return memberActive;
 }
 async function requireActive() { if (memberActive) return true; await refreshMembership(); if (!memberActive) openMember(); return memberActive; }
+async function issueDesktopLicense(fingerprint) {
+  if (!await requireActive()) throw new Error("Please sign in and activate VIP first.");
+  return request("/pet-license", { method: "POST", body: JSON.stringify({ fingerprint }) });
+}
 
-window.PetForgeMembership = { requireActive, isActive: () => memberActive, open: openMember, refresh: refreshMembership };
+window.PetForgeMembership = { requireActive, isActive: () => memberActive, open: openMember, refresh: refreshMembership, issueDesktopLicense };
 authTriggers.forEach((button) => button.addEventListener("click", openMember));
 document.querySelector("[data-member-close]")?.addEventListener("click", () => dialog.close());
 dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });

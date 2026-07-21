@@ -8,9 +8,17 @@ import random
 import sys
 import webbrowser
 import ctypes
+import hashlib
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox
+from urllib.error import URLError
+from urllib.request import Request, urlopen
+
+try:
+    import winreg
+except ImportError:
+    winreg = None
 
 
 def app_dir() -> Path:
@@ -22,6 +30,7 @@ def app_dir() -> Path:
 BASE_DIR = app_dir()
 CONFIG_PATH = BASE_DIR / "config.json"
 IMAGE_PATH = BASE_DIR / "assets" / "pet.png"
+LICENSE_URL = "https://cloud-paw-vip-api.cloud-paw-vip-080805liang.workers.dev/pet-license/verify"
 
 
 def fail(message: str) -> None:
@@ -43,9 +52,45 @@ def load_config() -> dict:
         fail(f"无法读取桌宠配置：{exc}")
 
 
+def machine_hash() -> str:
+    source = os.environ.get("COMPUTERNAME", "")
+    if winreg is not None:
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography") as key:
+                source = winreg.QueryValueEx(key, "MachineGuid")[0]
+        except OSError:
+            pass
+    return hashlib.sha256(str(source).encode("utf-8")).hexdigest()
+
+
+def verify_license(config: dict) -> None:
+    license_data = config.get("license")
+    if not isinstance(license_data, dict):
+        fail("This desktop pet is an old package and cannot be started. Please download the latest VIP package from PET FORGE.")
+    license_id = str(license_data.get("id", ""))
+    expected_fingerprint = str(license_data.get("fingerprint", "")).lower()
+    actual_fingerprint = hashlib.sha256(IMAGE_PATH.read_bytes()).hexdigest()
+    if not license_id or actual_fingerprint != expected_fingerprint:
+        fail("Desktop pet authorization is invalid. Please generate a new package from PET FORGE.")
+    body = json.dumps({
+        "licenseId": license_id,
+        "fingerprint": actual_fingerprint,
+        "deviceHash": machine_hash(),
+    }).encode("utf-8")
+    request = Request(LICENSE_URL, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urlopen(request, timeout=8) as response:
+            result = json.loads(response.read().decode("utf-8"))
+        if not result.get("active"):
+            raise ValueError("inactive")
+    except (URLError, OSError, ValueError, json.JSONDecodeError):
+        fail("PET FORGE authorization could not be verified. Check your internet connection and VIP status, then try again.")
+
+
 class DesktopPet:
     def __init__(self) -> None:
         self.config = load_config()
+        verify_license(self.config)
         self.root = tk.Tk()
         self.root.title(self.config.get("name", "PetForge"))
         self.root.overrideredirect(True)
