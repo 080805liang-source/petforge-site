@@ -27,6 +27,7 @@ const manualShortcutFields = document.querySelector("#manual-shortcut-fields");
 const addShortcutButton = document.querySelector("#add-shortcut");
 const shortcutList = document.querySelector("#shortcut-list");
 const alwaysOnTop = document.querySelector("#always-on-top");
+const desktopOnly = document.querySelector("#desktop-only");
 const petShadow = document.querySelector("#pet-shadow");
 const exportButton = document.querySelector("#export-config");
 const buildButton = document.querySelector("#build-package");
@@ -78,6 +79,7 @@ function getConfig() {
     bubbleStyle: bubbleStyle.value,
     position: petPosition.value,
     alwaysOnTop: Boolean(alwaysOnTop.checked),
+    desktopOnly: Boolean(desktopOnly.checked),
     shadow: Boolean(petShadow.checked),
     visualStyle: selectedStyle,
     customShortcuts,
@@ -593,6 +595,7 @@ async function loadWorkshopTemplate() {
     bubbleStyle.value = templateConfig.bubbleStyle || bubbleStyle.value;
     petPosition.value = templateConfig.position || petPosition.value;
     alwaysOnTop.checked = templateConfig.alwaysOnTop !== false;
+    desktopOnly.checked = templateConfig.desktopOnly === true;
     petShadow.checked = templateConfig.shadow !== false;
     customShortcuts = Array.isArray(templateConfig.customShortcuts) ? templateConfig.customShortcuts : [];
     selectedStyle = templateConfig.visualStyle || "original";

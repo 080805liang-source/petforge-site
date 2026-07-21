@@ -7,6 +7,7 @@ import os
 import random
 import sys
 import webbrowser
+import ctypes
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox
@@ -50,6 +51,8 @@ class DesktopPet:
         self.root.overrideredirect(True)
         self.root.attributes("-transparentcolor", "#ff00ff")
         self.root.attributes("-topmost", bool(self.config.get("alwaysOnTop", True)))
+        self.desktop_only = bool(self.config.get("desktopOnly", False))
+        self.desktop_hidden = False
         opacity = max(0.25, min(1.0, float(self.config.get("opacity", 96)) / 100))
         self.root.attributes("-alpha", opacity)
 
@@ -101,6 +104,8 @@ class DesktopPet:
         self.bind_events()
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
         self.root.after(120, self.idle)
+        if self.desktop_only and sys.platform.startswith("win"):
+            self.root.after(250, self.sync_desktop_visibility)
 
     def status_text(self) -> str:
         return {
@@ -295,6 +300,32 @@ class DesktopPet:
         current = bool(self.root.attributes("-topmost"))
         self.root.attributes("-topmost", not current)
         self.show_bubble("已始终置顶" if not current else "已取消始终置顶", 1800)
+
+    def is_desktop_foreground(self) -> bool:
+        user32 = ctypes.windll.user32
+        foreground = user32.GetForegroundWindow()
+        if not foreground:
+            return True
+        root_handle = user32.GetAncestor(self.root.winfo_id(), 2)
+        foreground_root = user32.GetAncestor(foreground, 2)
+        if root_handle == foreground_root:
+            return True
+        class_name = ctypes.create_unicode_buffer(256)
+        user32.GetClassNameW(foreground, class_name, len(class_name))
+        return class_name.value in {"Progman", "WorkerW", "Shell_TrayWnd"}
+
+    def sync_desktop_visibility(self) -> None:
+        if not self.desktop_only:
+            return
+        on_desktop = self.is_desktop_foreground()
+        if on_desktop and self.desktop_hidden:
+            self.root.deiconify()
+            self.root.lift()
+            self.desktop_hidden = False
+        elif not on_desktop and not self.desktop_hidden:
+            self.root.withdraw()
+            self.desktop_hidden = True
+        self.root.after(250, self.sync_desktop_visibility)
 
     def show_bubble(self, text: object, duration: int) -> None:
         self.bubble_token += 1
