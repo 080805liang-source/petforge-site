@@ -473,15 +473,27 @@ async function buildPackageInBrowser() {
 const slides = [...document.querySelectorAll("[data-slide]")];
 const slideLinks = [...document.querySelectorAll(".slide-rail a")];
 if (slides.length && "IntersectionObserver" in window) {
+  const visibility = new Map(slides.map((slide) => [slide, 0]));
+  let activeSlide = slides.find((slide) => slide.classList.contains("is-active")) || slides[0];
+  let syncFrame = 0;
+  const syncActiveSlide = () => {
+    syncFrame = 0;
+    const nextSlide = slides.reduce((best, slide) => (
+      visibility.get(slide) > visibility.get(best) ? slide : best
+    ), slides[0]);
+    if (nextSlide === activeSlide || !visibility.get(nextSlide)) return;
+    activeSlide = nextSlide;
+    slides.forEach((slide) => slide.classList.toggle("is-active", slide === activeSlide));
+    slideLinks.forEach((link) => {
+      link.classList.toggle("is-current", link.getAttribute("href") === `#${activeSlide.id || "top"}`);
+    });
+  };
   const slideObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      entry.target.classList.toggle("is-active", entry.isIntersecting);
-      if (!entry.isIntersecting) return;
-      slideLinks.forEach((link) => {
-        link.classList.toggle("is-current", link.getAttribute("href") === `#${entry.target.id || "top"}`);
-      });
+      visibility.set(entry.target, entry.isIntersecting ? entry.intersectionRatio : 0);
     });
-  }, { threshold: 0.54 });
+    if (!syncFrame) syncFrame = requestAnimationFrame(syncActiveSlide);
+  }, { threshold: [0, .18, .5, .82], rootMargin: "-7% 0px -12% 0px" });
   slides.forEach((slide) => slideObserver.observe(slide));
 }
 
