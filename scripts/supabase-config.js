@@ -7,9 +7,8 @@ window.PETFORGE_SUPABASE = {
   bucket: "workshop"
 };
 
-// Membership reuses the proven account and card-code service from the existing paid product.
-// The key is publishable; card codes remain hashed and are redeemed by an RLS-protected database function.
+// Membership is shared with Cloud Paw Memorial. The Worker owns accounts, card codes and VIP expiry.
 window.PETFORGE_MEMBERSHIP = {
-  url: "https://ojohdsngxeoubynhpmtf.supabase.co",
-  publishableKey: "sb_publishable_VEq5R7M6rz2VC7XpfJu4qw_QYiVcnfn"
+  apiUrl: "https://cloud-paw-vip-api.cloud-paw-vip-080805liang.workers.dev",
+  sessionKey: "cloud-paw-session"
 };

@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const config = window.PETFORGE_MEMBERSHIP;
 const dialog = document.querySelector("#membership-dialog");
 const authPanel = document.querySelector("#membership-auth");
@@ -13,9 +11,11 @@ const vipTitle = document.querySelector("#membership-vip-title");
 const vipStatus = document.querySelector("#membership-vip-status");
 const authTriggers = [...document.querySelectorAll("[data-member-open]")];
 const modeButtons = [...document.querySelectorAll("[data-member-mode]")];
-const supabase = config ? createClient(config.url, config.publishableKey) : null;
+
 let mode = "login";
 let memberActive = false;
+let sessionToken = config ? localStorage.getItem(config.sessionKey) || "" : "";
+let member = null;
 
 function formatDate(value) { return new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(new Date(value)); }
 function openMember() { if (dialog && !dialog.open) dialog.showModal(); }
@@ -29,16 +29,45 @@ function setHeaderState(active, signedIn) {
   authTriggers.forEach((button) => { button.textContent = active ? "我的 VIP" : signedIn ? "开通 VIP" : "登录 / 开通 VIP"; });
   document.body.dataset.memberActive = String(active);
 }
+function saveSession(token) {
+  sessionToken = token || "";
+  if (sessionToken) localStorage.setItem(config.sessionKey, sessionToken);
+  else localStorage.removeItem(config.sessionKey);
+}
+async function request(path, options = {}) {
+  if (!config?.apiUrl) throw new Error("会员服务暂未配置。");
+  const response = await fetch(`${config.apiUrl}${path}`, {
+    ...options,
+    headers: {
+      "content-type": "application/json",
+      ...(sessionToken ? { authorization: `Bearer ${sessionToken}` } : {}),
+      ...(options.headers || {})
+    }
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error || "会员服务暂时无法连接，请稍后重试。");
+  return body;
+}
+async function currentMember() {
+  if (!sessionToken) return null;
+  try {
+    const data = await request("/me");
+    return data.user;
+  } catch (_) {
+    saveSession("");
+    return null;
+  }
+}
 async function refreshMembership() {
-  if (!supabase) return false;
-  const { data: { user } } = await supabase.auth.getUser();
-  authPanel.hidden = Boolean(user); vipPanel.hidden = !user;
-  if (!user) { memberActive = false; setHeaderState(false, false); return false; }
-  const { data, error } = await supabase.from("profiles").select("vip_expires_at").eq("id", user.id).maybeSingle();
-  memberActive = !error && Boolean(data?.vip_expires_at) && new Date(data.vip_expires_at) > new Date();
+  member = await currentMember();
+  authPanel.hidden = Boolean(member); vipPanel.hidden = !member;
+  if (!member) { memberActive = false; setHeaderState(false, false); return false; }
+  memberActive = Boolean(member.vipExpiresAt) && new Date(member.vipExpiresAt) > new Date();
   setHeaderState(memberActive, true);
   vipTitle.textContent = memberActive ? "你的 PET FORGE VIP 正在生效" : "开通 PET FORGE VIP";
-  vipStatus.textContent = memberActive ? `VIP 有效至 ${formatDate(data.vip_expires_at)}，现在可以创作并生成 Windows 桌宠应用。` : "输入购买后获得的兑换码，即可开通创作权限。";
+  vipStatus.textContent = memberActive
+    ? `VIP 有效至 ${formatDate(member.vipExpiresAt)}，现在可以创作并生成 Windows 桌宠应用。`
+    : "输入购买后获得的兑换码，即可开通创作权限。";
   window.dispatchEvent(new CustomEvent("petforge:membership-change", { detail: { active: memberActive } }));
   return memberActive;
 }
@@ -59,22 +88,29 @@ document.addEventListener("change", (event) => {
   event.target.value = ""; openMember();
 }, true);
 authForm?.addEventListener("submit", async (event) => {
-  event.preventDefault(); if (!supabase) return;
+  event.preventDefault();
   const email = document.querySelector("#membership-email").value.trim();
   const password = document.querySelector("#membership-password").value;
   authSubmit.disabled = true; authNote.textContent = mode === "login" ? "正在登录..." : "正在注册...";
-  const result = mode === "login" ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password });
-  authSubmit.disabled = false;
-  if (result.error) { authNote.textContent = result.error.message; return; }
-  if (mode === "signup" && !result.data.session) { authNote.textContent = "注册成功，请完成邮箱验证后再登录。"; return; }
-  await refreshMembership();
+  try {
+    const data = await request(mode === "login" ? "/auth/login" : "/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) });
+    saveSession(data.token); member = data.user;
+    authNote.textContent = mode === "signup" ? "注册成功，请输入 VIP 兑换码开通会员。" : "登录成功。";
+    await refreshMembership();
+  } catch (error) { authNote.textContent = error.message; }
+  finally { authSubmit.disabled = false; }
 });
 redeemForm?.addEventListener("submit", async (event) => {
-  event.preventDefault(); if (!supabase) return;
-  redeemNote.textContent = "正在兑换...";
-  const { data, error } = await supabase.rpc("redeem_code", { voucher_code: document.querySelector("#membership-code").value });
-  redeemNote.textContent = error ? error.message : `兑换成功，VIP 有效至 ${formatDate(data)}。`;
-  if (!error) { document.querySelector("#membership-code").value = ""; await refreshMembership(); }
+  event.preventDefault(); redeemNote.textContent = "正在兑换...";
+  try {
+    const data = await request("/redeem", { method: "POST", body: JSON.stringify({ code: document.querySelector("#membership-code").value }) });
+    redeemNote.textContent = `兑换成功，VIP 有效至 ${formatDate(data.vipExpiresAt)}。`;
+    document.querySelector("#membership-code").value = "";
+    await refreshMembership();
+  } catch (error) { redeemNote.textContent = error.message; }
 });
-document.querySelector("#membership-signout")?.addEventListener("click", async () => { await supabase?.auth.signOut(); await refreshMembership(); });
+document.querySelector("#membership-signout")?.addEventListener("click", async () => {
+  try { await request("/auth/logout", { method: "POST" }); } catch (_) {}
+  saveSession(""); await refreshMembership();
+});
 refreshMembership();
