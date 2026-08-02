@@ -39,14 +39,19 @@ function saveSession(token) {
 }
 async function request(path, options = {}) {
   if (!config?.apiUrl) throw new Error("会员服务暂未配置。");
-  const response = await fetch(`${config.apiUrl}${path}`, {
-    ...options,
-    headers: {
-      "content-type": "application/json",
-      ...(sessionToken ? { authorization: `Bearer ${sessionToken}` } : {}),
-      ...(options.headers || {})
-    }
-  });
+  let response;
+  try {
+    response = await fetch(`${config.apiUrl}${path}`, {
+      ...options,
+      headers: {
+        "content-type": "application/json",
+        ...(sessionToken ? { authorization: `Bearer ${sessionToken}` } : {}),
+        ...(options.headers || {})
+      }
+    });
+  } catch (_) {
+    throw new Error("会员服务暂时无法连接。请检查网络，或使用公开网址重新打开后再试。");
+  }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error || "会员服务暂时无法连接，请稍后重试。");
   return body;
