@@ -30,7 +30,7 @@ def app_dir() -> Path:
 BASE_DIR = app_dir()
 CONFIG_PATH = BASE_DIR / "config.json"
 IMAGE_PATH = BASE_DIR / "assets" / "pet.png"
-LICENSE_URL = "https://cloud-paw-vip-api.cloud-paw-vip-080805liang.workers.dev/pet-license/verify"
+LICENSE_URL = "https://cloud-paw-vip-cn-d0eub7r110788a3-1460995143.ap-shanghai.app.tcloudbase.com/api/pet-license/verify"
 
 
 def fail(message: str) -> None:
