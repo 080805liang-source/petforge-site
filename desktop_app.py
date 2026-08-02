@@ -150,12 +150,17 @@ class DesktopPet:
         self.cursor_offset = (0, 0)
         self.last_cursor_near = False
         self.last_proactive_at = 0.0
+        self.typing_active = False
+        self.typing_ids: list[int] = []
+        self.last_typing_hint_at = 0.0
         self.place_window()
         self.build_menu()
         self.bind_events()
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
         self.root.after(120, self.idle)
         self.root.after(160, self.track_cursor)
+        if self.config.get("keyboardSync", True):
+            self.root.after(90, self.track_keyboard)
         if self.config.get("wanderEnabled", False):
             self.root.after(random.randint(18000, 28000), self.wander)
         if self.desktop_only and sys.platform.startswith("win"):
@@ -324,7 +329,7 @@ class DesktopPet:
 
     def idle(self) -> None:
         self.idle_phase += 1
-        if not self.motion_active and not self.dragged:
+        if not self.motion_active and not self.typing_active and not self.dragged:
             behavior = self.config.get("idleBehavior", "float")
             if behavior == "still":
                 bob = 0
@@ -393,6 +398,56 @@ class DesktopPet:
                     self.show_bubble(random.choice(["鼠标来啦！", "我在看着你哦。", "想和我玩一下吗？"]), 1800)
             self.last_cursor_near = is_near
         self.root.after(160, self.track_cursor)
+
+    def is_key_active(self) -> bool:
+        if not sys.platform.startswith("win"):
+            return False
+        user32 = ctypes.windll.user32
+        # 只读取“是否有任意按键按下”的状态，不记录任何键名或输入内容。
+        key_ranges = (range(0x08, 0x5B), range(0x60, 0x70), range(0x70, 0x88))
+        return any(user32.GetAsyncKeyState(key) & 0x8000 for key_range in key_ranges for key in key_range)
+
+    def track_keyboard(self) -> None:
+        if self.config.get("keyboardSync", True) and self.is_key_active():
+            self.start_typing_effect()
+        if self.config.get("keyboardSync", True):
+            self.root.after(90, self.track_keyboard)
+
+    def start_typing_effect(self) -> None:
+        if self.typing_active or self.dragged:
+            return
+        self.typing_active = True
+        keyboard_top = self.photo.height() + 37
+        board = self.canvas.create_rectangle(
+            self.pet_base_x - 52, keyboard_top, self.pet_base_x + 52, keyboard_top + 20,
+            fill="#dff5ff", outline="#7cb8db",
+        )
+        keys = self.canvas.create_text(
+            self.pet_base_x, keyboard_top + 10, text="⌨  ·  ·  ·  ·", fill="#173047",
+            font=("Segoe UI Symbol", 10, "bold"),
+        )
+        self.typing_ids = [board, keys]
+        if self.config.get("keyboardReaction", "bongo") == "cheer" and time.monotonic() - self.last_typing_hint_at > 12:
+            self.last_typing_hint_at = time.monotonic()
+            self.show_bubble(random.choice(["打字也要加油！", "我在陪你完成它。", "键盘节奏真好听。"]), 1600)
+        self.play_typing_step(0)
+
+    def play_typing_step(self, step: int) -> None:
+        if step >= 9:
+            self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y)
+            for item_id in self.typing_ids:
+                self.canvas.delete(item_id)
+            self.typing_ids = []
+            self.typing_active = False
+            return
+        reaction = self.config.get("keyboardReaction", "bongo")
+        if reaction == "quiet":
+            offsets = [(0, 0), (1, -1), (0, 0)]
+        else:
+            offsets = [(-5, 5), (5, 1), (-3, 4), (4, 0)]
+        x_offset, y_offset = offsets[step % len(offsets)]
+        self.canvas.coords(self.pet_id, self.pet_base_x + x_offset, self.pet_base_y + y_offset)
+        self.root.after(75, lambda: self.play_typing_step(step + 1))
 
     def spawn_particles(self, close: bool = False) -> None:
         symbols = ["✦", "♥", "·"] if close else ["✦", "·", "+"]

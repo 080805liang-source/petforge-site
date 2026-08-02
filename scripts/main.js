@@ -35,10 +35,12 @@ const idleBehavior = document.querySelector("#idle-behavior");
 const doubleClickEffect = document.querySelector("#double-click-effect");
 const cursorFollowMode = document.querySelector("#cursor-follow-mode");
 const proactiveFrequency = document.querySelector("#proactive-frequency");
+const keyboardReaction = document.querySelector("#keyboard-reaction");
 const wanderEnabled = document.querySelector("#wander-enabled");
 const hoverBubble = document.querySelector("#hover-bubble");
 const clickParticles = document.querySelector("#click-particles");
 const soundHint = document.querySelector("#sound-hint");
+const keyboardSync = document.querySelector("#keyboard-sync");
 const interactionNote = document.querySelector("#interaction-note");
 const exportButton = document.querySelector("#export-config");
 const buildButton = document.querySelector("#build-package");
@@ -98,10 +100,12 @@ function getConfig() {
     doubleClickEffect: doubleClickEffect.value,
     cursorFollowMode: cursorFollowMode.value,
     proactiveFrequency: proactiveFrequency.value,
+    keyboardReaction: keyboardReaction.value,
     wanderEnabled: Boolean(wanderEnabled.checked),
     hoverBubble: Boolean(hoverBubble.checked),
     clickParticles: Boolean(clickParticles.checked),
     soundHint: Boolean(soundHint.checked),
+    keyboardSync: Boolean(keyboardSync.checked),
     interactionNote: interactionNote.value.trim(),
     visualStyle: selectedStyle,
     customShortcuts,
@@ -635,10 +639,12 @@ async function loadWorkshopTemplate() {
     doubleClickEffect.value = templateConfig.doubleClickEffect || doubleClickEffect.value;
     cursorFollowMode.value = templateConfig.cursorFollowMode || cursorFollowMode.value;
     proactiveFrequency.value = templateConfig.proactiveFrequency || proactiveFrequency.value;
+    keyboardReaction.value = templateConfig.keyboardReaction || keyboardReaction.value;
     wanderEnabled.checked = templateConfig.wanderEnabled === true;
     hoverBubble.checked = templateConfig.hoverBubble !== false;
     clickParticles.checked = templateConfig.clickParticles !== false;
     soundHint.checked = templateConfig.soundHint === true;
+    keyboardSync.checked = templateConfig.keyboardSync !== false;
     interactionNote.value = templateConfig.interactionNote || "";
     customShortcuts = Array.isArray(templateConfig.customShortcuts) ? templateConfig.customShortcuts : [];
     selectedStyle = templateConfig.visualStyle || "original";
