@@ -29,6 +29,15 @@ const shortcutList = document.querySelector("#shortcut-list");
 const alwaysOnTop = document.querySelector("#always-on-top");
 const desktopOnly = document.querySelector("#desktop-only");
 const petShadow = document.querySelector("#pet-shadow");
+const hoverEffect = document.querySelector("#hover-effect");
+const leaveEffect = document.querySelector("#leave-effect");
+const idleBehavior = document.querySelector("#idle-behavior");
+const doubleClickEffect = document.querySelector("#double-click-effect");
+const wanderEnabled = document.querySelector("#wander-enabled");
+const hoverBubble = document.querySelector("#hover-bubble");
+const clickParticles = document.querySelector("#click-particles");
+const soundHint = document.querySelector("#sound-hint");
+const interactionNote = document.querySelector("#interaction-note");
 const exportButton = document.querySelector("#export-config");
 const buildButton = document.querySelector("#build-package");
 const buildStatus = document.querySelector("#build-status");
@@ -81,6 +90,15 @@ function getConfig() {
     alwaysOnTop: Boolean(alwaysOnTop.checked),
     desktopOnly: Boolean(desktopOnly.checked),
     shadow: Boolean(petShadow.checked),
+    hoverEffect: hoverEffect.value,
+    leaveEffect: leaveEffect.value,
+    idleBehavior: idleBehavior.value,
+    doubleClickEffect: doubleClickEffect.value,
+    wanderEnabled: Boolean(wanderEnabled.checked),
+    hoverBubble: Boolean(hoverBubble.checked),
+    clickParticles: Boolean(clickParticles.checked),
+    soundHint: Boolean(soundHint.checked),
+    interactionNote: interactionNote.value.trim(),
     visualStyle: selectedStyle,
     customShortcuts,
     generatedAt: new Date().toISOString()
@@ -607,6 +625,15 @@ async function loadWorkshopTemplate() {
     alwaysOnTop.checked = templateConfig.alwaysOnTop !== false;
     desktopOnly.checked = templateConfig.desktopOnly === true;
     petShadow.checked = templateConfig.shadow !== false;
+    hoverEffect.value = templateConfig.hoverEffect || hoverEffect.value;
+    leaveEffect.value = templateConfig.leaveEffect || leaveEffect.value;
+    idleBehavior.value = templateConfig.idleBehavior || idleBehavior.value;
+    doubleClickEffect.value = templateConfig.doubleClickEffect || doubleClickEffect.value;
+    wanderEnabled.checked = templateConfig.wanderEnabled === true;
+    hoverBubble.checked = templateConfig.hoverBubble !== false;
+    clickParticles.checked = templateConfig.clickParticles !== false;
+    soundHint.checked = templateConfig.soundHint === true;
+    interactionNote.value = templateConfig.interactionNote || "";
     customShortcuts = Array.isArray(templateConfig.customShortcuts) ? templateConfig.customShortcuts : [];
     selectedStyle = templateConfig.visualStyle || "original";
     stylePresets.forEach((preset) => {

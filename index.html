@@ -117,7 +117,7 @@
 
             <div class="select-grid">
               <label>初始状态<select id="pet-status"><option value="companion">陪伴中</option><option value="working">工作中</option><option value="resting">休息中</option><option value="sleeping">睡眠中</option></select></label>
-              <label>点击动画<select id="pet-animation"><option value="jump">轻跳</option><option value="shake">摇摆</option><option value="glow">光环</option><option value="none">无动画</option></select></label>
+              <label>点击动画<select id="pet-animation"><option value="jump">轻跳</option><option value="shake">摇摆</option><option value="wiggle">扭一扭</option><option value="dash">向前小跑</option><option value="glow">光环</option><option value="none">无动画</option></select></label>
               <label>气泡外观<select id="bubble-style"><option value="soft">柔光白</option><option value="glass">玻璃感</option><option value="dark">深色</option></select></label>
               <label>初始位置<select id="pet-position"><option value="bottom-right">右下角</option><option value="bottom-left">左下角</option><option value="center">屏幕中央</option></select></label>
             </div>
@@ -153,6 +153,60 @@
                 <label title="打开其他应用时自动隐藏，回到桌面后显示"><input id="desktop-only" type="checkbox"><span>仅在桌面显示</span><i></i></label>
                 <label><input id="pet-shadow" type="checkbox" checked><span>桌面阴影</span><i></i></label>
               </div>
+            </div>
+
+            <div class="interaction-lab" aria-label="桌宠互动体验">
+              <div class="interaction-heading">
+                <p class="minor-heading">INTERACTION LAB</p>
+                <span>每项都会写入桌宠应用</span>
+              </div>
+              <p class="interaction-intro">选择它如何回应鼠标和你的陪伴习惯。生成后，桌宠会按这套互动设定运行。</p>
+              <div class="select-grid interaction-selects">
+                <label>鼠标移到身上时
+                  <select id="hover-effect">
+                    <option value="halo">出现柔光光环</option>
+                    <option value="greeting">主动打招呼</option>
+                    <option value="hop">轻轻跳一下</option>
+                    <option value="sparkle">冒出星光粒子</option>
+                    <option value="shy">害羞地躲一躲</option>
+                    <option value="none">安静不打扰</option>
+                  </select>
+                </label>
+                <label>鼠标离开时
+                  <select id="leave-effect">
+                    <option value="stay">留在原地等待</option>
+                    <option value="goodbye">说一句再见</option>
+                    <option value="dim">轻轻收起光环</option>
+                    <option value="hide">短暂藏起来</option>
+                  </select>
+                </label>
+                <label>空闲时的状态
+                  <select id="idle-behavior">
+                    <option value="float">轻轻呼吸漂浮</option>
+                    <option value="stretch">偶尔伸展身体</option>
+                    <option value="look">左看看右看看</option>
+                    <option value="nap">安静打盹</option>
+                    <option value="still">保持安静</option>
+                  </select>
+                </label>
+                <label>双击时的回应
+                  <select id="double-click-effect">
+                    <option value="cuddle">贴贴 + 爱心</option>
+                    <option value="spin">开心转圈</option>
+                    <option value="celebrate">庆祝星光</option>
+                    <option value="quiet">温柔回应</option>
+                  </select>
+                </label>
+              </div>
+              <div class="interaction-options">
+                <label><input id="wander-enabled" type="checkbox"><span>开启桌面巡游</span><small>每隔一段时间在屏幕内换一个位置</small><i></i></label>
+                <label><input id="hover-bubble" type="checkbox" checked><span>悬停显示心情气泡</span><small>鼠标靠近时给出一句可爱回应</small><i></i></label>
+                <label><input id="click-particles" type="checkbox" checked><span>点击释放互动粒子</span><small>星星、爱心或能量点随选择出现</small><i></i></label>
+                <label><input id="sound-hint" type="checkbox"><span>显示静音提示</span><small>桌宠不会擅自播放声音，避免打扰</small><i></i></label>
+              </div>
+              <label class="interaction-note">还有什么专属互动想法？
+                <textarea id="interaction-note" maxlength="280" placeholder="例如：鼠标停留三秒后，它会举起小爪子；工作一小时后提醒我喝水。"></textarea>
+              </label>
             </div>
 
             <div class="custom-shortcut">

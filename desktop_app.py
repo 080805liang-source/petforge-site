@@ -144,11 +144,14 @@ class DesktopPet:
         self.double_click_pending = False
         self.aura_id: int | None = None
         self.bubble_token = 0
+        self.hovered = False
         self.place_window()
         self.build_menu()
         self.bind_events()
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
         self.root.after(120, self.idle)
+        if self.config.get("wanderEnabled", False):
+            self.root.after(random.randint(18000, 28000), self.wander)
         if self.desktop_only and sys.platform.startswith("win"):
             self.root.after(250, self.sync_desktop_visibility)
 
@@ -235,7 +238,19 @@ class DesktopPet:
     def double_click(self, _event: tk.Event) -> None:
         self.cancel_pending_click()
         self.double_click_pending = True
-        self.interact(close=True)
+        effect = self.config.get("doubleClickEffect", "cuddle")
+        if effect == "spin":
+            self.animate(mode="spin")
+            self.spawn_particles(close=True)
+            self.show_bubble("转个圈给你看！", 2200)
+        elif effect == "celebrate":
+            self.animate(mode="glow")
+            self.spawn_particles(close=True)
+            self.show_bubble("今天也值得庆祝。", 2200)
+        elif effect == "quiet":
+            self.show_bubble("我在这里，安静陪着你。", 2200)
+        else:
+            self.interact(close=True)
 
     def cancel_pending_click(self) -> None:
         if self.pending_click is not None:
@@ -257,16 +272,23 @@ class DesktopPet:
     def interact(self, close: bool = False) -> None:
         self.pending_click = None
         self.animate(close=close)
-        self.spawn_particles(close=close)
+        if self.config.get("clickParticles", True):
+            self.spawn_particles(close=close)
         self.show_bubble(self.interaction_text(close), 2400)
 
-    def animate(self, close: bool = False) -> None:
+    def animate(self, close: bool = False, mode: str | None = None) -> None:
         if self.motion_active:
             return
         self.motion_active = True
-        mode = self.config.get("clickAnimation", "jump")
+        mode = mode or self.config.get("clickAnimation", "jump")
         if mode == "shake":
             offsets = [(-10, 0), (10, 0), (-7, 0), (7, 0), (0, 0)]
+        elif mode == "wiggle":
+            offsets = [(-6, -4), (7, -1), (-8, 2), (6, 0), (0, 0)]
+        elif mode == "dash":
+            offsets = [(18, 0), (34, -6), (14, -3), (0, 0)]
+        elif mode == "spin":
+            offsets = [(0, -14), (14, -8), (18, 4), (6, 12), (-12, 7), (-15, -4), (0, 0)]
         elif mode == "glow":
             glow = self.canvas.create_oval(
                 20,
@@ -297,8 +319,23 @@ class DesktopPet:
     def idle(self) -> None:
         self.idle_phase += 1
         if not self.motion_active and not self.dragged:
-            bob = int(math.sin(self.idle_phase / 5) * 3)
-            self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y + bob)
+            behavior = self.config.get("idleBehavior", "float")
+            if behavior == "still":
+                bob = 0
+            elif behavior == "nap":
+                bob = int(math.sin(self.idle_phase / 11) * 1)
+            elif behavior == "look":
+                bob = int(math.sin(self.idle_phase / 5) * 2)
+                if self.idle_phase % 44 == 0:
+                    self.play_motion([(5, 0), (-5, 0), (0, 0)])
+            elif behavior == "stretch":
+                bob = int(math.sin(self.idle_phase / 5) * 3)
+                if self.idle_phase % 50 == 0:
+                    self.play_motion([(0, 5), (0, -10), (0, -4), (0, 0)])
+            else:
+                bob = int(math.sin(self.idle_phase / 5) * 3)
+            if not self.motion_active:
+                self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y + bob)
         self.root.after(120, self.idle)
 
     def spawn_particles(self, close: bool = False) -> None:
@@ -321,17 +358,34 @@ class DesktopPet:
         self.root.after(55, lambda: self.rise_particle(particle, horizontal, step + 1))
 
     def on_hover(self, _event: tk.Event) -> None:
-        if self.aura_id is None:
+        self.hovered = True
+        effect = self.config.get("hoverEffect", "halo")
+        if effect == "halo" and self.aura_id is None:
             self.aura_id = self.canvas.create_oval(
                 18, 18, self.width - 18, self.photo.height() + 52,
                 outline="#8ddcff", width=2,
             )
             self.canvas.tag_lower(self.aura_id, self.pet_id)
+        elif effect == "greeting" and self.config.get("hoverBubble", True):
+            self.show_bubble(random.choice(["你好呀，我看到你啦。", "今天也一起加油。", "摸摸我吧！"]), 1800)
+        elif effect == "hop":
+            self.animate(mode="jump")
+        elif effect == "sparkle":
+            self.spawn_particles()
+        elif effect == "shy":
+            self.play_motion([(-8, 3), (-12, 4), (-6, 1), (0, 0)])
 
     def on_leave(self, _event: tk.Event) -> None:
+        self.hovered = False
         if self.aura_id is not None:
             self.canvas.delete(self.aura_id)
             self.aura_id = None
+        effect = self.config.get("leaveEffect", "stay")
+        if effect == "goodbye":
+            self.show_bubble(random.choice(["我在这里等你。", "一会儿见。", "忙完再来找我吧。"]), 1800)
+        elif effect == "hide":
+            self.root.withdraw()
+            self.root.after(1100, self.restore_after_hide)
 
     def hide_temporarily(self) -> None:
         self.root.withdraw()
@@ -340,6 +394,18 @@ class DesktopPet:
     def restore_after_hide(self) -> None:
         self.root.deiconify()
         self.show_bubble("我回来啦。", 1800)
+
+    def wander(self) -> None:
+        if self.config.get("wanderEnabled", False) and not self.dragged and not self.desktop_hidden:
+            screen_w = self.root.winfo_screenwidth()
+            screen_h = self.root.winfo_screenheight()
+            x = random.randint(24, max(24, screen_w - self.width - 24))
+            y = random.randint(80, max(80, screen_h - self.height - 88))
+            self.root.geometry(f"+{x}+{y}")
+            if self.config.get("hoverBubble", True):
+                self.show_bubble(random.choice(["我来这里看看。", "换个地方陪你。", "巡游完成！"]), 1700)
+        if self.config.get("wanderEnabled", False):
+            self.root.after(random.randint(22000, 42000), self.wander)
 
     def toggle_topmost(self) -> None:
         current = bool(self.root.attributes("-topmost"))
