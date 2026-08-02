@@ -92,7 +92,6 @@ def verify_license(config: dict) -> None:
 class DesktopPet:
     def __init__(self) -> None:
         self.config = load_config()
-        verify_license(self.config)
         self.root = tk.Tk()
         self.root.title(self.config.get("name", "PetForge"))
         self.root.overrideredirect(True)

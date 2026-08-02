@@ -465,16 +465,36 @@ function packageReadme(config) {
 
 运行方式：
 
-1. 解压整个 zip。
-2. 双击 PetForge.exe。
+1. 解压整个 zip 到一个不要移动的位置。
+2. 双击「一键创建桌面图标.cmd」。
+3. 以后直接点击桌面上的图标即可启动。
 
 说明：
 
 - PetForge.exe 已包含运行环境，不需要安装 Python。
+- 一键创建桌面图标只会在你的 Windows 桌面创建快捷方式，不会上传任何内容。
 - 右键桌宠可以打开快捷菜单。
 - 左键拖拽可以移动桌宠。
-- 左键点击会触发台词和动画。
+- 左键点击、鼠标互动和键盘同步会使用你在网站里选择的效果。
 `;
+}
+
+function desktopShortcutInstaller(config) {
+  const label = safeName(config.name);
+  return [
+    "@echo off",
+    "setlocal",
+    "set \"APP_DIR=%~dp0\"",
+    "set \"APP_PATH=%APP_DIR%PetForge.exe\"",
+    "if not exist \"%APP_PATH%\" (",
+    "  echo Cannot find PetForge.exe. Keep this file in the extracted pet folder.",
+    "  pause",
+    "  exit /b 1",
+    ")",
+    "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$shell = New-Object -ComObject WScript.Shell; $shortcut = $shell.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\\\\" + label + ".lnk'); $shortcut.TargetPath = $env:APP_PATH; $shortcut.WorkingDirectory = $env:APP_DIR; $shortcut.IconLocation = $env:APP_PATH; $shortcut.Description = 'PET FORGE desktop pet'; $shortcut.Save()\"",
+    "echo Desktop shortcut created: " + label,
+    "start \"\" \"%APP_PATH%\""
+  ].join("\r\n");
 }
 
 async function getDesktopAppBytes() {
@@ -494,13 +514,13 @@ async function buildPackageInBrowser() {
   const config = getConfig();
   const name = safeName(config.name);
   const pngBytes = await getPetPngBytes(config);
-  const fingerprint = await sha256Hex(pngBytes);
-  const license = await window.PetForgeMembership?.issueDesktopLicense(fingerprint);
-  if (!license?.licenseId) throw new Error("Unable to create desktop pet authorization. Please try again.");
-  config.license = { id: license.licenseId, fingerprint };
+  // The web page has already checked the user's VIP access before allowing this action.
+  // Do not make the downloaded pet depend on a second network request.
+  config.packageVersion = "offline-interaction-v1";
   const appBytes = await getDesktopAppBytes();
   const entries = [
     { name: "README.md", data: packageReadme(config) },
+    { name: "一键创建桌面图标.cmd", data: desktopShortcutInstaller(config) },
     { name: "PetForge.exe", data: appBytes },
     { name: "config.json", data: JSON.stringify(config, null, 2) },
     { name: "assets/pet.png", data: pngBytes }
