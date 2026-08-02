@@ -9,6 +9,10 @@ const redeemNote = document.querySelector("#membership-redeem-note");
 const authSubmit = document.querySelector("#membership-auth-submit");
 const vipTitle = document.querySelector("#membership-vip-title");
 const vipStatus = document.querySelector("#membership-vip-status");
+const adminPanel = document.querySelector("#membership-admin");
+const adminIssueButton = document.querySelector("#membership-issue-code");
+const adminNote = document.querySelector("#membership-admin-note");
+const adminEmail = "2533018119@qq.com";
 const authTriggers = [...document.querySelectorAll("[data-member-open]")];
 const modeButtons = [...document.querySelectorAll("[data-member-mode]")];
 
@@ -63,6 +67,7 @@ async function refreshMembership() {
   authPanel.hidden = Boolean(member); vipPanel.hidden = !member;
   if (!member) { memberActive = false; setHeaderState(false, false); return false; }
   memberActive = Boolean(member.vipExpiresAt) && new Date(member.vipExpiresAt) > new Date();
+  if (adminPanel) adminPanel.hidden = member.email !== adminEmail;
   setHeaderState(memberActive, true);
   vipTitle.textContent = memberActive ? "你的 PET FORGE VIP 正在生效" : "开通 PET FORGE VIP";
   vipStatus.textContent = memberActive
@@ -112,6 +117,15 @@ redeemForm?.addEventListener("submit", async (event) => {
     document.querySelector("#membership-code").value = "";
     await refreshMembership();
   } catch (error) { redeemNote.textContent = error.message; }
+});
+adminIssueButton?.addEventListener("click", async () => {
+  adminIssueButton.disabled = true;
+  adminNote.textContent = "正在生成卡密…";
+  try {
+    const data = await request("/admin/issue-code", { method: "POST", body: JSON.stringify({ durationDays: 30 }) });
+    adminNote.textContent = `新卡密：${data.code}（${data.durationDays} 天，复制后发送给买家）`;
+  } catch (error) { adminNote.textContent = error.message; }
+  finally { adminIssueButton.disabled = false; }
 });
 document.querySelector("#membership-signout")?.addEventListener("click", async () => {
   try { await request("/auth/logout", { method: "POST" }); } catch (_) {}
