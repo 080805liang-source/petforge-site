@@ -12,7 +12,6 @@ const vipStatus = document.querySelector("#membership-vip-status");
 const adminPanel = document.querySelector("#membership-admin");
 const adminIssueButton = document.querySelector("#membership-issue-code");
 const adminNote = document.querySelector("#membership-admin-note");
-const adminEmail = "2533018119@qq.com";
 const authTriggers = [...document.querySelectorAll("[data-member-open]")];
 const modeButtons = [...document.querySelectorAll("[data-member-mode]")];
 
@@ -66,12 +65,12 @@ async function refreshMembership() {
   member = await currentMember();
   authPanel.hidden = Boolean(member); vipPanel.hidden = !member;
   if (!member) { memberActive = false; setHeaderState(false, false); return false; }
-  memberActive = Boolean(member.vipExpiresAt) && new Date(member.vipExpiresAt) > new Date();
-  if (adminPanel) adminPanel.hidden = member.email !== adminEmail;
+  memberActive = Boolean(member.isAdmin) || (Boolean(member.vipExpiresAt) && new Date(member.vipExpiresAt) > new Date());
+  if (adminPanel) adminPanel.hidden = !member.isAdmin;
   setHeaderState(memberActive, true);
-  vipTitle.textContent = memberActive ? "你的 PET FORGE VIP 正在生效" : "开通 PET FORGE VIP";
+  vipTitle.textContent = member.isAdmin ? "管理员控制台" : memberActive ? "你的 PET FORGE VIP 正在生效" : "开通 PET FORGE VIP";
   vipStatus.textContent = memberActive
-    ? `VIP 有效至 ${formatDate(member.vipExpiresAt)}，现在可以创作并生成 Windows 桌宠应用。`
+    ? member.isAdmin ? "管理员权限已开启：你可以正常创作、生成桌宠，并在下方直接生成销售卡密。" : `VIP 有效至 ${formatDate(member.vipExpiresAt)}，现在可以创作并生成 Windows 桌宠应用。`
     : "输入购买后获得的兑换码，即可开通创作权限。";
   window.dispatchEvent(new CustomEvent("petforge:membership-change", { detail: { active: memberActive } }));
   return memberActive;
