@@ -6,6 +6,7 @@ import math
 import os
 import random
 import sys
+import time
 import webbrowser
 import ctypes
 import hashlib
@@ -14,6 +15,7 @@ import tkinter as tk
 from tkinter import messagebox
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+from ctypes import wintypes
 
 try:
     import winreg
@@ -145,11 +147,15 @@ class DesktopPet:
         self.aura_id: int | None = None
         self.bubble_token = 0
         self.hovered = False
+        self.cursor_offset = (0, 0)
+        self.last_cursor_near = False
+        self.last_proactive_at = 0.0
         self.place_window()
         self.build_menu()
         self.bind_events()
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
         self.root.after(120, self.idle)
+        self.root.after(160, self.track_cursor)
         if self.config.get("wanderEnabled", False):
             self.root.after(random.randint(18000, 28000), self.wander)
         if self.desktop_only and sys.platform.startswith("win"):
@@ -335,8 +341,58 @@ class DesktopPet:
             else:
                 bob = int(math.sin(self.idle_phase / 5) * 3)
             if not self.motion_active:
-                self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y + bob)
+                look_x, look_y = self.cursor_offset
+                self.canvas.coords(self.pet_id, self.pet_base_x + look_x, self.pet_base_y + bob + look_y)
         self.root.after(120, self.idle)
+
+    def cursor_position(self) -> tuple[int, int] | None:
+        if not sys.platform.startswith("win"):
+            return None
+        point = wintypes.POINT()
+        if ctypes.windll.user32.GetCursorPos(ctypes.byref(point)):
+            return point.x, point.y
+        return None
+
+    def track_cursor(self) -> None:
+        cursor = self.cursor_position()
+        mode = self.config.get("cursorFollowMode", "look")
+        if cursor and not self.dragged:
+            mouse_x, mouse_y = cursor
+            center_x = self.root.winfo_x() + self.width // 2
+            center_y = self.root.winfo_y() + self.height // 2
+            dx, dy = mouse_x - center_x, mouse_y - center_y
+            distance = max(1, math.hypot(dx, dy))
+
+            if mode == "look":
+                self.cursor_offset = (
+                    max(-8, min(8, int(dx / 38))),
+                    max(-4, min(4, int(dy / 55))),
+                )
+            else:
+                self.cursor_offset = (0, 0)
+
+            if mode == "follow" and 170 < distance < 760 and not self.motion_active:
+                target_x = max(8, min(self.root.winfo_screenwidth() - self.width - 8, mouse_x - self.width // 2))
+                target_y = max(36, min(self.root.winfo_screenheight() - self.height - 56, mouse_y - self.height - 18))
+                next_x = round(self.root.winfo_x() + (target_x - self.root.winfo_x()) * .09)
+                next_y = round(self.root.winfo_y() + (target_y - self.root.winfo_y()) * .09)
+                self.root.geometry(f"+{next_x}+{next_y}")
+            elif mode == "playful" and distance < 210 and not self.motion_active:
+                away_x = self.root.winfo_x() - int(dx * .44)
+                away_y = self.root.winfo_y() - int(dy * .44)
+                safe_x = max(8, min(self.root.winfo_screenwidth() - self.width - 8, away_x))
+                safe_y = max(36, min(self.root.winfo_screenheight() - self.height - 56, away_y))
+                self.root.geometry(f"+{safe_x}+{safe_y}")
+
+            is_near = distance < 190
+            frequency = self.config.get("proactiveFrequency", "gentle")
+            interval = {"lively": 15, "gentle": 32, "quiet": 10**9}.get(frequency, 32)
+            if is_near and not self.last_cursor_near and time.monotonic() - self.last_proactive_at > interval:
+                self.last_proactive_at = time.monotonic()
+                if frequency != "quiet" and self.config.get("hoverBubble", True):
+                    self.show_bubble(random.choice(["鼠标来啦！", "我在看着你哦。", "想和我玩一下吗？"]), 1800)
+            self.last_cursor_near = is_near
+        self.root.after(160, self.track_cursor)
 
     def spawn_particles(self, close: bool = False) -> None:
         symbols = ["✦", "♥", "·"] if close else ["✦", "·", "+"]

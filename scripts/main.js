@@ -33,6 +33,8 @@ const hoverEffect = document.querySelector("#hover-effect");
 const leaveEffect = document.querySelector("#leave-effect");
 const idleBehavior = document.querySelector("#idle-behavior");
 const doubleClickEffect = document.querySelector("#double-click-effect");
+const cursorFollowMode = document.querySelector("#cursor-follow-mode");
+const proactiveFrequency = document.querySelector("#proactive-frequency");
 const wanderEnabled = document.querySelector("#wander-enabled");
 const hoverBubble = document.querySelector("#hover-bubble");
 const clickParticles = document.querySelector("#click-particles");
@@ -94,6 +96,8 @@ function getConfig() {
     leaveEffect: leaveEffect.value,
     idleBehavior: idleBehavior.value,
     doubleClickEffect: doubleClickEffect.value,
+    cursorFollowMode: cursorFollowMode.value,
+    proactiveFrequency: proactiveFrequency.value,
     wanderEnabled: Boolean(wanderEnabled.checked),
     hoverBubble: Boolean(hoverBubble.checked),
     clickParticles: Boolean(clickParticles.checked),
@@ -629,6 +633,8 @@ async function loadWorkshopTemplate() {
     leaveEffect.value = templateConfig.leaveEffect || leaveEffect.value;
     idleBehavior.value = templateConfig.idleBehavior || idleBehavior.value;
     doubleClickEffect.value = templateConfig.doubleClickEffect || doubleClickEffect.value;
+    cursorFollowMode.value = templateConfig.cursorFollowMode || cursorFollowMode.value;
+    proactiveFrequency.value = templateConfig.proactiveFrequency || proactiveFrequency.value;
     wanderEnabled.checked = templateConfig.wanderEnabled === true;
     hoverBubble.checked = templateConfig.hoverBubble !== false;
     clickParticles.checked = templateConfig.clickParticles !== false;
