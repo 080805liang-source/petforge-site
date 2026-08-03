@@ -517,6 +517,35 @@ async function getDesktopAppBytes() {
   return bytes;
 }
 
+async function getPortableLauncherBytes() {
+  const launcherUrl = new URL("assets/PetForgeLauncher.exe", document.baseURI);
+  let response;
+  try {
+    response = await fetch(launcherUrl, { cache: "no-store" });
+  } catch {
+    throw new Error(`单文件启动器没有下载成功。请刷新后重试；若仍失败，请重新部署最新国内版（${PETFORGE_BUILD_VERSION}）。`);
+  }
+  if (!response.ok) {
+    throw new Error(`单文件启动器暂时不可用（HTTP ${response.status}）。请重新部署最新包。`);
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.length < 1024 || bytes[0] !== 0x4d || bytes[1] !== 0x5a) {
+    throw new Error("单文件启动器不完整。请刷新后重试；若持续出现，请重新部署最新包。");
+  }
+  return bytes;
+}
+
+function createPortablePayload(entries) {
+  const chunks = [encoder.encode("PFG1"), u32(entries.length)];
+  for (const entry of entries) {
+    const name = encoder.encode(entry.name);
+    const data = entry.data instanceof Uint8Array ? entry.data : encoder.encode(entry.data);
+    if (name.length > 65535 || data.length > 0xffffffff) throw new Error("桌宠配置过大，无法生成单文件应用。");
+    chunks.push(u16(name.length), name, u32(data.length), data);
+  }
+  return concatBytes(chunks);
+}
+
 async function sha256Hex(bytes) {
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -526,18 +555,15 @@ async function buildPackageInBrowser() {
   const config = getConfig();
   const name = safeName(config.name);
   const pngBytes = await getPetPngBytes(config);
-  // The web page has already checked the user's VIP access before allowing this action.
-  // Do not make the downloaded pet depend on a second network request.
-  config.packageVersion = "offline-interaction-v1";
-  const appBytes = await getDesktopAppBytes();
-  const entries = [
-    { name: "README.md", data: packageReadme(config) },
-    { name: "一键创建桌面图标.cmd", data: desktopShortcutInstaller(config) },
+  config.packageVersion = "single-file-portable-v1";
+  const [appBytes, launcherBytes] = await Promise.all([getDesktopAppBytes(), getPortableLauncherBytes()]);
+  const payload = createPortablePayload([
     { name: "PetForge.exe", data: appBytes },
     { name: "config.json", data: JSON.stringify(config, null, 2) },
     { name: "assets/pet.png", data: pngBytes }
-  ];
-  return { name, blob: createZip(entries) };
+  ]);
+  const footer = concatBytes([u32(payload.length), encoder.encode("PFG1TAIL")]);
+  return { name, blob: new Blob([launcherBytes, payload, footer], { type: "application/vnd.microsoft.portable-executable" }) };
 }
 
 const slides = [...document.querySelectorAll("[data-slide]")];
@@ -627,12 +653,12 @@ exportButton?.addEventListener("click", () => {
 
 buildButton?.addEventListener("click", async () => {
   buildButton.disabled = true;
-  setStatus(`正在组装 Windows 桌宠应用…（${PETFORGE_BUILD_VERSION}）`);
+  setStatus(`正在生成单文件 Windows 桌宠应用…（${PETFORGE_BUILD_VERSION}）`);
 
   try {
     const result = await buildPackageInBrowser();
-    downloadBlob(result.blob, `${result.name}-windows-pet.zip`);
-    setStatus("Windows 应用包已生成。解压后双击「一键创建桌面图标.cmd」，以后点击桌面图标即可启动。", "success");
+    downloadBlob(result.blob, `${result.name}-桌宠.exe`);
+    setStatus("单文件桌宠已下载。第一次双击它会自动创建桌面图标并启动，以后直接点击桌面图标即可。", "success");
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : "生成过程异常，请刷新后重试。";
     setStatus(`生成失败：${message}`, "error");
