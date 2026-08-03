@@ -497,12 +497,24 @@ function desktopShortcutInstaller(config) {
   ].join("\r\n");
 }
 
+const PETFORGE_BUILD_VERSION = "2026.08.03-cn-stable";
+
 async function getDesktopAppBytes() {
-  const response = await fetch(new URL("assets/PetForge.exe", document.baseURI), { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error("Windows 应用文件暂时不可用，请稍后再试");
+  const appUrl = new URL("assets/PetForge.exe", document.baseURI);
+  let response;
+  try {
+    response = await fetch(appUrl, { cache: "no-store" });
+  } catch {
+    throw new Error(`桌宠运行核心没有下载成功。请刷新后重试；若仍失败，请确认打开的是最新国内版（${PETFORGE_BUILD_VERSION}）。`);
   }
-  return new Uint8Array(await response.arrayBuffer());
+  if (!response.ok) {
+    throw new Error(`桌宠运行核心暂时不可用（HTTP ${response.status}）。请刷新后重试；若持续出现，请重新部署最新包。`);
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.length < 1024 || bytes[0] !== 0x4d || bytes[1] !== 0x5a) {
+    throw new Error("桌宠运行核心文件不完整。请刷新后重试；若持续出现，请重新部署最新包。");
+  }
+  return bytes;
 }
 
 async function sha256Hex(bytes) {
@@ -615,14 +627,15 @@ exportButton?.addEventListener("click", () => {
 
 buildButton?.addEventListener("click", async () => {
   buildButton.disabled = true;
-  setStatus("正在组装 Windows 桌宠应用...");
+  setStatus(`正在组装 Windows 桌宠应用…（${PETFORGE_BUILD_VERSION}）`);
 
   try {
     const result = await buildPackageInBrowser();
     downloadBlob(result.blob, `${result.name}-windows-pet.zip`);
-    setStatus("Windows 应用包已生成。解压后直接双击 PetForge.exe。", "success");
+    setStatus("Windows 应用包已生成。解压后双击「一键创建桌面图标.cmd」，以后点击桌面图标即可启动。", "success");
   } catch (error) {
-    setStatus(`生成失败：${error.message}`, "error");
+    const message = error instanceof Error && error.message ? error.message : "生成过程异常，请刷新后重试。";
+    setStatus(`生成失败：${message}`, "error");
   } finally {
     buildButton.disabled = false;
   }
