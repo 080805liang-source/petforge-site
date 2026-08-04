@@ -95,8 +95,14 @@ class DesktopPet:
         self.root = tk.Tk()
         self.root.title(self.config.get("name", "PetForge"))
         self.root.overrideredirect(True)
-        self.root.attributes("-transparentcolor", "#ff00ff")
-        self.root.attributes("-topmost", bool(self.config.get("alwaysOnTop", True)))
+        # Transparent, always-on-top Tk windows can render as black overlays on
+        # some Windows graphics drivers. Use safe rendering by default.
+        self.safe_rendering = bool(self.config.get("safeRendering", True))
+        self.background = "#f7f4ef" if self.safe_rendering else "#ff00ff"
+        self.root.configure(bg=self.background)
+        if not self.safe_rendering:
+            self.root.attributes("-transparentcolor", "#ff00ff")
+        self.root.attributes("-topmost", bool(self.config.get("alwaysOnTop", False)))
         self.desktop_only = bool(self.config.get("desktopOnly", False))
         self.desktop_hidden = False
         opacity = max(0.25, min(1.0, float(self.config.get("opacity", 96)) / 100))
@@ -108,13 +114,15 @@ class DesktopPet:
             self.root.destroy()
             fail(f"无法加载桌宠图片：{exc}")
 
-        self.width = self.photo.width() + 80
-        self.height = self.photo.height() + 96
+        max_width = max(180, self.root.winfo_screenwidth() - 120)
+        max_height = max(180, self.root.winfo_screenheight() - 160)
+        self.width = min(self.photo.width() + 80, max_width)
+        self.height = min(self.photo.height() + 96, max_height)
         self.canvas = tk.Canvas(
             self.root,
             width=self.width,
             height=self.height,
-            bg="#ff00ff",
+            bg=self.background,
             highlightthickness=0,
         )
         self.canvas.pack()
@@ -158,7 +166,7 @@ class DesktopPet:
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
         self.root.after(120, self.idle)
         self.root.after(160, self.track_cursor)
-        if self.config.get("keyboardSync", True):
+        if self.config.get("keyboardSync", False):
             self.root.after(90, self.track_keyboard)
         if self.config.get("wanderEnabled", False):
             self.root.after(random.randint(18000, 28000), self.wander)
@@ -407,9 +415,9 @@ class DesktopPet:
         return any(user32.GetAsyncKeyState(key) & 0x8000 for key_range in key_ranges for key in key_range)
 
     def track_keyboard(self) -> None:
-        if self.config.get("keyboardSync", True) and self.is_key_active():
+        if self.config.get("keyboardSync", False) and self.is_key_active():
             self.start_typing_effect()
-        if self.config.get("keyboardSync", True):
+        if self.config.get("keyboardSync", False):
             self.root.after(90, self.track_keyboard)
 
     def start_typing_effect(self) -> None:

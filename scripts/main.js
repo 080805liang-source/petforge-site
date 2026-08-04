@@ -92,6 +92,7 @@ function getConfig() {
     bubbleStyle: bubbleStyle.value,
     position: petPosition.value,
     alwaysOnTop: Boolean(alwaysOnTop.checked),
+    safeRendering: true,
     desktopOnly: Boolean(desktopOnly.checked),
     shadow: Boolean(petShadow.checked),
     hoverEffect: hoverEffect.value,
@@ -304,8 +305,13 @@ async function blobToPngBytes(blob, sizePercent) {
     img.decoding = "async";
     img.src = url;
     await img.decode();
-    const targetHeight = Math.max(96, Math.min(420, Math.round(220 * sizePercent / 100)));
-    const ratio = targetHeight / img.naturalHeight;
+    let targetHeight = Math.max(96, Math.min(420, Math.round(220 * sizePercent / 100)));
+    let ratio = targetHeight / img.naturalHeight;
+    const maxWidth = 360;
+    if (img.naturalWidth * ratio > maxWidth) {
+      ratio = maxWidth / img.naturalWidth;
+      targetHeight = Math.max(64, Math.round(img.naturalHeight * ratio));
+    }
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(64, Math.round(img.naturalWidth * ratio));
     canvas.height = targetHeight;
@@ -689,7 +695,7 @@ async function loadWorkshopTemplate() {
     petAnimation.value = templateConfig.clickAnimation || petAnimation.value;
     bubbleStyle.value = templateConfig.bubbleStyle || bubbleStyle.value;
     petPosition.value = templateConfig.position || petPosition.value;
-    alwaysOnTop.checked = templateConfig.alwaysOnTop !== false;
+    alwaysOnTop.checked = templateConfig.alwaysOnTop === true;
     desktopOnly.checked = templateConfig.desktopOnly === true;
     petShadow.checked = templateConfig.shadow !== false;
     hoverEffect.value = templateConfig.hoverEffect || hoverEffect.value;
@@ -703,7 +709,7 @@ async function loadWorkshopTemplate() {
     hoverBubble.checked = templateConfig.hoverBubble !== false;
     clickParticles.checked = templateConfig.clickParticles !== false;
     soundHint.checked = templateConfig.soundHint === true;
-    keyboardSync.checked = templateConfig.keyboardSync !== false;
+    keyboardSync.checked = templateConfig.keyboardSync === true;
     interactionNote.value = templateConfig.interactionNote || "";
     customShortcuts = Array.isArray(templateConfig.customShortcuts) ? templateConfig.customShortcuts : [];
     selectedStyle = templateConfig.visualStyle || "original";
