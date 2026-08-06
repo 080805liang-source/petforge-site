@@ -663,7 +663,7 @@ buildButton?.addEventListener("click", async () => {
 
   try {
     const result = await buildPackageInBrowser();
-    downloadBlob(result.blob, `${result.name}-桌宠.exe`);
+    downloadBlob(result.blob, `PETFORGE-${result.name}.exe`);
     setStatus("单文件桌宠已下载。第一次双击它会自动创建桌面图标并启动，以后直接点击桌面图标即可。", "success");
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : "生成过程异常，请刷新后重试。";
