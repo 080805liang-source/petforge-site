@@ -10,6 +10,8 @@ import uuid
 import zipfile
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from PIL import Image
 
@@ -20,6 +22,7 @@ DIST_DIR = ROOT / "dist"
 APP_BINARY = ROOT / "assets" / "PetForge.exe"
 PORT = 8765
 HOST = "0.0.0.0"
+MEMBERSHIP_API = "https://cloud-paw-vip-cn-d0eub7r110788a3.service.tcloudbase.com/api"
 
 
 
@@ -104,9 +107,18 @@ def create_package(config: dict, image_field) -> Path:
 class PackagerHandler(SimpleHTTPRequestHandler):
     server_version = "PetForge/0.1"
 
+    def do_GET(self) -> None:
+        if self.path.startswith("/api/"):
+            self.proxy_membership("GET")
+            return
+        super().do_GET()
+
     def do_POST(self) -> None:
         if self.path != "/api/build":
-            self.send_error(404)
+            if self.path.startswith("/api/"):
+                self.proxy_membership("POST")
+            else:
+                self.send_error(404)
             return
 
         try:
@@ -140,6 +152,42 @@ class PackagerHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(len(encoded)))
             self.end_headers()
             self.wfile.write(encoded)
+
+    def proxy_membership(self, method: str) -> None:
+        body = None
+        if method == "POST":
+            length = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(length) if length else b""
+        headers = {"Content-Type": "application/json"}
+        if self.headers.get("Authorization"):
+            headers["Authorization"] = self.headers["Authorization"]
+        request = Request(
+            f"{MEMBERSHIP_API}{self.path.removeprefix('/api')}",
+            data=body,
+            headers=headers,
+            method=method,
+        )
+        try:
+            response = urlopen(request, timeout=20)
+        except HTTPError as error:
+            response = error
+        except (URLError, TimeoutError):
+            self.send_json(502, {"error": "会员服务暂时无法连接，请稍后重试。"})
+            return
+        data = response.read()
+        self.send_response(response.status)
+        self.send_header("Content-Type", response.headers.get("Content-Type", "application/json; charset=utf-8"))
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def send_json(self, status: int, payload: dict) -> None:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def end_headers(self) -> None:
         self.send_header("Cache-Control", "no-store")

@@ -572,33 +572,6 @@ async function buildPackageInBrowser() {
   return { name, blob: new Blob([launcherBytes, payload, footer], { type: "application/vnd.microsoft.portable-executable" }) };
 }
 
-const slides = [...document.querySelectorAll("[data-slide]")];
-const slideLinks = [...document.querySelectorAll(".slide-rail a")];
-if (slides.length && "IntersectionObserver" in window) {
-  const visibility = new Map(slides.map((slide) => [slide, 0]));
-  let activeSlide = slides.find((slide) => slide.classList.contains("is-active")) || slides[0];
-  let syncFrame = 0;
-  const syncActiveSlide = () => {
-    syncFrame = 0;
-    const nextSlide = slides.reduce((best, slide) => (
-      visibility.get(slide) > visibility.get(best) ? slide : best
-    ), slides[0]);
-    if (nextSlide === activeSlide || !visibility.get(nextSlide)) return;
-    activeSlide = nextSlide;
-    slides.forEach((slide) => slide.classList.toggle("is-active", slide === activeSlide));
-    slideLinks.forEach((link) => {
-      link.classList.toggle("is-current", link.getAttribute("href") === `#${activeSlide.id || "top"}`);
-    });
-  };
-  const slideObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      visibility.set(entry.target, entry.isIntersecting ? entry.intersectionRatio : 0);
-    });
-    if (!syncFrame) syncFrame = requestAnimationFrame(syncActiveSlide);
-  }, { threshold: [0, .18, .5, .82], rootMargin: "-7% 0px -12% 0px" });
-  slides.forEach((slide) => slideObserver.observe(slide));
-}
-
 petImage?.addEventListener("change", () => {
   const file = petImage.files?.[0];
   if (!file) return;
