@@ -472,38 +472,19 @@ function packageReadme(config) {
 运行方式：
 
 1. 解压整个 zip 到一个不要移动的位置。
-2. 双击「一键创建桌面图标.cmd」。
-3. 以后直接点击桌面上的图标即可启动。
+2. 双击 PetForge.exe 启动桌宠。
+3. 请保持 PetForge.exe、config.json 和 assets 文件夹在一起。
 
 说明：
 
 - PetForge.exe 已包含运行环境，不需要安装 Python。
-- 一键创建桌面图标只会在你的 Windows 桌面创建快捷方式，不会上传任何内容。
 - 右键桌宠可以打开快捷菜单。
 - 左键拖拽可以移动桌宠。
 - 左键点击、鼠标互动和键盘同步会使用你在网站里选择的效果。
 `;
 }
 
-function desktopShortcutInstaller(config) {
-  const label = safeName(config.name);
-  return [
-    "@echo off",
-    "setlocal",
-    "set \"APP_DIR=%~dp0\"",
-    "set \"APP_PATH=%APP_DIR%PetForge.exe\"",
-    "if not exist \"%APP_PATH%\" (",
-    "  echo Cannot find PetForge.exe. Keep this file in the extracted pet folder.",
-    "  pause",
-    "  exit /b 1",
-    ")",
-    "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$shell = New-Object -ComObject WScript.Shell; $shortcut = $shell.CreateShortcut([Environment]::GetFolderPath('Desktop') + '\\\\" + label + ".lnk'); $shortcut.TargetPath = $env:APP_PATH; $shortcut.WorkingDirectory = $env:APP_DIR; $shortcut.IconLocation = $env:APP_PATH; $shortcut.Description = 'PET FORGE desktop pet'; $shortcut.Save()\"",
-    "echo Desktop shortcut created: " + label,
-    "start \"\" \"%APP_PATH%\""
-  ].join("\r\n");
-}
-
-const PETFORGE_BUILD_VERSION = "2026.08.03-cn-stable";
+const PETFORGE_BUILD_VERSION = "2026.09.06-zip-stable";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL("assets/PetForge.exe", document.baseURI);
@@ -523,53 +504,18 @@ async function getDesktopAppBytes() {
   return bytes;
 }
 
-async function getPortableLauncherBytes() {
-  const launcherUrl = new URL("assets/PetForgeLauncher.exe", document.baseURI);
-  let response;
-  try {
-    response = await fetch(launcherUrl, { cache: "no-store" });
-  } catch {
-    throw new Error(`单文件启动器没有下载成功。请刷新后重试；若仍失败，请重新部署最新国内版（${PETFORGE_BUILD_VERSION}）。`);
-  }
-  if (!response.ok) {
-    throw new Error(`单文件启动器暂时不可用（HTTP ${response.status}）。请重新部署最新包。`);
-  }
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes.length < 1024 || bytes[0] !== 0x4d || bytes[1] !== 0x5a) {
-    throw new Error("单文件启动器不完整。请刷新后重试；若持续出现，请重新部署最新包。");
-  }
-  return bytes;
-}
-
-function createPortablePayload(entries) {
-  const chunks = [encoder.encode("PFG1"), u32(entries.length)];
-  for (const entry of entries) {
-    const name = encoder.encode(entry.name);
-    const data = entry.data instanceof Uint8Array ? entry.data : encoder.encode(entry.data);
-    if (name.length > 65535 || data.length > 0xffffffff) throw new Error("桌宠配置过大，无法生成单文件应用。");
-    chunks.push(u16(name.length), name, u32(data.length), data);
-  }
-  return concatBytes(chunks);
-}
-
-async function sha256Hex(bytes) {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
 async function buildPackageInBrowser() {
   const config = getConfig();
   const name = safeName(config.name);
   const pngBytes = await getPetPngBytes(config);
-  config.packageVersion = "single-file-portable-v1";
-  const [appBytes, launcherBytes] = await Promise.all([getDesktopAppBytes(), getPortableLauncherBytes()]);
-  const payload = createPortablePayload([
+  config.packageVersion = "zip-portable-v2";
+  const appBytes = await getDesktopAppBytes();
+  return { name, blob: createZip([
+    { name: "README.md", data: packageReadme(config) },
     { name: "PetForge.exe", data: appBytes },
     { name: "config.json", data: JSON.stringify(config, null, 2) },
     { name: "assets/pet.png", data: pngBytes }
-  ]);
-  const footer = concatBytes([u32(payload.length), encoder.encode("PFG1TAIL")]);
-  return { name, blob: new Blob([launcherBytes, payload, footer], { type: "application/vnd.microsoft.portable-executable" }) };
+  ]) };
 }
 
 petImage?.addEventListener("change", () => {
@@ -632,12 +578,12 @@ exportButton?.addEventListener("click", () => {
 
 buildButton?.addEventListener("click", async () => {
   buildButton.disabled = true;
-  setStatus(`正在生成单文件 Windows 桌宠应用…（${PETFORGE_BUILD_VERSION}）`);
+  setStatus(`正在生成 Windows 桌宠 ZIP…（${PETFORGE_BUILD_VERSION}）`);
 
   try {
     const result = await buildPackageInBrowser();
-    downloadBlob(result.blob, `PETFORGE-${result.name}.exe`);
-    setStatus("单文件桌宠已下载。第一次双击它会自动创建桌面图标并启动，以后直接点击桌面图标即可。", "success");
+    downloadBlob(result.blob, `PETFORGE-${result.name}.zip`);
+    setStatus("桌宠 ZIP 已下载。解压全部文件后，双击 PetForge.exe 即可启动。", "success");
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : "生成过程异常，请刷新后重试。";
     setStatus(`生成失败：${message}`, "error");
