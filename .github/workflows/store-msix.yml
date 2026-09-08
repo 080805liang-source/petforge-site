@@ -1,0 +1,34 @@
+name: Build Microsoft Store MSIX
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Partner Center Identity Name"
+        required: true
+        type: string
+      publisher:
+        description: "Partner Center Publisher (for example CN=...)"
+        required: true
+        type: string
+      version:
+        description: "Four-part package version"
+        required: true
+        default: "1.0.0.0"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build MSIX
+        shell: pwsh
+        run: .\store\build-msix.ps1 -PackageName '${{ inputs.package_name }}' -Publisher '${{ inputs.publisher }}' -Version '${{ inputs.version }}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: petforge-msix
+          path: store/artifacts/*.msix
