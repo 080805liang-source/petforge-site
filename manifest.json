@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "PET FORGE",
+  "short_name": "PET FORGE",
+  "description": "创建并管理属于你的 Windows 桌面宠物。",
+  "lang": "zh-CN",
+  "start_url": "./index.html#studio",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#05070b",
+  "theme_color": "#05070b",
+  "categories": ["lifestyle", "personalization", "utilities"],
+  "icons": [
+    { "src": "assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/pwa-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

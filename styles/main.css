@@ -44,6 +44,9 @@ button { cursor: pointer; }
 .nav-links a:hover { color: #fff; }
 .nav-cta, .button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 46px; border: 0; font-size: 14px; font-weight: 750; letter-spacing: .01em; }
 .nav-cta { padding: 0 16px; border: 1px solid rgba(255,255,255,.42); color: #fff; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.pwa-install { border-color: rgba(166, 232, 191, .72); color: #c8f8dc; }
+.pwa-install:hover { border-color: #d8ffe7; background: rgba(166, 232, 191, .12); }
 .slide-rail { position: fixed; z-index: 12; top: 50%; right: 26px; display: grid; gap: 14px; transform: translateY(-50%); }
 .slide-rail a { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 8px; color: rgba(221,236,250,.42); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; letter-spacing: .08em; }
 .slide-rail b { display: grid; width: 20px; height: 20px; place-items: center; border: 1px solid currentColor; font-weight: 500; }
