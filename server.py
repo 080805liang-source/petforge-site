@@ -22,7 +22,7 @@ DIST_DIR = ROOT / "dist"
 APP_BINARY = ROOT / "assets" / "PetForge.exe"
 PORT = 8765
 HOST = "0.0.0.0"
-MEMBERSHIP_API = "https://cloud-paw-vip-cn-d0eub7r110788a3.service.tcloudbase.com/api"
+MEMBERSHIP_API = "https://cloud-paw-vip-cn-d0eub7r110788a3-1460995143.ap-shanghai.app.tcloudbase.com/api"
 
 
 

@@ -25,7 +25,7 @@
       </nav>
       <div class="header-actions">
         <button id="install-pwa" class="nav-cta pwa-install" type="button" hidden>安装应用</button>
-        <button class="nav-cta" type="button" data-member-open>登录 / 开通 VIP</button>
+        <button class="nav-cta" type="button" data-member-open>登录 / 购买次数</button>
       </div>
     </header>
 
@@ -288,31 +288,45 @@
     <dialog id="membership-dialog" class="membership-dialog" aria-labelledby="membership-title">
       <button class="membership-close" type="button" data-member-close aria-label="关闭">×</button>
       <section id="membership-auth" class="membership-panel">
-        <p class="eyebrow"><span></span> PET FORGE MEMBERSHIP</p>
-        <h2 id="membership-title">把桌宠，带到<br><em>你的 Windows 桌面。</em></h2>
+        <p class="eyebrow"><span></span> PET FORGE ACCOUNT</p>
+        <h2 id="membership-title">登录后，<br><em>按次数使用。</em></h2>
         <div class="membership-switch" role="group" aria-label="账号操作"><button class="is-active" type="button" data-member-mode="login">登录</button><button type="button" data-member-mode="signup">注册</button></div>
+        <div class="membership-switch identity-switch" role="group" aria-label="登录方式"><button class="is-active" type="button" data-identity-mode="email">邮箱</button><button type="button" data-identity-mode="phone">手机号</button></div>
         <form id="membership-auth-form">
-          <label>邮箱<input id="membership-email" type="email" autocomplete="email" placeholder="name@example.com" required></label>
+          <label id="membership-email-field">邮箱<input id="membership-email" type="email" autocomplete="email" placeholder="name@example.com"></label>
+          <label id="membership-phone-field" hidden>手机号<input id="membership-phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="请输入手机号"></label>
+          <div id="membership-sms-field" class="sms-field" hidden><label>短信验证码<input id="membership-sms-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位验证码"></label><button id="membership-send-code" class="button secondary" type="button">获取验证码</button></div>
           <label>密码<input id="membership-password" type="password" autocomplete="current-password" minlength="8" placeholder="至少 8 位" required></label>
+          <label id="membership-confirm-password-field" hidden>再次确认密码<input id="membership-confirm-password" type="password" autocomplete="new-password" minlength="8" placeholder="请再次输入密码"></label>
           <button id="membership-auth-submit" class="button primary wide" type="submit">登录 <span>→</span></button>
         </form>
         <p id="membership-auth-note" class="membership-note" role="status"></p>
       </section>
       <section id="membership-vip" class="membership-panel" hidden>
-        <p class="eyebrow"><span></span> VIP ACCESS</p>
-        <h2 id="membership-vip-title">开通 PET FORGE VIP</h2>
-        <p id="membership-vip-status" class="membership-intro">输入购买后获得的兑换码，即可开始创作并生成桌宠应用。</p>
-        <form id="membership-redeem-form">
-          <label>VIP 兑换码<input id="membership-code" autocomplete="off" placeholder="例如：PAW-XXXX-XXXX" required></label>
-          <button class="button primary wide" type="submit">兑换 VIP <span>✦</span></button>
-        </form>
+        <p class="eyebrow"><span></span> PET FORGE BALANCE</p>
+        <h2 id="membership-vip-title">我的使用次数</h2>
+        <p id="membership-vip-status" class="membership-intro">每生成一次桌宠包消耗 1 次。</p>
+        <button id="membership-buy-credits" class="button primary wide" type="button">购买 3 次 · ¥9.90 <span>→</span></button>
+        <p id="membership-order-note" class="membership-note" role="status"></p>
         <section id="membership-admin" class="membership-admin" hidden>
-          <p>管理员发卡区 · 自动保存到会员系统</p>
-          <button id="membership-issue-code" class="button secondary wide" type="button">生成一张 30 天卡密</button>
+          <p>管理员订单确认</p>
+          <input id="membership-confirm-order-id" type="text" placeholder="输入订单号">
+          <button id="membership-confirm-order" class="button secondary wide" type="button">确认收款并增加 3 次</button>
           <p id="membership-admin-note" class="membership-note" role="status"></p>
         </section>
         <button id="membership-signout" class="membership-text-button" type="button">退出当前账号</button>
-        <p id="membership-redeem-note" class="membership-note" role="status"></p>
+      </section>
+    </dialog>
+    <dialog id="payment-dialog" class="membership-dialog payment-dialog" aria-labelledby="payment-title">
+      <button class="membership-close" type="button" data-payment-close aria-label="关闭">×</button>
+      <section class="membership-panel">
+        <p class="eyebrow"><span></span> ALIPAY PAYMENT</p>
+        <h2 id="payment-title">扫码购买 3 次</h2>
+        <p class="membership-intro">支付 ¥9.90 后，保存订单号并联系管理员确认。确认后次数会自动到账。</p>
+        <div class="payment-qr-frame"><img id="payment-qr" src="assets/alipay-qr.png" alt="支付宝收款二维码"><p id="payment-qr-missing" hidden>尚未配置支付宝二维码，请联系管理员。</p></div>
+        <p class="payment-order">订单号：<strong id="payment-order-id"></strong></p>
+        <p id="payment-note" class="membership-note" role="status"></p>
+        <button class="button secondary wide" type="button" data-payment-close>我已扫码，关闭</button>
       </section>
     </dialog>
     <footer><span>PET FORGE</span><span>YOUR CHARACTER. YOUR DESKTOP.</span><span>© 2026</span></footer>

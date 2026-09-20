@@ -582,8 +582,9 @@ buildButton?.addEventListener("click", async () => {
 
   try {
     const result = await buildPackageInBrowser();
+    if (window.PetForgeMembership?.consumeUse) await window.PetForgeMembership.consumeUse();
     downloadBlob(result.blob, `PETFORGE-${result.name}.zip`);
-    setStatus("桌宠 ZIP 已下载。解压全部文件后，双击 PetForge.exe 即可启动；未签名程序在其他电脑上可能出现 SmartScreen 提示。", "success");
+    setStatus("本次使用已扣除 1 次。桌宠 ZIP 已下载；解压全部文件后即可启动。", "success");
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : "生成过程异常，请刷新后重试。";
     setStatus(`生成失败：${message}`, "error");
