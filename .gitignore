@@ -3,6 +3,8 @@ dist/
 dist-site/
 __pycache__/
 *.pyc
+qq-ai-bot/.env
+qq-ai-bot/logs/
 build-pyinstaller/
 test-run/
 browser-e2e/
