@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build-static.mjs"
+    "build": "node build-static.mjs",
+    "test:cat": "node --test tests/cat-motion.test.js"
   },
   "dependencies": {}
 }

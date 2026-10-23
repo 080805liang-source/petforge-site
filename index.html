@@ -7,11 +7,13 @@
     <title>PET FORGE | 你的桌面陪伴计划</title>
     <link rel="stylesheet" href="styles/main.css?v=stable-20260906">
     <link rel="stylesheet" href="styles/membership.css?v=auth-20260921">
+    <link rel="stylesheet" href="styles/cat-home.css?v=cat-20261023-r3">
+    <script type="importmap">{"imports":{"three":"./scripts/vendor/three/build/three.module.js","three/addons/":"./scripts/vendor/three/addons/"}}</script>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#05070b">
+    <meta name="theme-color" content="#fbfcfb">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
   </head>
-  <body>
+  <body class="cat-home">
     <header class="site-header">
       <a class="brand" href="#top" aria-label="PET FORGE 首页">
         <span class="brand-mark" aria-hidden="true"></span>
@@ -19,8 +21,8 @@
       </a>
       <nav class="nav-links" aria-label="主导航">
         <a href="#studio">创作台</a>
-        <a href="#systems">连接</a>
-        <a href="#how-it-works">交付</a>
+        <a href="#systems">桌宠功能</a>
+        <a href="#how-it-works">使用指南</a>
         <a href="workshop.html">创意工坊</a>
       </nav>
       <div class="header-actions">
@@ -37,39 +39,39 @@
     </nav>
 
     <main id="top">
-      <section class="hero-section page-slide is-active" data-slide aria-labelledby="hero-title">
+      <section id="cat-playground" class="hero-section page-slide is-active" data-slide aria-labelledby="hero-title">
+        <div id="cat-scene" class="cat-scene" role="img" aria-label="可以用逗猫棒互动的三维小猫"></div>
+        <div class="cat-floor-word" aria-hidden="true">a little company.</div>
         <div class="hero-copy">
-          <p class="eyebrow"><span></span> PERSONAL DESKTOP COMPANION</p>
-          <h1 id="hero-title">让你的角色，<br>来到你的桌面。</h1>
-          <p class="hero-lead">不提供预设角色。上传你自己的图片，设置它的动作、语气和快捷功能，然后生成只属于你的桌宠。</p>
+          <p class="cat-intro">给日常，多一点小小的陪伴。</p>
+          <h1 id="hero-title">先和小猫，<br>打个招呼。</h1>
+          <p class="hero-lead">移动鼠标，让逗猫棒带它跑一会儿。<br>喜欢这份陪伴？再做一只属于你的桌宠。</p>
           <div class="hero-actions">
-            <a class="button primary" href="#studio">创建我的桌宠 <span aria-hidden="true">→</span></a>
-            <a class="button text-button" href="#how-it-works">了解生成方式</a>
+            <a class="button primary" href="#studio">制作我的桌宠 <span aria-hidden="true">↗</span></a>
+            <button id="cat-pounce" class="button text-button" type="button" disabled>逗它扑一下 <span aria-hidden="true">♡</span></button>
           </div>
-          <div class="hero-data" aria-label="网站特点">
-            <div><strong>01</strong><span>上传你的角色</span></div>
-            <div><strong>02</strong><span>实时调试互动</span></div>
-            <div><strong>03</strong><span>导出 Windows 项目包</span></div>
-          </div>
+          <p class="cat-detail">上传你的图片，自定义外观、动作与快捷入口。</p>
         </div>
-
-        <div class="hero-orbit" aria-label="桌宠创作展示舱">
-          <img src="assets/creator-studio-3d.png" alt="空的 3D 桌宠创作展示舱">
-          <img id="hero-user-pet" class="hero-user-pet" alt="你上传的桌宠" hidden>
-          <div class="hero-shade"></div>
-          <div class="hero-plane plane-one"></div>
-          <div class="hero-plane plane-two"></div>
-          <div class="launch-readout">
-            <span class="readout-dot"></span>
-            <span>CREATION CHAMBER</span>
-            <strong id="hero-asset-status">等待你的第一个角色</strong>
-          </div>
-          <div class="hero-empty-card">
-            <span class="empty-symbol">＋</span>
-            <p>没有预设宠物<br>你的图片将进入创作舱</p>
+        <div id="cat-loading" class="cat-loading" role="status">
+          <span class="cat-loading-paw" aria-hidden="true">🐾</span>
+          <span id="cat-loading-text">小猫正在来的路上…</span>
+          <button id="cat-retry" class="cat-text-control" type="button" hidden>重新加载</button>
+        </div>
+        <div class="cat-play-note">
+          <svg class="cat-note-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="m12 38 17-25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M29 13c15-9 12 10 5 9-8-2 9 13 0 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 3"/><path d="M30 37c-5 2-5 7-1 8 5 1 8-7 5-8" fill="#c597a0"/></svg>
+          <div><strong>这一次，让它来追你。</strong><p id="cat-play-hint">移动鼠标或轻触空白处，试试它的反应。</p></div>
+        </div>
+        <div class="cat-bottom-bar">
+          <p class="cat-mood"><span></span><span id="cat-mood" role="status" aria-live="polite">等小猫准备好</span></p>
+          <div class="cat-controls">
+            <button id="cat-pause" type="button" aria-pressed="false" disabled>暂停互动</button>
+            <button id="cat-reset" type="button" disabled>让小猫回家</button>
+            <a href="#studio" aria-label="往下进入桌宠创作台">向下探索 <span aria-hidden="true">↓</span></a>
           </div>
         </div>
       </section>
+      <img id="hero-user-pet" alt="" hidden style="display:none">
+      <span id="hero-asset-status" hidden></span>
 
       <section class="studio-section page-slide" data-slide id="studio" aria-labelledby="studio-title">
         <div class="studio-topline">
@@ -330,7 +332,9 @@
         <button class="button secondary wide" type="button" data-payment-close>我已扫码，关闭</button>
       </section>
     </dialog>
-    <footer><span>PET FORGE</span><span>YOUR CHARACTER. YOUR DESKTOP.</span><span>© 2026</span></footer>
+    <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><span>© 2026</span></footer>
+    <p class="cat-model-credit">互动猫模型：<a href="https://sketchfab.com/3d-models/bicolor-cat-e623a618ca344a8393d7ba4d63ec23cf" target="_blank" rel="noopener">Bicolor Cat / kenchoo</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · 已调整材质、比例与互动动作。</p>
+    <script type="module" src="scripts/cat-home.js?v=cat-20261023-r3"></script>
     <script src="scripts/supabase-config.js?v=stable-20260906"></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
     <script src="scripts/membership.js?v=auth-20260921" defer></script>
