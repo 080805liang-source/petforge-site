@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { createCatMotion } from "./cat-motion.js?v=voxel-20261023-r1";
 import { createKitten } from "./kitten-model.js?v=voxel-20261023-r1";
-import { createTeaser } from "./teaser-cursor.js?v=kitten-20261023-r8";
+import { createTeaser } from "./teaser-cursor.js?v=teaser-20261023-r3";
 
 const playground = document.querySelector("#cat-playground");
 const container = document.querySelector("#cat-scene");

@@ -1,7 +1,7 @@
 // The handle follows pointer events directly. Only the dangling toy has inertia.
 export function createLureMotion({ reduced = false } = {}) {
   const state = { x: 0, y: 0, toyX: 62, toyY: 25, vx: 0, vy: 0 };
-  const spring = reduced ? 320 : 160, damping = reduced ? 34 : 22;
+  const spring = reduced ? 400 : 260, damping = reduced ? 40 : 29;
   let started = false;
   return {
     state,
@@ -11,7 +11,8 @@ export function createLureMotion({ reduced = false } = {}) {
     },
     update(delta) {
       const dt = Math.min(.05, Math.max(0, delta));
-      const steps = Math.max(1, Math.ceil(dt * 120));
+      // Physics substeps stay smooth on 60/120/144Hz displays and dropped frames.
+      const steps = Math.max(1, Math.ceil(dt * 240));
       for (let i = 0; i < steps; i++) {
         const h = dt / steps;
         state.vx += ((state.x + 62 - state.toyX) * spring - state.vx * damping) * h;
@@ -45,6 +46,8 @@ export function createTeaser(playground, scene, { reducedMotion }) {
     const s = motion.state;
     const tipX = s.x + 26, tipY = s.y - 38;
     const rotation = Math.max(-65, Math.min(65, s.vx * -.08));
+    // Update all three pieces together, including between animation frames.
+    handle.setAttribute("transform", `translate(${s.x} ${s.y})`);
     string.setAttribute("d", `M${tipX} ${tipY}Q${(tipX + s.toyX) / 2} ${Math.max(tipY, s.toyY) + 18} ${s.toyX} ${s.toyY}`);
     feathers.setAttribute("transform", `translate(${s.toyX} ${s.toyY}) rotate(${rotation})`);
   }
@@ -66,7 +69,8 @@ export function createTeaser(playground, scene, { reducedMotion }) {
   function move(x, y) {
     if (svg.hasAttribute("hidden")) motion = createLureMotion({ reduced: reducedMotion() });
     motion.move(x, y);
-    handle.setAttribute("transform", `translate(${x} ${y})`);
+    motion.update(0);
+    draw();
     svg.removeAttribute("hidden");
     scene.classList.add("is-playing");
     if (!frame) frame = requestAnimationFrame(tick);
