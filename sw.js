@@ -1,22 +1,25 @@
-const CACHE_NAME = "petforge-pwa-cat-20261023-r3";
+const CACHE_NAME = "petforge-pwa-kitten-20261023-r8";
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./creator.html",
   "./workshop.html",
   "./manifest.json",
   "./styles/main.css",
   "./styles/membership.css",
   "./styles/workshop.css",
-  "./styles/cat-home.css?v=cat-20261023-r3",
-  "./scripts/cat-home.js?v=cat-20261023-r3",
-  "./scripts/cat-motion.js?v=cat-20261023-r3",
+  "./styles/cat-home.css?v=kitten-20261023-r8",
+  "./styles/creator.css?v=kitten-20261023-r8",
+  "./scripts/cat-home.js?v=kitten-20261023-r8",
+  "./scripts/cat-motion.js?v=kitten-20261023-r7",
+  "./scripts/kitten-model.js?v=kitten-20261023-r7",
+  "./scripts/teaser-cursor.js?v=kitten-20261023-r8",
   "./scripts/vendor/three/build/three.module.js",
   "./scripts/vendor/three/build/three.core.js",
   "./scripts/vendor/three/addons/loaders/GLTFLoader.js",
   "./scripts/vendor/three/addons/utils/BufferGeometryUtils.js",
   "./scripts/vendor/three/addons/utils/SkeletonUtils.js",
   "./scripts/vendor/three/addons/environments/RoomEnvironment.js",
-  "./assets/models/playful-cat.glb",
   "./assets/teaser-wand.svg",
   "./scripts/main.js",
   "./scripts/membership.js",
@@ -45,12 +48,13 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("./index.html")));
+    const page = new URL(request.url).pathname.split("/").pop();
+    const fallback = ["creator.html", "workshop.html"].includes(page) ? `./${page}` : "./index.html";
+    event.respondWith(fetch(request).catch(() => caches.match(fallback)));
     return;
   }
 
-  const cacheable = ["script", "style", "image", "font"].includes(request.destination)
-    || new URL(request.url).pathname.endsWith("/assets/models/playful-cat.glb");
+  const cacheable = ["script", "style", "image", "font"].includes(request.destination);
   if (!cacheable) return;
   event.respondWith(
     caches.match(request).then((cached) => cached || fetch(request).then((response) => {

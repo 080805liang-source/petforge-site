@@ -3,54 +3,42 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="上传自己的图片，定制交互与快捷菜单，生成专属 Windows 桌宠。">
-    <title>PET FORGE | 你的桌面陪伴计划</title>
+    <meta name="description" content="先和三维小猫玩一会儿，再制作属于你的桌面宠物。">
+    <title>PET FORGE | 先和小猫打个招呼</title>
     <link rel="stylesheet" href="styles/main.css?v=stable-20260906">
-    <link rel="stylesheet" href="styles/membership.css?v=auth-20260921">
-    <link rel="stylesheet" href="styles/cat-home.css?v=cat-20261023-r3">
+    <link rel="stylesheet" href="styles/cat-home.css?v=kitten-20261023-r8">
     <script type="importmap">{"imports":{"three":"./scripts/vendor/three/build/three.module.js","three/addons/":"./scripts/vendor/three/addons/"}}</script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#fbfcfb">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
+    <script>
+      // Keep shared links from before the cover and creator were separated working.
+      if (new URLSearchParams(location.search).has("template") || ["#studio", "#systems", "#how-it-works"].includes(location.hash)) {
+        location.replace("creator.html" + location.search + location.hash);
+      }
+    </script>
   </head>
   <body class="cat-home">
     <header class="site-header">
-      <a class="brand" href="#top" aria-label="PET FORGE 首页">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <span>PET FORGE</span>
-      </a>
-      <nav class="nav-links" aria-label="主导航">
-        <a href="#studio">创作台</a>
-        <a href="#systems">桌宠功能</a>
-        <a href="#how-it-works">使用指南</a>
-        <a href="workshop.html">创意工坊</a>
-      </nav>
+      <a class="brand" href="./" aria-label="PET FORGE 首页"><span class="brand-mark" aria-hidden="true"></span><span>PET FORGE</span></a>
       <div class="header-actions">
         <button id="install-pwa" class="nav-cta pwa-install" type="button" hidden>安装应用</button>
-        <button class="nav-cta" type="button" data-member-open>登录 / 购买次数</button>
+        <a class="nav-cta" href="creator.html">进入创作台 <span aria-hidden="true">↗</span></a>
       </div>
     </header>
-
-    <nav class="slide-rail" aria-label="桌宠创作阶段">
-      <a href="#top" class="is-current"><b>01</b><span>载入</span></a>
-      <a href="#studio"><b>02</b><span>塑造</span></a>
-      <a href="#systems"><b>03</b><span>连接</span></a>
-      <a href="#how-it-works"><b>04</b><span>交付</span></a>
-    </nav>
-
-    <main id="top">
-      <section id="cat-playground" class="hero-section page-slide is-active" data-slide aria-labelledby="hero-title">
-        <div id="cat-scene" class="cat-scene" role="img" aria-label="可以用逗猫棒互动的三维小猫"></div>
+    <main>
+      <section id="cat-playground" class="hero-section" aria-labelledby="hero-title">
+        <div id="cat-scene" class="cat-scene" role="img" aria-label="可以用逗猫棒互动的三维虎斑幼猫"></div>
         <div class="cat-floor-word" aria-hidden="true">a little company.</div>
         <div class="hero-copy">
           <p class="cat-intro">给日常，多一点小小的陪伴。</p>
           <h1 id="hero-title">先和小猫，<br>打个招呼。</h1>
-          <p class="hero-lead">移动鼠标，让逗猫棒带它跑一会儿。<br>喜欢这份陪伴？再做一只属于你的桌宠。</p>
+          <p class="hero-lead">挥一挥逗猫棒，看看它会不会扑过来。<br>准备好了？做一只属于你的桌宠。</p>
           <div class="hero-actions">
-            <a class="button primary" href="#studio">制作我的桌宠 <span aria-hidden="true">↗</span></a>
+            <a class="button primary" href="creator.html">制作我的桌宠 <span aria-hidden="true">↗</span></a>
             <button id="cat-pounce" class="button text-button" type="button" disabled>逗它扑一下 <span aria-hidden="true">♡</span></button>
           </div>
-          <p class="cat-detail">上传你的图片，自定义外观、动作与快捷入口。</p>
+          <p class="cat-detail">从一张你喜欢的图片开始。</p>
         </div>
         <div id="cat-loading" class="cat-loading" role="status">
           <span class="cat-loading-paw" aria-hidden="true">🐾</span>
@@ -59,285 +47,18 @@
         </div>
         <div class="cat-play-note">
           <svg class="cat-note-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="m12 38 17-25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M29 13c15-9 12 10 5 9-8-2 9 13 0 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 3"/><path d="M30 37c-5 2-5 7-1 8 5 1 8-7 5-8" fill="#c597a0"/></svg>
-          <div><strong>这一次，让它来追你。</strong><p id="cat-play-hint">移动鼠标或轻触空白处，试试它的反应。</p></div>
+          <div><strong>一根逗猫棒，就能玩好久。</strong><p id="cat-play-hint">移动鼠标或轻触空白处，试试它的反应。</p></div>
         </div>
         <div class="cat-bottom-bar">
           <p class="cat-mood"><span></span><span id="cat-mood" role="status" aria-live="polite">等小猫准备好</span></p>
           <div class="cat-controls">
             <button id="cat-pause" type="button" aria-pressed="false" disabled>暂停互动</button>
             <button id="cat-reset" type="button" disabled>让小猫回家</button>
-            <a href="#studio" aria-label="往下进入桌宠创作台">向下探索 <span aria-hidden="true">↓</span></a>
           </div>
-        </div>
-      </section>
-      <img id="hero-user-pet" alt="" hidden style="display:none">
-      <span id="hero-asset-status" hidden></span>
-
-      <section class="studio-section page-slide" data-slide id="studio" aria-labelledby="studio-title">
-        <div class="studio-topline">
-          <div>
-            <p class="eyebrow light"><span></span> CREATE / 01</p>
-            <h2 id="studio-title">桌宠创作台</h2>
-          </div>
-          <div class="studio-actions">
-            <p class="studio-state"><span></span> 本地处理 · 你的图片不会离开当前浏览器</p>
-            <a class="studio-workshop-link" href="workshop.html">创意工坊 <span aria-hidden="true">↗</span></a>
-          </div>
-        </div>
-
-        <div class="studio-shell">
-          <section class="composer-panel" aria-label="角色素材与外观">
-            <div class="panel-heading">
-              <span>01</span>
-              <div><p>CHARACTER</p><h3>角色与状态</h3></div>
-            </div>
-
-            <label class="upload-zone" for="pet-image" data-membership-required>
-              <input id="pet-image" type="file" accept="image/png,image/jpeg,image/webp">
-              <span class="upload-icon" aria-hidden="true">↑</span>
-              <strong>上传你的桌宠图片</strong>
-              <small>PNG、JPG 或 WEBP，推荐透明 PNG</small>
-            </label>
-
-            <div class="style-lab" aria-label="桌宠风格">
-              <p class="minor-heading">STYLE LAB</p>
-              <div id="style-presets" class="style-presets" role="group" aria-label="选择桌宠风格">
-                <button class="style-preset is-selected" type="button" data-style="original" aria-pressed="true"><i class="swatch-original"></i><span>原始</span></button>
-                <button class="style-preset" type="button" data-style="pixel" aria-pressed="false"><i class="swatch-pixel"></i><span>像素格</span></button>
-                <button class="style-preset" type="button" data-style="toon" aria-pressed="false"><i class="swatch-toon"></i><span>动画童话</span></button>
-                <button class="style-preset" type="button" data-style="comic" aria-pressed="false"><i class="swatch-comic"></i><span>漫画墨线</span></button>
-                <button class="style-preset" type="button" data-style="chrome" aria-pressed="false"><i class="swatch-chrome"></i><span>Y2K 镜面</span></button>
-                <button class="style-preset" type="button" data-style="neon" aria-pressed="false"><i class="swatch-neon"></i><span>霓虹梦境</span></button>
-              </div>
-            </div>
-
-            <div class="field-stack">
-              <label>桌宠名称<input id="pet-name" type="text" value="我的桌宠" maxlength="24"></label>
-              <label>点击时说的话<input id="pet-line" type="text" value="你好，我在这里。" maxlength="42"></label>
-            </div>
-
-            <div class="meter-group">
-              <div class="range-row"><label for="pet-size">显示大小</label><output id="size-output" for="pet-size">100%</output></div>
-              <input id="pet-size" type="range" min="70" max="140" value="100">
-              <div class="range-row"><label for="pet-opacity">透明度</label><output id="opacity-output" for="pet-opacity">96%</output></div>
-              <input id="pet-opacity" type="range" min="72" max="100" value="96">
-            </div>
-
-            <div class="select-grid">
-              <label>初始状态<select id="pet-status"><option value="companion">陪伴中</option><option value="working">工作中</option><option value="resting">休息中</option><option value="sleeping">睡眠中</option></select></label>
-              <label>点击动画<select id="pet-animation"><option value="jump">轻跳</option><option value="shake">摇摆</option><option value="wiggle">扭一扭</option><option value="dash">向前小跑</option><option value="glow">光环</option><option value="none">无动画</option></select></label>
-              <label>气泡外观<select id="bubble-style"><option value="soft">柔光白</option><option value="glass">玻璃感</option><option value="dark">深色</option></select></label>
-              <label>初始位置<select id="pet-position"><option value="bottom-right">右下角</option><option value="bottom-left">左下角</option><option value="center">屏幕中央</option></select></label>
-            </div>
-          </section>
-
-          <section class="preview-panel" aria-label="桌宠实时预览">
-            <div class="preview-label"><span>LIVE ENVIRONMENT</span><span id="preview-status">陪伴中</span></div>
-            <div class="preview-desktop" data-preview-shell>
-              <div class="desktop-grid"></div>
-              <div class="desktop-surface" aria-hidden="true"></div>
-              <div class="desktop-topbar"><span></span><span>PET FORGE / PREVIEW</span><span>WIN</span></div>
-              <div id="preview-empty" class="preview-empty">
-                <span>＋</span>
-                <strong>把你的图片放进这里</strong>
-                <small>上传后即可预览大小、透明度与气泡</small>
-              </div>
-              <img id="preview-pet" alt="你上传的桌宠预览" hidden>
-              <div id="preview-bubble" class="preview-bubble" hidden>你好，我在这里。</div>
-              <div class="desktop-coordinate"><span>X 1432</span><span>Y 786</span></div>
-            </div>
-            <p class="preview-hint">上传后可以继续在左侧调整外观。生成后的桌宠支持拖动、点击和右键菜单。</p>
-          </section>
-
-          <section class="function-panel" aria-label="桌宠功能设置">
-            <div class="panel-heading">
-              <span>02</span>
-              <div><p>BEHAVIOUR</p><h3>功能与出口</h3></div>
-            </div>
-            <div class="display-options" aria-label="桌宠显示设置">
-              <p class="minor-heading">桌宠显示</p>
-              <div class="toggle-list">
-                <label><input id="always-on-top" type="checkbox"><span>始终置顶</span><i></i></label>
-                <label title="打开其他应用时自动隐藏，回到桌面后显示"><input id="desktop-only" type="checkbox"><span>仅在桌面显示</span><i></i></label>
-                <label><input id="pet-shadow" type="checkbox" checked><span>桌面阴影</span><i></i></label>
-              </div>
-            </div>
-
-            <div class="interaction-lab" aria-label="桌宠互动体验">
-              <div class="interaction-heading">
-                <p class="minor-heading">INTERACTION LAB</p>
-                <span>每项都会写入桌宠应用</span>
-              </div>
-              <p class="interaction-intro">选择它如何回应鼠标和你的陪伴习惯。生成后，桌宠会按这套互动设定运行。</p>
-              <div class="select-grid interaction-selects">
-                <label>鼠标移到身上时
-                  <select id="hover-effect">
-                    <option value="halo">出现柔光光环</option>
-                    <option value="greeting">主动打招呼</option>
-                    <option value="hop">轻轻跳一下</option>
-                    <option value="sparkle">冒出星光粒子</option>
-                    <option value="shy">害羞地躲一躲</option>
-                    <option value="none">安静不打扰</option>
-                  </select>
-                </label>
-                <label>鼠标离开时
-                  <select id="leave-effect">
-                    <option value="stay">留在原地等待</option>
-                    <option value="goodbye">说一句再见</option>
-                    <option value="dim">轻轻收起光环</option>
-                    <option value="hide">短暂藏起来</option>
-                  </select>
-                </label>
-                <label>空闲时的状态
-                  <select id="idle-behavior">
-                    <option value="float">轻轻呼吸漂浮</option>
-                    <option value="stretch">偶尔伸展身体</option>
-                    <option value="look">左看看右看看</option>
-                    <option value="nap">安静打盹</option>
-                    <option value="still">保持安静</option>
-                  </select>
-                </label>
-                <label>双击时的回应
-                  <select id="double-click-effect">
-                    <option value="cuddle">贴贴 + 爱心</option>
-                    <option value="spin">开心转圈</option>
-                    <option value="celebrate">庆祝星光</option>
-                    <option value="quiet">温柔回应</option>
-                  </select>
-                </label>
-                <label>全局鼠标互动
-                  <select id="cursor-follow-mode">
-                    <option value="look">目光跟随鼠标</option>
-                    <option value="follow">慢慢靠近鼠标</option>
-                    <option value="playful">鼠标靠近时俏皮躲开</option>
-                    <option value="none">不追随鼠标</option>
-                  </select>
-                </label>
-                <label>靠近时的招呼频率
-                  <select id="proactive-frequency">
-                    <option value="gentle">温柔，不频繁打扰</option>
-                    <option value="lively">活泼，偶尔主动回应</option>
-                    <option value="quiet">安静，只在点击时回应</option>
-                  </select>
-                </label>
-                <label>键盘同步动作
-                  <select id="keyboard-reaction">
-                    <option value="bongo">同步敲键盘（Bongo 风格）</option>
-                    <option value="cheer">打字时为你加油</option>
-                    <option value="quiet">安静地陪你输入</option>
-                  </select>
-                </label>
-              </div>
-              <div class="interaction-options">
-                <label><input id="wander-enabled" type="checkbox"><span>开启桌面巡游</span><small>每隔一段时间在屏幕内换一个位置</small><i></i></label>
-                <label><input id="hover-bubble" type="checkbox" checked><span>悬停显示心情气泡</span><small>鼠标靠近时给出一句可爱回应</small><i></i></label>
-                <label><input id="click-particles" type="checkbox" checked><span>点击释放互动粒子</span><small>星星、爱心或能量点随选择出现</small><i></i></label>
-                <label><input id="sound-hint" type="checkbox"><span>显示静音提示</span><small>桌宠不会擅自播放声音，避免打扰</small><i></i></label>
-                <label><input id="keyboard-sync" type="checkbox"><span>开启键盘同步</span><small>只感知是否正在输入，不读取按键内容</small><i></i></label>
-              </div>
-              <label class="interaction-note">还有什么专属互动想法？
-                <textarea id="interaction-note" maxlength="280" placeholder="例如：鼠标停留三秒后，它会举起小爪子；工作一小时后提醒我喝水。"></textarea>
-              </label>
-            </div>
-
-            <div class="custom-shortcut">
-              <p class="minor-heading">快捷入口</p>
-              <label>常用入口<select id="shortcut-template"><option value="">选择常用入口</option><option value="浏览器">浏览器</option><option value="抖音">抖音</option><option value="哔哩哔哩">哔哩哔哩</option><option value="QQ">QQ</option><option value="微信">微信</option><option value="飞书">飞书</option><option value="钉钉">钉钉</option><option value="企业微信">企业微信</option><option value="WPS Office">WPS Office</option><option value="Microsoft Office">Microsoft Office</option><option value="Steam">Steam</option><option value="Epic Games">Epic Games</option><option value="网易云音乐">网易云音乐</option><option value="VS Code">VS Code</option><option value="Discord">Discord</option><option value="自定义">自定义入口</option></select></label>
-              <div id="manual-shortcut-fields" class="manual-shortcut-fields" hidden>
-                <label>显示名称<input id="custom-label" type="text" placeholder="例如：打开微信" maxlength="18"></label>
-                <label>类型<select id="custom-type"><option value="file">软件或文件</option><option value="folder">文件夹</option><option value="url">网址</option><option value="protocol">应用协议</option></select></label>
-                <label>目标地址<input id="custom-target" type="text" placeholder="填写软件路径、文件夹或网址" maxlength="260"></label>
-                <button id="add-shortcut" class="button secondary wide" type="button">添加快捷入口 <span aria-hidden="true">+</span></button>
-              </div>
-              <div id="shortcut-list" class="shortcut-list" aria-live="polite"></div>
-            </div>
-
-            <div class="action-stack">
-              <button id="build-package" class="button primary wide" type="button" disabled data-membership-required>生成 Windows 桌宠 ZIP <span aria-hidden="true">→</span></button>
-              <button id="export-config" class="button secondary wide" type="button" data-membership-required>导出制作配置</button>
-            </div>
-            <p id="build-status" class="panel-note" role="status">请先上传你的桌宠图片，再生成 Windows 桌宠 ZIP。公开免警告安装版正在准备 Microsoft Store。</p>
-          </section>
-        </div>
-      </section>
-
-      <section class="systems-section page-slide" data-slide id="systems" aria-labelledby="systems-title">
-        <div class="section-intro">
-          <p class="eyebrow"><span></span> CONNECT / 03</p>
-          <h2 id="systems-title">让它不只存在。<br>还能够替你行动。</h2>
-        </div>
-        <div class="systems-list">
-          <article><span>01</span><div><h3>从你的图片开始</h3><p>不展示模板角色。上传后，预览和生成包只使用你的素材。</p></div></article>
-          <article><span>02</span><div><h3>让互动变得有用</h3><p>把浏览器、游戏、工具或文件夹变成桌宠右键菜单里的快捷入口。</p></div></article>
-          <article><span>03</span><div><h3>为 Windows 桌面准备</h3><p>导出桌宠项目包，在电脑桌面上拖动、点击和使用你的自定义功能。</p></div></article>
-        </div>
-      </section>
-
-      <section class="process-section page-slide" data-slide id="how-it-works" aria-labelledby="process-title">
-        <div class="process-visual" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div>
-          <p class="eyebrow light"><span></span> DELIVER / 04</p>
-          <h2 id="process-title">从一张图，<br>到桌面上的陪伴。</h2>
-          <ol class="process-list">
-            <li><b>上传</b><span>选择你希望它成为的样子。</span></li>
-            <li><b>调试</b><span>设定语气、动画、外观与快捷功能。</span></li>
-            <li><b>交付</b><span>下载你的 Windows 桌宠项目包。</span></li>
-          </ol>
         </div>
       </section>
     </main>
-
-    <dialog id="membership-dialog" class="membership-dialog" aria-labelledby="membership-title">
-      <button class="membership-close" type="button" data-member-close aria-label="关闭">×</button>
-      <section id="membership-auth" class="membership-panel">
-        <p class="eyebrow"><span></span> PET FORGE ACCOUNT</p>
-        <h2 id="membership-title">登录后，<br><em>按次数使用。</em></h2>
-        <div class="membership-switch" role="group" aria-label="账号操作"><button class="is-active" type="button" data-member-mode="login">登录</button><button type="button" data-member-mode="signup">注册</button></div>
-        <div class="membership-switch identity-switch" role="group" aria-label="登录方式"><button class="is-active" type="button" data-identity-mode="email">邮箱</button><button type="button" data-identity-mode="phone">手机号</button></div>
-        <form id="membership-auth-form">
-          <label id="membership-email-field">邮箱<input id="membership-email" type="email" autocomplete="email" placeholder="name@example.com"></label>
-          <label id="membership-phone-field" hidden>手机号<input id="membership-phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="请输入手机号"></label>
-          <div id="membership-email-code-field" class="sms-field" hidden><label>邮箱验证码<input id="membership-email-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位验证码"></label><button id="membership-send-email-code" class="button secondary" type="button">发送验证码</button></div>
-          <div id="membership-sms-field" class="sms-field" hidden><label>短信验证码<input id="membership-sms-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位验证码"></label><button id="membership-send-code" class="button secondary" type="button">获取验证码</button></div>
-          <label>密码<input id="membership-password" type="password" autocomplete="current-password" minlength="8" placeholder="至少 8 位" required></label>
-          <label id="membership-confirm-password-field" hidden>再次确认密码<input id="membership-confirm-password" type="password" autocomplete="new-password" minlength="8" placeholder="请再次输入密码"></label>
-          <button id="membership-auth-submit" class="button primary wide" type="submit">登录 <span>→</span></button>
-        </form>
-        <p id="membership-auth-note" class="membership-note" role="status"></p>
-      </section>
-      <section id="membership-vip" class="membership-panel" hidden>
-        <p class="eyebrow"><span></span> PET FORGE BALANCE</p>
-        <h2 id="membership-vip-title">我的使用次数</h2>
-        <p id="membership-vip-status" class="membership-intro">每生成一次桌宠包消耗 1 次。</p>
-        <button id="membership-buy-credits" class="button primary wide" type="button">购买 3 次 · ¥9.90 <span>→</span></button>
-        <p id="membership-order-note" class="membership-note" role="status"></p>
-        <section id="membership-admin" class="membership-admin" hidden>
-          <p>管理员订单确认</p>
-          <input id="membership-confirm-order-id" type="text" placeholder="输入订单号">
-          <button id="membership-confirm-order" class="button secondary wide" type="button">确认收款并增加 3 次</button>
-          <p id="membership-admin-note" class="membership-note" role="status"></p>
-        </section>
-        <button id="membership-signout" class="membership-text-button" type="button">退出当前账号</button>
-      </section>
-    </dialog>
-    <dialog id="payment-dialog" class="membership-dialog payment-dialog" aria-labelledby="payment-title">
-      <button class="membership-close" type="button" data-payment-close aria-label="关闭">×</button>
-      <section class="membership-panel">
-        <p class="eyebrow"><span></span> ALIPAY PAYMENT</p>
-        <h2 id="payment-title">扫码购买 3 次</h2>
-        <p class="membership-intro">支付 ¥9.90 后，保存订单号并联系管理员确认。确认后次数会自动到账。</p>
-        <div class="payment-qr-frame"><img id="payment-qr" src="assets/alipay-qr.png" alt="支付宝收款二维码"><p id="payment-qr-missing" hidden>尚未配置支付宝二维码，请联系管理员。</p></div>
-        <p class="payment-order">订单号：<strong id="payment-order-id"></strong></p>
-        <p id="payment-note" class="membership-note" role="status"></p>
-        <button class="button secondary wide" type="button" data-payment-close>我已扫码，关闭</button>
-      </section>
-    </dialog>
-    <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><span>© 2026</span></footer>
-    <p class="cat-model-credit">互动猫模型：<a href="https://sketchfab.com/3d-models/bicolor-cat-e623a618ca344a8393d7ba4d63ec23cf" target="_blank" rel="noopener">Bicolor Cat / kenchoo</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · 已调整材质、比例与互动动作。</p>
-    <script type="module" src="scripts/cat-home.js?v=cat-20261023-r3"></script>
-    <script src="scripts/supabase-config.js?v=stable-20260906"></script>
+    <script type="module" src="scripts/cat-home.js?v=kitten-20261023-r8"></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
-    <script src="scripts/membership.js?v=auth-20260921" defer></script>
-    <script src="scripts/main.js?v=zip-20260906" defer></script>
   </body>
 </html>

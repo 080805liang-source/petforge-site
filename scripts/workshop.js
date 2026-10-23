@@ -53,7 +53,7 @@ function createCard(post) {
   const description = document.createElement("p"); description.textContent = post.description || "由创作者分享的桌面陪伴。";
   const actions = document.createElement("div"); actions.className = "card-actions";
   const use = document.createElement("button"); use.className = "card-use"; use.type = "button"; use.textContent = "使用这个桌宠";
-  use.addEventListener("click", () => { window.location.href = `index.html?template=${encodeURIComponent(post.id)}#studio`; });
+  use.addEventListener("click", () => { window.location.href = `creator.html?template=${encodeURIComponent(post.id)}#studio`; });
   const follow = document.createElement("button"); follow.className = "card-follow"; follow.type = "button"; follow.title = "关注创作者"; follow.textContent = "♡";
   follow.addEventListener("click", () => followCreator(post.author_id, follow));
   meta.append(author, downloads); actions.append(use, follow); main.append(meta, title, description, actions); article.append(media, main);

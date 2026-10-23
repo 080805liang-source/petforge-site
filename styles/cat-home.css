@@ -1,5 +1,5 @@
 /* The homepage is a quiet room for a living, interactive 3D companion. */
-.cat-home { --cat-paper: #fbfcfb; --cat-ink: #283a32; --cat-muted: #748078; --cat-green: #577b65; --cat-line: #e1e8e2; }
+.cat-home { --cat-paper: #fbfcfb; --cat-ink: #283a32; --cat-muted: #748078; --cat-green: #577b65; --cat-line: #e1e8e2; min-width: 0; color-scheme: light; background: var(--cat-paper); }
 .cat-home .site-header { height: 100px; width: calc(100% - clamp(40px, 8vw, 160px)); color: var(--cat-ink); }
 .cat-home .brand { font-size: 16px; letter-spacing: .06em; }
 .cat-home .brand-mark { width: 25px; height: 27px; border-radius: 40% 40% 46% 46%; border: 1.7px solid currentColor; transform: rotate(-8deg); }
@@ -10,7 +10,7 @@
 .cat-home .nav-cta { color: var(--cat-ink); background: transparent; border: 1px solid #c6d2c9; border-radius: 100px; min-height: 40px; font-size: 12px; font-weight: 600; padding-inline: 18px; }
 .cat-home .pwa-install { border-color: #c6d2c9; }
 .cat-home .slide-rail { display: none; }
-.cat-home .hero-section { display: block; min-height: max(740px, 100svh); overflow: hidden; isolation: isolate; background: var(--cat-paper); color: var(--cat-ink); }
+.cat-home .hero-section { display: block; min-height: max(660px, 100svh); overflow: hidden; isolation: isolate; background: var(--cat-paper); color: var(--cat-ink); }
 .cat-scene { position: absolute; z-index: 1; inset: 0; touch-action: pan-y; }
 .cat-scene canvas { display: block; width: 100%; height: 100%; }
 .cat-home .hero-copy { position: relative; z-index: 3; width: 46%; max-width: 550px; margin: 0 0 0 clamp(28px, 7vw, 136px); padding: clamp(175px, 24vh, 270px) 0 175px; pointer-events: none; }
@@ -43,7 +43,9 @@
 .cat-controls a { margin-left: 18px; }
 .cat-controls a span { margin-left: 10px; }
 .cat-controls button:disabled { opacity: .4; cursor: wait; }
-@media (hover: hover) and (pointer: fine) { .cat-scene.is-playing { cursor: url("../assets/teaser-wand.svg") 8 8, crosshair; } }
+@media (hover: hover) and (pointer: fine) { .cat-scene.is-playing { cursor: none; } }
+.teaser-cursor { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 100; overflow: visible; pointer-events: none; }
+.teaser-cursor[hidden] { display: none; }
 .cat-home .studio-section { border-radius: 32px 32px 0 0; }
 .cat-model-credit { margin: 0; padding: 0 28px 20px; text-align: center; color: #7d8b94; background: #05070b; font-size: 10px; line-height: 1.8; }
 .cat-model-credit a { text-decoration: underline; text-underline-offset: 2px; }

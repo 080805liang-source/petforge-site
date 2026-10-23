@@ -33,7 +33,7 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
       sinceInput = 0;
       returning = false;
       lookHeight = clamp(elevation, -.25, .25);
-      if (fast && cooldown <= 0 && Math.hypot(target.x - state.x, target.z - state.z) > .75) this.pounce();
+      if (fast && cooldown <= 0 && Math.hypot(target.x - state.x, target.z - state.z) > .55) this.pounce();
     },
     pounce() {
       if (state.paused || cooldown > 0 || ["crouch", "pounce", "land"].includes(state.phase)) return false;
@@ -45,7 +45,7 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
       end = point(state.x + dx * ratio, state.z + dz * ratio);
       if (distance < .25) end = point(state.x + .3, state.z + .35);
       setPhase("crouch");
-      cooldown = 1.8;
+      cooldown = 1.45;
       interest = 0;
       return true;
     },
@@ -63,7 +63,7 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
       const distance = Math.hypot(dx, dz);
       const moving = sinceInput < 1.3 || returning;
       const desiredYaw = distance > .1 && moving ? Math.atan2(dx, dz) : -.15;
-      state.yaw += angleDelta(state.yaw, desiredYaw) * (1 - Math.exp(-dt * (state.phase === "pounce" ? 4 : 7)));
+      state.yaw += angleDelta(state.yaw, desiredYaw) * (1 - Math.exp(-dt * (state.phase === "pounce" ? 7 : 11)));
       state.gaze = clamp(angleDelta(state.yaw, Math.atan2(dx, dz)), -.6, .6) * (moving ? 1 : 0);
       state.headPitch += ((moving ? lookHeight : 0) - state.headPitch) * (1 - Math.exp(-dt * 8));
       state.crouch = 0;
@@ -72,9 +72,9 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
       state.pitch = 0;
 
       if (state.phase === "crouch") {
-        state.crouch = ease(clamp(phaseTime / .28, 0, 1));
+        state.crouch = ease(clamp(phaseTime / .18, 0, 1));
         state.speed *= Math.exp(-dt * 15);
-        if (phaseTime >= .34) setPhase("pounce");
+        if (phaseTime >= .23) setPhase("pounce");
       } else if (state.phase === "pounce") {
         const t = clamp(phaseTime / .58, 0, 1);
         state.x = start.x + (end.x - start.x) * ease(t);
@@ -91,10 +91,10 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
         if (t === 1) setPhase("watch");
       } else {
         interest = moving && !returning && distance > .85 ? interest + dt : 0;
-        if (interest > .55 && cooldown <= 0) this.pounce();
+        if (interest > .38 && cooldown <= 0) this.pounce();
         if (moving && distance > .27) {
-          const desiredSpeed = Math.min(1.75, distance * 2);
-          state.speed += (desiredSpeed - state.speed) * (1 - Math.exp(-dt * 7));
+          const desiredSpeed = Math.min(2.4, distance * 3.3);
+          state.speed += (desiredSpeed - state.speed) * (1 - Math.exp(-dt * 11));
           const step = Math.min(state.speed * dt, distance - .2);
           state.x += dx / distance * step;
           state.z += dz / distance * step;

@@ -1,0 +1,9 @@
+.creator-page { min-width: 0; background: #07101a; }
+.creator-page .site-header { position: relative; height: 80px; }
+.creator-page .studio-section { padding-top: 50px; }
+.creator-page .slide-rail a[href="#studio"] { color: #fff; }
+.creator-page .brand:focus-visible, .creator-page .nav-links a:focus-visible { outline: 2px solid #b9d2ec; outline-offset: 6px; }
+@media (max-width: 760px) {
+  .creator-page .site-header { height: 70px; }
+  .creator-page .studio-section { padding-top: 28px; }
+}
