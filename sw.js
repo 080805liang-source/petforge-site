@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-kitten-20261023-r8";
+const CACHE_NAME = "petforge-pwa-voxel-20261023-r2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,11 +8,11 @@ const APP_SHELL = [
   "./styles/main.css",
   "./styles/membership.css",
   "./styles/workshop.css",
-  "./styles/cat-home.css?v=kitten-20261023-r8",
+  "./styles/cat-home.css?v=voxel-20261023-r2",
   "./styles/creator.css?v=kitten-20261023-r8",
-  "./scripts/cat-home.js?v=kitten-20261023-r8",
-  "./scripts/cat-motion.js?v=kitten-20261023-r7",
-  "./scripts/kitten-model.js?v=kitten-20261023-r7",
+  "./scripts/cat-home.js?v=voxel-20261023-r2",
+  "./scripts/cat-motion.js?v=voxel-20261023-r1",
+  "./scripts/kitten-model.js?v=voxel-20261023-r1",
   "./scripts/teaser-cursor.js?v=kitten-20261023-r8",
   "./scripts/vendor/three/build/three.module.js",
   "./scripts/vendor/three/build/three.core.js",

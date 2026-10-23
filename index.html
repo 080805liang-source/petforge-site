@@ -6,7 +6,7 @@
     <meta name="description" content="先和三维小猫玩一会儿，再制作属于你的桌面宠物。">
     <title>PET FORGE | 先和小猫打个招呼</title>
     <link rel="stylesheet" href="styles/main.css?v=stable-20260906">
-    <link rel="stylesheet" href="styles/cat-home.css?v=kitten-20261023-r8">
+    <link rel="stylesheet" href="styles/cat-home.css?v=voxel-20261023-r2">
     <script type="importmap">{"imports":{"three":"./scripts/vendor/three/build/three.module.js","three/addons/":"./scripts/vendor/three/addons/"}}</script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#fbfcfb">
@@ -28,15 +28,15 @@
     </header>
     <main>
       <section id="cat-playground" class="hero-section" aria-labelledby="hero-title">
-        <div id="cat-scene" class="cat-scene" role="img" aria-label="可以用逗猫棒互动的三维虎斑幼猫"></div>
+        <div id="cat-scene" class="cat-scene" role="img" aria-label="会慢慢跟随鼠标的三维方块小猫，点击左键跳跃"></div>
         <div class="cat-floor-word" aria-hidden="true">a little company.</div>
         <div class="hero-copy">
           <p class="cat-intro">给日常，多一点小小的陪伴。</p>
           <h1 id="hero-title">先和小猫，<br>打个招呼。</h1>
-          <p class="hero-lead">挥一挥逗猫棒，看看它会不会扑过来。<br>准备好了？做一只属于你的桌宠。</p>
+          <p class="hero-lead">鼠标慢慢移，它就慢慢跟。点击左键，跳一下。<br>准备好了？做一只属于你的桌宠。</p>
           <div class="hero-actions">
             <a class="button primary" href="creator.html">制作我的桌宠 <span aria-hidden="true">↗</span></a>
-            <button id="cat-pounce" class="button text-button" type="button" disabled>逗它扑一下 <span aria-hidden="true">♡</span></button>
+            <button id="cat-pounce" class="button text-button" type="button" disabled>让它跳一下 <span aria-hidden="true">♡</span></button>
           </div>
           <p class="cat-detail">从一张你喜欢的图片开始。</p>
         </div>
@@ -47,7 +47,7 @@
         </div>
         <div class="cat-play-note">
           <svg class="cat-note-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="m12 38 17-25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M29 13c15-9 12 10 5 9-8-2 9 13 0 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 3"/><path d="M30 37c-5 2-5 7-1 8 5 1 8-7 5-8" fill="#c597a0"/></svg>
-          <div><strong>一根逗猫棒，就能玩好久。</strong><p id="cat-play-hint">移动鼠标或轻触空白处，试试它的反应。</p></div>
+          <div><strong>整个封面，都是它的小天地。</strong><p id="cat-play-hint">移动鼠标让它跟来，点击左键让它跳一下。</p></div>
         </div>
         <div class="cat-bottom-bar">
           <p class="cat-mood"><span></span><span id="cat-mood" role="status" aria-live="polite">等小猫准备好</span></p>
@@ -58,7 +58,7 @@
         </div>
       </section>
     </main>
-    <script type="module" src="scripts/cat-home.js?v=kitten-20261023-r8"></script>
+    <script type="module" src="scripts/cat-home.js?v=voxel-20261023-r2"></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
   </body>
 </html>

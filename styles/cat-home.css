@@ -11,7 +11,7 @@
 .cat-home .pwa-install { border-color: #c6d2c9; }
 .cat-home .slide-rail { display: none; }
 .cat-home .hero-section { display: block; min-height: max(660px, 100svh); overflow: hidden; isolation: isolate; background: var(--cat-paper); color: var(--cat-ink); }
-.cat-scene { position: absolute; z-index: 1; inset: 0; touch-action: pan-y; }
+.cat-scene { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
 .cat-scene canvas { display: block; width: 100%; height: 100%; }
 .cat-home .hero-copy { position: relative; z-index: 3; width: 46%; max-width: 550px; margin: 0 0 0 clamp(28px, 7vw, 136px); padding: clamp(175px, 24vh, 270px) 0 175px; pointer-events: none; }
 .cat-home .hero-copy a, .cat-home .hero-copy button { pointer-events: auto; }
@@ -43,7 +43,7 @@
 .cat-controls a { margin-left: 18px; }
 .cat-controls a span { margin-left: 10px; }
 .cat-controls button:disabled { opacity: .4; cursor: wait; }
-@media (hover: hover) and (pointer: fine) { .cat-scene.is-playing { cursor: none; } }
+@media (hover: hover) and (pointer: fine) { .cat-home:has(.cat-scene.is-playing), .cat-home:has(.cat-scene.is-playing) .hero-copy { cursor: none; } }
 .teaser-cursor { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 100; overflow: visible; pointer-events: none; }
 .teaser-cursor[hidden] { display: none; }
 .cat-home .studio-section { border-radius: 32px 32px 0 0; }

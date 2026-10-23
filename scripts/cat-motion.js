@@ -12,9 +12,8 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
   let phaseTime = 0;
   let sinceInput = 10;
   let cooldown = 0;
-  let runTime = 0;
   let returning = false;
-  let interest = 0;
+  let following = false;
   let lookHeight = 0;
 
   function setPhase(phase) { state.phase = phase; phaseTime = 0; }
@@ -27,13 +26,13 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
       target = point(target.x, target.z);
     },
     setHome(x, z) { home.x = x; home.z = z; },
-    aim(x, z, fast = false, elevation = 0) {
+    aim(x, z, elevation = 0) {
       if (state.paused) return;
       target = point(x, z);
       sinceInput = 0;
       returning = false;
+      following = true;
       lookHeight = clamp(elevation, -.25, .25);
-      if (fast && cooldown <= 0 && Math.hypot(target.x - state.x, target.z - state.z) > .55) this.pounce();
     },
     pounce() {
       if (state.paused || cooldown > 0 || ["crouch", "pounce", "land"].includes(state.phase)) return false;
@@ -41,15 +40,15 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
       const dx = target.x - state.x;
       const dz = target.z - state.z;
       const distance = Math.hypot(dx, dz);
-      const ratio = Math.min(1, 1.65 / Math.max(distance, .001));
+      const ratio = Math.min(1, .8 / Math.max(distance, .001));
       end = point(state.x + dx * ratio, state.z + dz * ratio);
-      if (distance < .25) end = point(state.x + .3, state.z + .35);
+      if (distance < .25) end = point(state.x, state.z);
       setPhase("crouch");
       cooldown = 1.45;
-      interest = 0;
       return true;
     },
     pause(paused) { state.paused = paused; },
+    stop() { following = false; target = { x: state.x, z: state.z }; },
     reset() { target = point(home.x, home.z); returning = true; sinceInput = 0; if (!["pounce", "crouch", "land"].includes(state.phase)) setPhase("walk"); },
     update(delta) {
       if (state.paused) return state;
@@ -57,12 +56,12 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
       sinceInput += dt;
       phaseTime += dt;
       cooldown -= dt;
-      runTime += dt;
       const dx = target.x - state.x;
       const dz = target.z - state.z;
       const distance = Math.hypot(dx, dz);
-      const moving = sinceInput < 1.3 || returning;
-      const desiredYaw = distance > .1 && moving ? Math.atan2(dx, dz) : -.15;
+      const moving = following || returning;
+      // Screen-height travel keeps its face in view rather than turning its back.
+      const desiredYaw = distance > .1 && moving ? clamp(Math.atan2(dx, Math.abs(dz) + .3), -1.15, 1.15) : -.25;
       state.yaw += angleDelta(state.yaw, desiredYaw) * (1 - Math.exp(-dt * (state.phase === "pounce" ? 7 : 11)));
       state.gaze = clamp(angleDelta(state.yaw, Math.atan2(dx, dz)), -.6, .6) * (moving ? 1 : 0);
       state.headPitch += ((moving ? lookHeight : 0) - state.headPitch) * (1 - Math.exp(-dt * 8));
@@ -90,21 +89,19 @@ export function createCatMotion({ x = 1.4, z = 0, bounds = [-.25, 3.2, -1.2, 1.1
         state.speed = 0;
         if (t === 1) setPhase("watch");
       } else {
-        interest = moving && !returning && distance > .85 ? interest + dt : 0;
-        if (interest > .38 && cooldown <= 0) this.pounce();
-        if (moving && distance > .27) {
-          const desiredSpeed = Math.min(2.4, distance * 3.3);
-          state.speed += (desiredSpeed - state.speed) * (1 - Math.exp(-dt * 11));
-          const step = Math.min(state.speed * dt, distance - .2);
+        if (moving && distance > .12) {
+          const desiredSpeed = Math.min(1.05, distance * 1.8);
+          state.speed += (desiredSpeed - state.speed) * (1 - Math.exp(-dt * 6));
+          const step = Math.min(state.speed * dt, distance - .10);
           state.x += dx / distance * step;
           state.z += dz / distance * step;
           if (state.phase !== "crouch") setPhase("walk");
         } else {
           state.speed *= Math.exp(-dt * 9);
-          if (returning && distance < .28) returning = false;
+          if (returning && distance < .13) returning = false;
           if (state.phase !== (sinceInput < 3 ? "watch" : "idle")) setPhase(sinceInput < 3 ? "watch" : "idle");
         }
-        state.y = state.speed > .15 ? Math.abs(Math.sin(runTime * 9)) * .025 * state.speed : 0;
+        state.y = 0;
       }
       state.x = clamp(state.x, bounds[0], bounds[1]);
       state.z = clamp(state.z, bounds[2], bounds[3]);
