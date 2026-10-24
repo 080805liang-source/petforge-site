@@ -11,7 +11,7 @@
 .cat-home .hero-section { display: block; min-height: max(660px, 100svh); overflow: hidden; isolation: isolate; background: var(--cat-paper); color: var(--cat-ink); }
 .cat-scene { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
 .cat-scene canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.cat-preview { position: absolute; z-index: 1; top: 45%; left: 68%; width: 145px; height: 165px; object-fit: contain; transform: translate(-50%, -50%); pointer-events: none; opacity: 1; transition: opacity .18s ease-out; }
+.cat-preview { position: absolute; z-index: 1; top: 48%; left: 68%; width: 145px; height: 165px; object-fit: contain; transform: translate(-50%, -50%); pointer-events: none; opacity: 1; transition: opacity .18s ease-out; }
 .cat-scene[data-ready="true"] .cat-preview { opacity: 0; }
 .cat-scene .cat-preview { will-change: opacity; }
 .cat-home .hero-copy { position: relative; z-index: 3; width: 46%; max-width: 550px; margin: 0 0 0 clamp(28px, 7vw, 136px); padding: clamp(175px, 24vh, 270px) 0 175px; pointer-events: none; }
@@ -75,7 +75,7 @@
   .cat-home .hero-actions .primary { padding-inline: 20px; gap: 14px; }
   .cat-detail { display: none; }
   .cat-floor-word { left: 6%; bottom: 19%; font-size: 10.5vw; }
-  .cat-preview { top: 54%; left: 50%; width: 108px; height: 125px; }
+  .cat-preview { top: 59%; left: 50%; width: 108px; height: 125px; }
   .cat-loading { top: 58%; right: 24px; left: 24px; max-width: none; text-align: center; }
   .cat-play-note { right: 24px; left: 24px; bottom: 84px; gap: 9px; justify-content: center; }
   .cat-note-icon { width: 25px; height: 34px; }
