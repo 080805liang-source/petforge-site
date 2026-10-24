@@ -32,7 +32,7 @@ test("the rope stays attached after rapid input before another animation frame",
     return { setAttribute: (key, value) => attributes.set(key, value), getAttribute: key => attributes.get(key), hasAttribute: key => attributes.has(key), removeAttribute: key => attributes.delete(key), classList: { add() {}, remove() {} }, remove() {}, addEventListener() {}, removeEventListener() {} };
   };
   const svg = node();
-  const parts = { ".teaser-handle": node(), ".teaser-string": node(), ".teaser-feathers": node() };
+  const parts = { ".teaser-rig": node(), ".teaser-string": node(), ".teaser-feathers": node() };
   svg.querySelector = selector => parts[selector];
   let queuedFrame;
   const original = new Map();
@@ -48,14 +48,16 @@ test("the rope stays attached after rapid input before another animation frame",
   }
   t.after(() => { for (const [name, descriptor] of original) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name]; } });
   const teaser = createTeaser(node(), node(), { reducedMotion: () => false });
+  assert.match(svg.innerHTML, /class="teaser-rig">[\s\S]*class="teaser-handle"[\s\S]*class="teaser-string"[\s\S]*class="teaser-feathers"[\s\S]*<\/g>/);
   function attached(x, y) {
-    assert.equal(parts[".teaser-handle"].getAttribute("transform"), `translate(${x} ${y})`);
+    assert.equal(parts[".teaser-rig"].getAttribute("transform"), `translate(${x} ${y})`);
     const path = parts[".teaser-string"].getAttribute("d");
-    assert.ok(path.startsWith(`M${x + 26} ${y - 38}Q`));
+    assert.ok(path.startsWith("M26 -38Q"));
     const end = path.match(/ ([\d.e+-]+) ([\d.e+-]+)$/);
     const feather = parts[".teaser-feathers"].getAttribute("transform");
-    assert.ok(feather.startsWith(`translate(${end[1]} ${end[2]})`));
-    assert.ok(Math.hypot(Number(end[1]) - x - 26, Number(end[2]) - y + 38) <= 105.001);
+    const featherPosition = feather.match(/^translate\(([\d.e+-]+) ([\d.e+-]+)\)/);
+    assert.deepEqual(end.slice(1).map(Number), featherPosition.slice(1).map(Number));
+    assert.ok(Math.hypot(Number(end[1]) - 26, Number(end[2]) + 38) <= 105.001);
   }
   teaser.move(100, 100);
   attached(100, 100);

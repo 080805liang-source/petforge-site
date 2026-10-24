@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { createCatMotion } from "./cat-motion.js?v=voxel-20261023-r1";
 import { createKitten } from "./kitten-model.js?v=voxel-20261023-r1";
-import { createTeaser } from "./teaser-cursor.js?v=teaser-20261023-r3";
+import { createTeaser } from "./teaser-cursor.js?v=teaser-20261024-r4";
 
 const playground = document.querySelector("#cat-playground");
 const container = document.querySelector("#cat-scene");
