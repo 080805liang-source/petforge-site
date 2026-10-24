@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="PET FORGE 帮助中心：桌宠制作、账号、下载和 Windows 安装问题排查。">
+    <title>PET FORGE 支持</title>
+    <link rel="stylesheet" href="styles/main.css?v=stable-20260906">
+    <link rel="stylesheet" href="styles/cat-home.css?v=kitten-ready-20261024-r2">
+    <link rel="stylesheet" href="styles/support.css?v=support-20261024-r1">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#fbfcfb">
+    <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
+    <script src="scripts/i18n.js?v=i18n-20261024-r1" defer></script>
+  </head>
+  <body class="support-page cat-home">
+    <header class="site-header support-header">
+      <a class="brand" href="index.html" aria-label="返回 PET FORGE 首页"><img class="brand-cat-mark" src="assets/brand-cat-head.svg" width="34" height="34" alt=""><span>PET FORGE</span></a>
+      <nav class="nav-links" aria-label="主导航"><a href="creator.html#studio">制作桌宠</a><a class="is-active" href="support.html">帮助与支持</a></nav>
+      <div class="header-actions">
+        <label class="language-control"><span class="sr-only">语言</span><select data-language-select aria-label="语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="ja">日本語</option><option value="it">Italiano</option><option value="es">Español</option><option value="fr">Français</option></select></label>
+        <a class="nav-cta support-maker-link" href="creator.html#studio">进入创作台</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="support-hero" aria-labelledby="support-title">
+        <p class="support-kicker">PET FORGE · 帮助中心</p>
+        <h1 id="support-title">遇到问题？<br>先从这里找答案。</h1>
+        <p class="support-lead">按主题浏览排查步骤。还没解决，可以直接发邮件，我会查看。</p>
+        <a class="support-email" href="mailto:3903345807@qq.com?subject=PET%20FORGE%20%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.5 6.5h17v11h-17z" stroke="currentColor" stroke-width="1.6"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>邮件反馈</span><strong>3903345807@qq.com</strong>
+        </a>
+        <p class="support-contact-note">反馈时请附上问题步骤、浏览器或 Windows 版本、页面提示截图。不要发送密码或验证码。</p>
+      </section>
+
+      <div class="support-faq-wrap">
+        <section class="faq-group" aria-labelledby="faq-download-title">
+          <h2 id="faq-download-title">下载与 Windows 安全</h2>
+          <details><summary>点击“生成”后没有看到下载文件？</summary><div class="faq-answer"><p>先确认已上传图片、已登录且账号还有可用次数。生成状态完成后，浏览器会下载一个 `.zip` 文件，不是单独的 `.exe`。</p><p>打开 Edge 或 Chrome 的下载列表，检查是否被浏览器暂停；如提示允许多个文件下载，请允许本站下载。仍没有文件时，清除失败下载记录后刷新页面再试，并检查系统“下载”文件夹。</p></div></details>
+          <details><summary>下载的 ZIP 怎么打开？</summary><div class="faq-answer"><p>在文件管理器中右键 ZIP，选择“全部解压”，再进入解压后的文件夹双击 `PetForge.exe`。不要在压缩包预览窗口里直接运行。</p><p>请保留同一文件夹里的 `PetForge.exe`、`config.json` 和 `assets` 文件夹，不要只移动 EXE。这个版本是便携包，不是安装向导。</p></div></details>
+          <details><summary>Windows 显示“未知发布者”或 SmartScreen 提示怎么办？</summary><div class="faq-answer"><p>目前公开桌宠包尚未使用受信任的代码签名证书，因此 Windows 可能提示无法验证发布者。这个提示本身不能证明文件有毒，也不能证明文件一定安全。</p><p>只从 PET FORGE 官方网站下载，并可先用 Microsoft Defender 扫描文件。若不确定来源或不放心，请取消运行；不要关闭 Defender、SmartScreen，也不要添加排除项来绕过提示。</p></div></details>
+          <details><summary>PetForge.exe 双击后没有窗口或马上退出？</summary><div class="faq-answer"><p>确认 ZIP 已完整解压，并且 EXE、配置文件和 `assets` 仍在一起。把整个文件夹放在本机一个固定位置（例如“下载”或“桌面”），再启动一次；不要从压缩包、网盘预览或临时目录运行。</p><p>如果仍退出，请邮件附上 Windows 版本、启动步骤和错误截图。不要把账号密码、邮箱验证码或个人文件发来。</p></div></details>
+        </section>
+
+        <section class="faq-group" aria-labelledby="faq-account-title">
+          <h2 id="faq-account-title">注册、登录与使用次数</h2>
+          <details><summary>邮箱和手机号注册有什么区别？</summary><div class="faq-answer"><p>在注册页先选择一种方式：邮箱注册使用邮箱验证码，手机号注册使用短信验证码；验证码必须和所选方式一致。注册时需要填写至少 8 位密码，并再次确认。</p><p>登录时也要选择注册时使用的同一身份方式。邮箱和手机号不要互相替代尝试。</p></div></details>
+          <details><summary>验证码没有收到，应该怎么排查？</summary><div class="faq-answer"><p>邮箱请检查地址拼写、垃圾邮件和广告邮件文件夹；手机请确认号码正确且可以接收短信。页面发送按钮会有短暂冷却，请等待后再试，避免连续点击。</p><p>如果页面明确提示账号服务未配置或暂时无法连接，稍后再试仍不行，请邮件反馈发生时间和提示截图；不要在邮件里提供验证码或密码。</p></div></details>
+          <details><summary>注册时提示密码不一致或密码无效？</summary><div class="faq-answer"><p>密码至少 8 位；注册表单中的“密码”和“再次确认密码”必须完全一致。注意检查输入法、前后空格和大小写，再重新输入两遍。</p></div></details>
+          <details><summary>付款后使用次数还没有到账？</summary><div class="faq-answer"><p>当前套餐是 ¥9.90 购买 3 次。付款后保留订单号，次数需要管理员确认订单后才会到账，不是扫码后即时自动确认。</p><p>请从帮助页邮件联系，并写上订单号、登录邮箱和付款时间。截图请遮住支付二维码、完整账户信息等不相关隐私。</p></div></details>
+          <details><summary>每个操作都会扣一次吗？</summary><div class="faq-answer"><p>只有生成 Windows 桌宠 ZIP 时扣 1 次。导出制作配置不会额外扣次数，但当前创作台仍要求登录并有可用次数后才能操作受限功能。</p></div></details>
+        </section>
+
+        <section class="faq-group" aria-labelledby="faq-create-title">
+          <h2 id="faq-create-title">图片与桌宠制作</h2>
+          <details><summary>支持什么图片？图片太大或预览失败怎么办？</summary><div class="faq-answer"><p>支持 PNG、JPG/JPEG 和 WEBP。透明背景的 PNG 通常更适合桌宠。大图片会占用较多浏览器内存；如果预览卡住，可以先把图片缩小或压缩，再用新版 Edge 或 Chrome 重试。</p><p>桌宠创作页的预览和生成在当前浏览器中处理图片；只有你主动发布到创意工坊时，图片和作品资料才会上传并公开展示。</p></div></details>
+          <details><summary>“生成”按钮不可用或提示没有次数？</summary><div class="faq-answer"><p>依次检查：已选择图片、预览处理已完成、账号已登录、还有可用次数。更换风格后等预览完成，再点击生成。</p><p>如果登录状态反复消失，刷新页面重新登录；如提示账号服务无法连接，先确认网络，再稍后重试。</p></div></details>
+          <details><summary>生成提示桌宠运行核心下载失败？</summary><div class="faq-answer"><p>生成 ZIP 时，网页还需要从本站读取桌宠运行文件。刷新到最新版后重试，并确认网络没有拦截本站文件下载。</p><p>如果仍显示 HTTP 错误或“文件不完整”，请邮件提供错误提示、浏览器版本和发生时间；不要反复生成消耗次数，先联系支持确认。</p></div></details>
+          <details><summary>设置怎么保存？刷新后还会保留吗？</summary><div class="faq-answer"><p>创作台不会自动备份未导出的编辑状态。完成设置后，使用“导出制作配置”保存 JSON 文件；生成包也包含当时的配置。刷新页面前先保存需要留存的内容。</p></div></details>
+          <details><summary>快捷入口没有打开目标软件？</summary><div class="faq-answer"><p>网址类型适合网站；软件类型需要目标电脑已安装对应程序；文件或文件夹路径必须在那台电脑上存在。检查路径、应用协议和安装位置，再重新生成桌宠包。</p><p>你电脑上的本地路径不会自动适用于其他用户的电脑；分享桌宠时请优先使用网址，或说明对方需要自行调整的路径。</p></div></details>
+        </section>
+
+        <section class="faq-group" aria-labelledby="faq-site-title">
+          <h2 id="faq-site-title">网站、隐私与其他问题</h2>
+          <details><summary>我上传的图片会被网站保存吗？</summary><div class="faq-answer"><p>制作页的预览和桌宠包生成在浏览器本地处理图片。若你主动把作品发布到创意工坊，作品图片、标题、说明和配置会上传以供公开浏览；请勿发布含私人信息或未经授权的图片。</p></div></details>
+          <details><summary>封面语言切换后会保存吗？</summary><div class="faq-answer"><p>语言选择会保存在当前浏览器，下次打开本站会继续使用。切换只改变网站界面文字，不会翻译你自己输入的桌宠名称、台词或上传图片。</p></div></details>
+          <details><summary>提交问题时，邮件里最好写什么？</summary><div class="faq-answer"><p>请写清楚你当时在哪个页面、按什么顺序操作、预期结果和实际结果，并附浏览器/Windows 版本与截图。如果涉及订单，再提供订单号和付款时间。</p><p>请勿发送密码、验证码、支付宝完整账单、私人照片或其他敏感资料。</p></div></details>
+        </section>
+      </div>
+
+      <section class="support-last-call">
+        <p class="support-kicker">还需要帮助？</p>
+        <h2>把问题步骤发给我。</h2>
+        <p>附上错误提示和截图，我会按你遇到的页面继续排查。</p>
+        <a class="support-email support-email-bottom" href="mailto:3903345807@qq.com?subject=PET%20FORGE%20%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88"><span>邮件联系</span><strong>3903345807@qq.com</strong></a>
+      </section>
+    </main>
+
+    <footer class="support-footer">
+      <div class="support-footer-brand"><a class="brand" href="index.html"><img class="brand-cat-mark" src="assets/brand-cat-head.svg" width="34" height="34" alt=""><span>PET FORGE</span></a><p>给你的桌面，一点陪伴。</p></div>
+      <div class="support-footer-links"><div><strong>产品</strong><a href="creator.html#studio">制作桌宠</a><a href="workshop.html">创意工坊</a></div><div><strong>支持</strong><a href="support.html">帮助中心</a><a href="mailto:3903345807@qq.com">邮件反馈</a></div><div><strong>账号</strong><a href="creator.html#studio">登录与使用</a></div></div>
+    </footer>
+    <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
+  </body>
+</html>

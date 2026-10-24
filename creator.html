@@ -23,9 +23,12 @@
         <a href="#systems">桌宠功能</a>
         <a href="#how-it-works">使用指南</a>
         <a href="workshop.html">创意工坊</a>
+        <a href="support.html">帮助与支持</a>
       </nav>
       <div class="header-actions">
         <button id="install-pwa" class="nav-cta pwa-install" type="button" hidden>安装应用</button>
+        <a class="support-icon-link" href="support.html" aria-label="帮助与支持" title="帮助与支持">?</a>
+        <label class="language-control"><span class="sr-only">语言</span><select data-language-select aria-label="语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="ja">日本語</option><option value="it">Italiano</option><option value="es">Español</option><option value="fr">Français</option></select></label>
         <button class="nav-cta" type="button" data-member-open>登录 / 购买次数</button>
       </div>
     </header>
@@ -300,8 +303,9 @@
         <button class="button secondary wide" type="button" data-payment-close>我已扫码，关闭</button>
       </section>
     </dialog>
-    <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><span>© 2026</span></footer>
+    <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/supabase-config.js?v=stable-20260906"></script>
+    <script src="scripts/i18n.js?v=i18n-20261024-r1" defer></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
     <script src="scripts/membership.js?v=auth-20260921" defer></script>
     <script src="scripts/main.js?v=zip-20260906" defer></script>

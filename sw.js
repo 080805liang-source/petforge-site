@@ -1,16 +1,19 @@
-const CACHE_NAME = "petforge-pwa-wand-attached-20261024-r1";
+const CACHE_NAME = "petforge-pwa-support-i18n-20261024-r1";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./creator.html",
   "./workshop.html",
+  "./support.html",
   "./manifest.json",
   "./styles/main.css",
   "./styles/membership.css",
   "./styles/workshop.css",
   "./styles/cat-home.css?v=kitten-ready-20261024-r2",
+  "./styles/support.css?v=support-20261024-r1",
   "./styles/creator.css?v=kitten-20261023-r8",
   "./scripts/cat-home.js?v=wand-attached-20261024-r1",
+  "./scripts/i18n.js?v=i18n-20261024-r1",
   "./scripts/cat-motion.js?v=voxel-20261023-r1",
   "./scripts/kitten-model.js?v=voxel-20261023-r1",
   "./scripts/teaser-cursor.js?v=teaser-20261024-r4",
@@ -50,7 +53,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     const page = new URL(request.url).pathname.split("/").pop();
-    const fallback = ["creator.html", "workshop.html"].includes(page) ? `./${page}` : "./index.html";
+    const fallback = ["creator.html", "workshop.html", "support.html"].includes(page) ? `./${page}` : "./index.html";
     event.respondWith(fetch(request).catch(() => caches.match(fallback)));
     return;
   }

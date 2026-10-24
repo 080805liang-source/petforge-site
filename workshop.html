@@ -10,14 +10,15 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#05070b">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
+    <script src="scripts/i18n.js?v=i18n-20261024-r1" defer></script>
     <script src="scripts/supabase-config.js"></script>
     <script type="module" src="scripts/workshop.js"></script>
   </head>
   <body class="workshop-body">
     <header class="site-header workshop-header">
       <a class="brand" href="index.html" aria-label="返回 PET FORGE 首页"><img class="brand-cat-mark" src="assets/brand-cat-head.svg" width="34" height="34" alt=""><b>PET FORGE</b></a>
-      <nav class="nav-links" aria-label="主导航"><a href="creator.html#studio">创作桌宠</a><a class="is-active" href="workshop.html">创意工坊</a></nav>
-      <div class="header-actions"><button id="install-pwa" class="nav-cta pwa-install" type="button" hidden>安装应用</button><button id="auth-trigger" class="nav-cta" type="button">登录</button><button id="publish-trigger" class="icon-command" type="button" aria-label="发布桌宠" title="发布桌宠">＋</button></div>
+      <nav class="nav-links" aria-label="主导航"><a href="creator.html#studio">创作桌宠</a><a class="is-active" href="workshop.html">创意工坊</a><a href="support.html">帮助与支持</a></nav>
+      <div class="header-actions"><button id="install-pwa" class="nav-cta pwa-install" type="button" hidden>安装应用</button><a class="support-icon-link" href="support.html" aria-label="帮助与支持" title="帮助与支持">?</a><label class="language-control"><span class="sr-only">语言</span><select data-language-select aria-label="语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="ja">日本語</option><option value="it">Italiano</option><option value="es">Español</option><option value="fr">Français</option></select></label><button id="auth-trigger" class="nav-cta" type="button">登录</button><button id="publish-trigger" class="icon-command" type="button" aria-label="发布桌宠" title="发布桌宠">＋</button></div>
     </header>
 
     <main>
@@ -63,7 +64,7 @@
       </form>
     </dialog>
 
-    <footer><span>PET FORGE</span><span>CREATED BY PEOPLE, FOR DESKTOPS.</span><span>© 2026</span></footer>
+    <footer><span>PET FORGE</span><span>CREATED BY PEOPLE, FOR DESKTOPS.</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
   </body>
 </html>

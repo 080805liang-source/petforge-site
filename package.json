@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build-static.mjs",
-    "test:cat": "node --test tests/cat-motion.test.js tests/teaser-cursor.test.js"
+    "test:cat": "node --test tests/cat-motion.test.js tests/teaser-cursor.test.js tests/i18n.test.js"
   },
   "dependencies": {}
 }

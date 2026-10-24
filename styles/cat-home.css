@@ -88,3 +88,4 @@
   .cat-home .studio-section { border-radius: 20px 20px 0 0; }
 }
 @media (prefers-reduced-motion: reduce) { .cat-home .hero-actions .primary:hover { transform: none; } }
+@media (max-width: 380px) { .cat-home .brand { gap: 6px; font-size: 10px; }.cat-home .header-actions { gap: 4px; }.cat-home .nav-cta:not(.pwa-install) { max-width: 78px; overflow: hidden; padding: 0 7px; font-size: 9px; white-space: nowrap; text-overflow: ellipsis; } }

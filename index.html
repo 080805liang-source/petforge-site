@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="styles/cat-home.css?v=kitten-ready-20261024-r2">
     <link rel="preload" as="image" href="assets/brand-cat-head.svg" fetchpriority="high">
     <link rel="preload" as="image" href="assets/voxel-kitten-preview.svg" fetchpriority="high">
+    <script src="scripts/i18n.js?v=i18n-20261024-r1" defer></script>
     <script type="importmap">{"imports":{"three":"./scripts/vendor/three/build/three.module.js","three/addons/":"./scripts/vendor/three/addons/"}}</script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#fbfcfb">
@@ -25,6 +26,8 @@
       <a class="brand" href="./" aria-label="PET FORGE 首页"><img class="brand-cat-mark" src="assets/brand-cat-head.svg" width="34" height="34" alt="" fetchpriority="high"><span>PET FORGE</span></a>
       <div class="header-actions">
         <button id="install-pwa" class="nav-cta pwa-install" type="button" hidden>安装应用</button>
+        <a class="support-icon-link" href="support.html" aria-label="帮助与支持" title="帮助与支持">?</a>
+        <label class="language-control"><span class="sr-only">语言</span><select data-language-select aria-label="语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="ja">日本語</option><option value="it">Italiano</option><option value="es">Español</option><option value="fr">Français</option></select></label>
         <a class="nav-cta" href="creator.html">进入创作台 <span aria-hidden="true">↗</span></a>
       </div>
     </header>
