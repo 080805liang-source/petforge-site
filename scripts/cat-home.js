@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { createCatMotion } from "./cat-motion.js?v=voxel-20261023-r1";
 import { createKitten } from "./kitten-model.js?v=voxel-20261023-r1";
 import { createTeaser } from "./teaser-cursor.js?v=teaser-20261023-r3";
 
 const playground = document.querySelector("#cat-playground");
 const container = document.querySelector("#cat-scene");
+const preview = document.querySelector("#cat-preview");
 const mood = document.querySelector("#cat-mood");
 const loading = document.querySelector("#cat-loading");
 const loadingText = document.querySelector("#cat-loading-text");
@@ -31,12 +31,14 @@ function fail(error) {
 
 async function start() {
   cleanup();
-  container.replaceChildren();
-  loading.hidden = false;
+  container.replaceChildren(preview);
   container.dataset.ready = "false";
   [pauseButton, resetButton, pounceButton].forEach((button) => { button.disabled = true; });
   retry.hidden = true;
-  loadingText.textContent = "小猫正在来的路上…";
+  loading.hidden = true;
+  loadingText.textContent = "三维互动暂时不可用，但你仍可制作桌宠。";
+  // Give the tiny poster and brand mark a real paint before starting WebGL setup.
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -50,13 +52,6 @@ async function start() {
   camera.position.set(0, 3, 10);
   camera.lookAt(0, 0, 0);
   const screenUp = new THREE.Vector3(0, 10, -3).normalize();
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const environment = new RoomEnvironment();
-  const environmentMap = pmrem.fromScene(environment, .04);
-  scene.environment = environmentMap.texture;
-  scene.environmentIntensity = .45;
-  environment.dispose();
-  pmrem.dispose();
   scene.add(new THREE.HemisphereLight(0xffffff, 0xd7d8c5, 1.3));
   const key = new THREE.DirectionalLight(0xfff5e7, 2.5);
   key.position.set(-3, 6, 5);
@@ -69,7 +64,7 @@ async function start() {
   shadow.renderOrder = -1;
   scene.add(shadow);
 
-  cleanup = () => { environmentMap.dispose(); renderer.dispose(); };
+  cleanup = () => renderer.dispose();
   const kitten = createKitten();
   const model = kitten.root;
   const footprint = kitten.footprint;
@@ -193,7 +188,6 @@ async function start() {
   resize();
   setPaused(paused);
   loading.hidden = true;
-  container.dataset.ready = "true";
   [pauseButton, resetButton, pounceButton].forEach((button) => { button.disabled = false; });
 
   renderer.setAnimationLoop(() => {
@@ -220,6 +214,10 @@ async function start() {
     shadow.material.opacity = .13 - pose.y * .055;
     if (lastPhase !== pose.phase) { lastPhase = pose.phase; updateMood(); }
     renderer.render(scene, camera);
+    if (container.dataset.ready !== "true") {
+      container.dataset.ready = "true";
+      loading.hidden = true;
+    }
   });
 
   function contextLost(event) { event.preventDefault(); setPaused(true); fail(new Error("WebGL context lost")); }
@@ -239,7 +237,6 @@ async function start() {
     pounceButton.removeEventListener("click", pounceDemo);
     reducedMotion.removeEventListener("change", onMotionPreference);
     scene.traverse((node) => { if (node.isMesh) { node.geometry.dispose(); for (const material of (Array.isArray(node.material) ? node.material : [node.material])) { material.map?.dispose(); material.dispose(); } } });
-    environmentMap.dispose();
     renderer.dispose();
   };
 }

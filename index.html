@@ -6,7 +6,9 @@
     <meta name="description" content="先和三维小猫玩一会儿，再制作属于你的桌面宠物。">
     <title>PET FORGE | 先和小猫打个招呼</title>
     <link rel="stylesheet" href="styles/main.css?v=stable-20260906">
-    <link rel="stylesheet" href="styles/cat-home.css?v=voxel-20261023-r2">
+    <link rel="stylesheet" href="styles/cat-home.css?v=kitten-ready-20261024-r1">
+    <link rel="preload" as="image" href="assets/brand-cat-head.svg" fetchpriority="high">
+    <link rel="preload" as="image" href="assets/voxel-kitten-preview.svg" fetchpriority="high">
     <script type="importmap">{"imports":{"three":"./scripts/vendor/three/build/three.module.js","three/addons/":"./scripts/vendor/three/addons/"}}</script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#fbfcfb">
@@ -20,7 +22,7 @@
   </head>
   <body class="cat-home">
     <header class="site-header">
-      <a class="brand" href="./" aria-label="PET FORGE 首页"><span class="brand-mark" aria-hidden="true"></span><span>PET FORGE</span></a>
+      <a class="brand" href="./" aria-label="PET FORGE 首页"><img class="brand-cat-mark" src="assets/brand-cat-head.svg" width="34" height="34" alt="" fetchpriority="high"><span>PET FORGE</span></a>
       <div class="header-actions">
         <button id="install-pwa" class="nav-cta pwa-install" type="button" hidden>安装应用</button>
         <a class="nav-cta" href="creator.html">进入创作台 <span aria-hidden="true">↗</span></a>
@@ -28,7 +30,9 @@
     </header>
     <main>
       <section id="cat-playground" class="hero-section" aria-labelledby="hero-title">
-        <div id="cat-scene" class="cat-scene" role="img" aria-label="会慢慢跟随鼠标的三维方块小猫，点击左键跳跃"></div>
+        <div id="cat-scene" class="cat-scene" role="img" aria-label="会慢慢跟随鼠标的三维方块小猫，点击左键跳跃">
+          <img id="cat-preview" class="cat-preview" src="assets/voxel-kitten-preview.svg" width="160" height="180" alt="" fetchpriority="high" decoding="async">
+        </div>
         <div class="cat-floor-word" aria-hidden="true">a little company.</div>
         <div class="hero-copy">
           <p class="cat-intro">给日常，多一点小小的陪伴。</p>
@@ -40,9 +44,8 @@
           </div>
           <p class="cat-detail">从一张你喜欢的图片开始。</p>
         </div>
-        <div id="cat-loading" class="cat-loading" role="status">
-          <span class="cat-loading-paw" aria-hidden="true">🐾</span>
-          <span id="cat-loading-text">小猫正在来的路上…</span>
+        <div id="cat-loading" class="cat-loading" role="status" hidden>
+          <span id="cat-loading-text">三维互动暂时不可用，但你仍可制作桌宠。</span>
           <button id="cat-retry" class="cat-text-control" type="button" hidden>重新加载</button>
         </div>
         <div class="cat-play-note">
@@ -58,7 +61,7 @@
         </div>
       </section>
     </main>
-    <script type="module" src="scripts/cat-home.js?v=teaser-20261023-r3"></script>
+    <script type="module" src="scripts/cat-home.js?v=kitten-ready-20261024-r1"></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
   </body>
 </html>
