@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-creator-glass-20261027-r5";
+const CACHE_NAME = "petforge-pwa-feature-cat-20261027-r1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -25,6 +25,7 @@ const APP_SHELL = [
   "./assets/teaser-wand.svg",
   "./assets/brand-cat-20261027.png",
   "./assets/voxel-kitten-preview.svg",
+  "./assets/feature-cat-white-20261027.png",
   "./assets/desktop-pet-scene.webp",
   "./scripts/main.js",
   "./scripts/membership.js",

@@ -120,7 +120,7 @@
 .creator-page .mini-window { position: relative; height: 208px; overflow: hidden; border: 1px solid #bacfc7; border-radius: 20px; background: linear-gradient(140deg, #d0e0d8, #e4ede8 70%); box-shadow: 0 14px 32px rgba(41, 72, 61, .08), inset 0 1px 0 #fff; }
 .creator-page .mini-window-bar { display: flex; gap: 5px; height: 28px; align-items: center; padding-left: 12px; border-bottom: 1px solid rgba(255, 255, 255, .6); background: rgba(255, 255, 255, .32); }
 .creator-page .mini-window-bar i { width: 5px; height: 5px; border-radius: 50%; background: #77958a; }
-.creator-page .mini-window img { position: absolute; right: 18%; bottom: 24px; width: 122px; height: 138px; }
+.creator-page .mini-window img { position: absolute; right: 14%; bottom: 25px; width: 138px; height: 138px; object-fit: contain; }
 .creator-page .mini-pet-bubble { position: absolute; top: 50px; left: 25%; display: grid; place-items: center; width: 50px; height: 38px; border-radius: 14px 14px 3px 14px; background: rgba(255, 255, 255, .85); color: #8c4b54; font-size: 23px; }
 .creator-page .mini-dock { position: absolute; bottom: 9px; left: 50%; display: flex; gap: 8px; padding: 6px 10px; border: 1px solid #fff; border-radius: 12px; background: rgba(255, 255, 255, .55); transform: translateX(-50%); }
 .creator-page .mini-dock i { width: 15px; height: 15px; border: 1px solid rgba(55, 90, 76, .15); border-radius: 5px; background: #a6c6bb; }
