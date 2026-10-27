@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-cat-icon-20261027-r1";
+const CACHE_NAME = "petforge-pwa-creator-glass-20261027-r5";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,12 +6,12 @@ const APP_SHELL = [
   "./workshop.html",
   "./support.html",
   "./manifest.json",
-  "./styles/main.css",
+  "./styles/main.css?v=stable-20260906",
   "./styles/membership.css",
   "./styles/workshop.css",
   "./styles/cat-home.css?v=kitten-ready-20261024-r2",
   "./styles/support.css?v=support-20261024-r1",
-  "./styles/creator.css?v=kitten-20261023-r8",
+  "./styles/creator.css?v=creator-glass-20261027-r5",
   "./scripts/cat-home.js?v=wand-attached-20261024-r1",
   "./scripts/i18n.js?v=i18n-20261024-r1",
   "./scripts/cat-motion.js?v=voxel-20261023-r1",
@@ -25,6 +25,7 @@ const APP_SHELL = [
   "./assets/teaser-wand.svg",
   "./assets/brand-cat-20261027.png",
   "./assets/voxel-kitten-preview.svg",
+  "./assets/desktop-pet-scene.webp",
   "./scripts/main.js",
   "./scripts/membership.js",
   "./scripts/workshop.js",
