@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-support-i18n-20261024-r1";
+const CACHE_NAME = "petforge-pwa-cat-icon-20261027-r1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -23,7 +23,7 @@ const APP_SHELL = [
   "./scripts/vendor/three/addons/utils/BufferGeometryUtils.js",
   "./scripts/vendor/three/addons/utils/SkeletonUtils.js",
   "./assets/teaser-wand.svg",
-  "./assets/brand-cat-head.svg",
+  "./assets/brand-cat-20261027.png",
   "./assets/voxel-kitten-preview.svg",
   "./scripts/main.js",
   "./scripts/membership.js",
