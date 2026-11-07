@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-motion-20261107-r1";
+const CACHE_NAME = "petforge-pwa-motion-20261107-r2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -29,7 +29,7 @@ const APP_SHELL = [
   "./assets/voxel-kitten-preview.svg",
   "./assets/feature-cat-white-20261027.png",
   "./assets/desktop-pet-scene.webp",
-  "./scripts/main.js?v=motion-20261107-r1",
+  "./scripts/main.js?v=motion-20261107-r2",
   "./scripts/membership.js?v=redeem-20261107-r2",
   "./scripts/admin.js?v=redeem-20261107-r2",
   "./scripts/analytics.js?v=admin-dashboard-20261107-r2",

@@ -508,7 +508,7 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.07-motion-60";
+const PETFORGE_BUILD_VERSION = "2026.11.07-motion-60-r2";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL("assets/PetForge.exe", document.baseURI);
