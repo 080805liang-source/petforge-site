@@ -13,7 +13,17 @@ export function createAdminTestApi(seed = {}) {
     cp_sessions: [{ _id: 'owner-token', userId: 'owner', token: 'owner-session', expiresAt: '2099-01-01T00:00:00.000Z' }, { _id: 'user-token', userId: 'user', token: 'user-session', expiresAt: '2099-01-01T00:00:00.000Z' }],
     ...seed
   };
-  const matches = (row, conditions) => Object.entries(conditions).every(([key, value]) => value && typeof value === 'object' && value.$gte !== undefined ? row[key] >= value.$gte : value && typeof value === 'object' && value.$gt !== undefined ? row[key] > value.$gt : row[key] === value);
+  const matches = (row, conditions) => Object.entries(conditions).every(([key, value]) => {
+    if (key === '$and') return value.every(item => matches(row,item));
+    if (key === '$or') return value.some(item => matches(row,item));
+    if (value && typeof value === 'object') {
+      if (value.$gte !== undefined) return row[key] >= value.$gte;
+      if (value.$gt !== undefined) return row[key] > value.$gt;
+      if (value.$neq !== undefined) return row[key] !== value.$neq;
+      if (value.$regexp !== undefined) return new RegExp(value.$regexp,value.options).test(String(row[key] || ''));
+    }
+    return row[key] === value;
+  });
   class Query {
     constructor(name) { this.name = name; this.conditions = {}; this.offset = 0; this.size = Infinity; this.order = null; }
     where(conditions) { this.conditions = conditions; return this; }
@@ -39,7 +49,7 @@ export function createAdminTestApi(seed = {}) {
     }
   }
   let transactions = Promise.resolve();
-  const db = { collection: (name) => new Query(name), command: { gt: (value) => ({ $gt: value }), gte: (value) => ({ $gte: value }), inc: (value) => ({ $inc: value }), aggregate: { sum: (value) => value } }, createCollection: async (name) => { if (rows[name]) throw new Error('Collection already exists'); rows[name] = []; }, runTransaction: (callback) => {
+  const db = { RegExp: ({regexp,options}) => ({$regexp:regexp,options}), collection: (name) => new Query(name), command: { and:value=>({$and:value}),or:value=>({$or:value}),neq:value=>({$neq:value}),gt: (value) => ({ $gt: value }), gte: (value) => ({ $gte: value }), inc: (value) => ({ $inc: value }), aggregate: { sum: (value) => value } }, createCollection: async (name) => { if (rows[name]) throw new Error('Collection already exists'); rows[name] = []; }, runTransaction: (callback) => {
     const operation = transactions.then(async () => {
       const snapshot = JSON.parse(JSON.stringify(rows));
       try { return await callback(db); }

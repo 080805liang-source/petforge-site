@@ -8,6 +8,18 @@ const png = `data:image/png;base64,${readFileSync(new URL('../assets/pwa-icon-19
 const config = { name: '像素小猫', size: 100, opacity: 100, clickLine: '你好', motionEnabled: false, shadow: false, visualStyle: 'chrome', keyboardSync: false, alwaysOnTop: true, customShortcuts: [{ label: '微信', type: 'app', target: 'weixin://', appPaths: ['%ProgramFiles%\\WeChat\\WeChat.exe'] }], safeRendering: true };
 const payload = () => ({ config: structuredClone(config), image: png, preview: png, description: '测试配置' });
 
+test('category and literal search cover every page and exclude unpublished creations', async () => {
+  const posts=Array.from({length:55},(_,i)=>({_id:`animal-${i}`,userId:'owner',author:'精选',title:`动物${i}`,description:i===49?'灰兔 [特别]':'真实动作',category:'animal',curated:true,isPublic:true,createdAt:new Date(2026,0,i+1).toISOString()}));
+  posts.push({_id:'anime-1',title:'动漫',category:'anime',curated:true,isPublic:true},{_id:'private',title:'灰兔 [特别]',category:'animal',curated:true,isPublic:false},{_id:'old-community',title:'旧作品',isPublic:true});
+  const api=createAdminTestApi({pf_workshop:posts});
+  const page=await api.call('GET','/workshop?category=animal&offset=24&limit=24');
+  assert.equal(page.body.total,55);assert.equal(page.body.posts.length,24);
+  const found=await api.call('GET','/workshop?category=animal&q='+encodeURIComponent('[特别]'));
+  assert.equal(found.status,200);assert.equal(found.body.total,1);assert.equal(found.body.posts[0].id,'animal-49');
+  const community=await api.call('GET','/workshop?category=community');
+  assert.equal(community.body.total,1);assert.equal(community.body.posts[0].id,'old-community');
+});
+
 test('publishing requires login; public readers receive the same PNG and complete safe configuration', async () => {
   const api = createAdminTestApi();
   assert.equal((await api.call('POST', '/workshop', payload())).status, 401);

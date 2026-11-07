@@ -11,7 +11,8 @@ import webbrowser
 import ctypes
 from pathlib import Path
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
+from response_bank import ResponseBank
 from ctypes import wintypes
 
 
@@ -70,6 +71,10 @@ def load_config() -> dict:
 class DesktopPet:
     def __init__(self) -> None:
         self.config = load_config()
+        self.responses = ResponseBank(BASE_DIR / 'assets' / 'responses.json')
+        self.animation_frames = []
+        self.animation_meta = {}
+        self.animation_frame_index = -1
         self.root = tk.Tk()
         self.root.title(self.config.get("name", "PetForge"))
         self.root.overrideredirect(True)
@@ -86,6 +91,8 @@ class DesktopPet:
         except tk.TclError as exc:
             self.root.destroy()
             fail(f"无法加载桌宠图片：{exc}")
+
+        self.load_animation()
 
         self.background = transparent_color(self.photo)
         self.root.configure(bg=self.background)
@@ -174,6 +181,9 @@ class DesktopPet:
     def build_menu(self) -> None:
         self.menu = tk.Menu(self.root, tearoff=False)
         self.menu.add_command(label="和我互动", command=self.interact)
+        self.menu.add_command(label="和我聊聊（本地回复）", command=self.chat)
+        for label, topic in [('给我一点鼓励', 'focus'), ('我想休息一下', 'break'), ('分享好消息', 'celebrate')]:
+            self.menu.add_command(label=label, command=lambda key=topic: self.show_bubble(self.responses.reply(topic=key), 5500))
         self.menu.add_command(
             label="看看我现在的状态",
             command=lambda: self.show_bubble(self.status_text(), 2200),
@@ -295,6 +305,7 @@ class DesktopPet:
         elif not self.dragged and not self.pointer_down:
             self.idle(now)
         self.update_particles(now)
+        self.update_animation(now)
         self.next_frame_at += FRAME_SECONDS
         if self.next_frame_at <= time.perf_counter():
             self.next_frame_at = time.perf_counter() + FRAME_SECONDS
@@ -376,20 +387,55 @@ class DesktopPet:
         self.menu.tk_popup(event.x_root, event.y_root)
 
     def interaction_text(self, close: bool = False) -> str:
-        custom_line = str(self.config.get("clickLine", "你好，我在这里。"))[:48]
-        if self.config.get("status") == "sleeping":
-            return random.choice(["我醒啦，陪你一会儿。", "轻轻点我就好。", custom_line])
-        messages = [custom_line, "今天也陪着你。", "收到你的互动啦。", "要不要一起完成一件小事？"]
-        if close:
-            messages.extend(["好开心，贴贴！", "我们是最好的搭档。"])
-        return random.choice(messages)
+        self.interaction_count = getattr(self, 'interaction_count', 0) + 1
+        custom = str(self.config.get('clickLine', '')).strip()[:80]
+        if custom and self.interaction_count == 1 and not close:
+            return custom
+        topic = 'cuddle' if close else 'sleep' if self.config.get('status') == 'sleeping' else 'default'
+        return self.responses.reply(topic=topic)
+
+    def chat(self) -> None:
+        text = simpledialog.askstring('和桌宠聊聊', '想聊什么？支持学习、工作、心情和日常。\n使用本地回复库，不发送聊天内容。', parent=self.root)
+        if text and text.strip():
+            self.show_bubble(self.responses.reply(text), 6500)
+
+    def load_animation(self) -> None:
+        if not self.config.get('animationPreset'):
+            return
+        try:
+            meta = json.loads((BASE_DIR / 'assets' / 'animation.json').read_text(encoding='utf-8'))
+            width, height, count, columns = (int(meta[key]) for key in ('width', 'height', 'count', 'columns'))
+            if not (32 <= width <= 512 and 32 <= height <= 512 and 2 <= count <= 120 and 1 <= columns <= 16):
+                return
+            atlas = tk.PhotoImage(file=BASE_DIR / 'assets' / 'pet-atlas.png')
+            if atlas.width() < width * columns or atlas.height() < height * math.ceil(count / columns):
+                return
+            for index in range(count):
+                frame = tk.PhotoImage(width=width, height=height)
+                x, y = index % columns * width, index // columns * height
+                frame.tk.call(str(frame), 'copy', str(atlas), '-from', x, y, x + width, y + height)
+                self.animation_frames.append(frame)
+            self.animation_meta = meta
+            self.photo = self.animation_frames[0]
+        except (OSError, ValueError, KeyError, TypeError, tk.TclError):
+            self.animation_frames = []
+
+    def update_animation(self, now: float) -> None:
+        if not getattr(self, 'animation_frames', None) or self.pointer_down:
+            return
+        count = len(self.animation_frames)
+        fps = max(1, min(30, float(self.animation_meta.get('fps', 12))))
+        index = int(now * fps) % count
+        if index != self.animation_frame_index:
+            self.animation_frame_index = index
+            self.canvas.itemconfigure(self.pet_id, image=self.animation_frames[index])
 
     def interact(self, close: bool = False) -> None:
         self.pending_click = None
         self.animate(close=close)
         if self.config.get("clickParticles", True):
             self.spawn_particles(close=close)
-        self.show_bubble(self.interaction_text(close), 2400)
+        self.show_bubble(self.interaction_text(close), 5500)
 
     def animate(self, close: bool = False, mode: str | None = None) -> None:
         if not self.motion_enabled or self.motion_active or self.typing_active:
@@ -684,7 +730,7 @@ class DesktopPet:
         self.bubble_token += 1
         token = self.bubble_token
         self.clear_bubble()
-        safe_text = str(text)[:48]
+        safe_text = str(text)[:140]
         dark = self.config.get("bubbleStyle") == "dark"
         fill = "#17201f" if dark else "#ffffff"
         ink = "#ffffff" if dark else "#17201f"
@@ -706,6 +752,9 @@ class DesktopPet:
             font=("Microsoft YaHei UI", 10, "bold"),
         )
         self.bubble_ids = [rect, label]
+        bounds = self.canvas.bbox(label)
+        if bounds:
+            self.canvas.coords(rect, 12, 10, min(self.width - 12, 278), bounds[3] + 12)
         self.root.after(duration, lambda: self.clear_bubble_if_current(token))
 
     def clear_bubble_if_current(self, token: int) -> None:

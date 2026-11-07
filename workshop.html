@@ -6,12 +6,12 @@
     <meta name="description" content="PET FORGE 创意工坊：发现、关注并使用全球创作者的桌面宠物。">
     <title>PET FORGE Workshop</title>
     <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/workshop.css?v=workshop-preview-20261107-r1">
+    <link rel="stylesheet" href="styles/workshop.css?v=catalog-20261107-r2">
     <link rel="stylesheet" href="styles/membership.css?v=redeem-20261107-r2">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#05070b">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
-    <script src="scripts/i18n.js?v=workshop-preview-20261107-r1" defer></script>
+    <script src="scripts/i18n.js?v=catalog-20261107-r2" defer></script>
     <script src="scripts/supabase-config.js"></script>
   </head>
   <body class="workshop-body">
@@ -34,6 +34,7 @@
 
       <section id="workshop-feed" class="workshop-feed" aria-labelledby="feed-title">
         <div class="feed-toolbar"><div><p class="eyebrow"><span></span> DISCOVER / 01</p><h2 id="feed-title">创意工坊</h2></div><div class="feed-controls"><label class="search-control"><span aria-hidden="true">⌕</span><input id="workshop-search" type="search" placeholder="搜索作品或创作者"></label><select id="workshop-sort" aria-label="排序"><option value="latest">最新发布</option><option value="popular">最受欢迎</option></select></div></div>
+        <div class="workshop-categories"><label for="workshop-category">选择陪伴方式</label><select id="workshop-category"><option value="">全部作品</option><option value="animal">写实动物</option><option value="anime">动漫静态</option><option value="community">社区作品</option></select><span>模板含常用软件入口，支持本地话题互动。</span></div>
         <p id="workshop-status" class="workshop-status" role="status">正在连接创意工坊...</p>
         <div id="workshop-grid" class="workshop-grid" aria-live="polite"></div>
         <button id="workshop-more" class="button secondary" type="button" hidden>加载更多作品</button>
@@ -72,7 +73,7 @@
 
     <footer><span>PET FORGE</span><span>CREATED BY PEOPLE, FOR DESKTOPS.</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/membership.js?v=workshop-20261107-r1" defer></script>
-    <script src="scripts/workshop.js?v=workshop-preview-20261107-r1" defer></script>
+    <script src="scripts/workshop.js?v=catalog-20261107-r2" defer></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
     <script src="scripts/analytics.js?v=admin-dashboard-20261107-r2" defer></script>
   </body>

@@ -64,6 +64,8 @@ let imageBusy = false;
 let backgroundModule;
 let publishing = false;
 let workshopTemplateId = "";
+let animationPreset = "";
+let assetAttribution = "";
 let pendingWorkshopDownload = false;
 let sharedImageSize = 0;
 let previewFrameId = 0;
@@ -111,6 +113,8 @@ function getConfig() {
     shadow: Boolean(petShadow.checked),
     motionEnabled: Boolean(petMotion.checked),
     targetFps: 120,
+    animationPreset,
+    assetAttribution,
     hoverEffect: hoverEffect.value,
     leaveEffect: leaveEffect.value,
     idleBehavior: idleBehavior.value,
@@ -223,7 +227,7 @@ function updatePreview() {
   previewEmpty.hidden = Boolean(petImage.files?.[0]);
   previewPet.hidden = !petImage.files?.[0];
   if (previewStatus) {
-    previewStatus.textContent = petStatus.options[petStatus.selectedIndex].text;
+    previewStatus.textContent = petStatus.selectedOptions[0]?.text || '陪伴中';
   }
   previewBubble.classList.toggle("style-glass", bubbleStyle.value === "glass");
   previewBubble.classList.toggle("style-dark", bubbleStyle.value === "dark");
@@ -568,7 +572,7 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.07-smooth-120fps-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.07-catalog-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL("assets/PetForge.exe", document.baseURI);
@@ -595,11 +599,48 @@ async function buildPackageInBrowser() {
   const pngBytes = await getPetPngBytes(config);
   config.packageVersion = "zip-portable-v2";
   const appBytes = await getDesktopAppBytes();
+  const replyResponse = await fetch(new URL('assets/responses.json', document.baseURI));
+  if (!replyResponse.ok) throw new Error('互动回复库下载失败，请重试。');
+  const extraFiles = [{name:'assets/responses.json',data:new Uint8Array(await replyResponse.arrayBuffer())}];
+  if (config.animationPreset) {
+    if (!/^animal-\d{1,12}$/.test(config.animationPreset)) throw new Error('动物动作配置无效。');
+    const prefix = `assets/workshop/animals/${config.animationPreset}`;
+    const [metaResponse, atlasResponse] = await Promise.all([fetch(new URL(`${prefix}-animation.json`,document.baseURI)),fetch(new URL(`${prefix}-atlas.webp`,document.baseURI))]);
+    if (!metaResponse.ok || !atlasResponse.ok) throw new Error('动物动作素材下载失败，请重试。');
+    const meta = await metaResponse.json();
+    if (!Number.isInteger(meta.count) || meta.count < 2 || meta.count > 120) throw new Error('动物动作文件无效。');
+    let atlas = await atlasResponse.blob();
+    // Export the same chosen size for every frame, including after resizing.
+    {
+      const image = await createImageBitmap(atlas);
+      const ratio = config.size === sharedImageSize ? 1 : Math.max(96,Math.min(420,Math.round(220*config.size/100))) / meta.height;
+      const width=Math.round(meta.width*ratio),height=Math.round(meta.height*ratio);
+      const canvas=document.createElement('canvas');canvas.width=width*meta.columns;canvas.height=height*Math.ceil(meta.count/meta.columns);
+      const context=canvas.getContext('2d');
+      for(let i=0;i<meta.count;i++) context.drawImage(image,(i%meta.columns)*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,(i%meta.columns)*width,Math.floor(i/meta.columns)*height,width,height);
+      atlas=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));image.close();meta.width=width;meta.height=height;
+    }
+    if (config.visualStyle !== 'original') {
+      const original=await createImageBitmap(atlas);
+      const output=document.createElement('canvas');output.width=original.width;output.height=original.height;
+      const context=output.getContext('2d'),cell=document.createElement('canvas');cell.width=meta.width;cell.height=meta.height;
+      const cellContext=cell.getContext('2d');
+      for(let i=0;i<meta.count;i++) {
+        const x=i%meta.columns*meta.width,y=Math.floor(i/meta.columns)*meta.height;
+        cellContext.clearRect(0,0,meta.width,meta.height);cellContext.drawImage(original,x,y,meta.width,meta.height,0,0,meta.width,meta.height);
+        const frame=await createImageBitmap(await renderStyle(await new Promise(resolve=>cell.toBlob(resolve,'image/png')),config.visualStyle));
+        context.drawImage(frame,x,y,meta.width,meta.height);frame.close();
+      }
+      original.close();atlas=await new Promise(resolve=>output.toBlob(resolve,'image/png'));
+    }
+    extraFiles.push({name:'assets/animation.json',data:JSON.stringify(meta)},{name:'assets/pet-atlas.png',data:new Uint8Array(await atlas.arrayBuffer())});
+  }
+  if(config.assetAttribution) extraFiles.push({name:'素材来源与授权.txt',data:config.assetAttribution});
   return { name, blob: createZip([
     { name: "README.md", data: packageReadme(config) },
     { name: "PetForge.exe", data: appBytes },
     { name: "config.json", data: JSON.stringify(config, null, 2) },
-    { name: "assets/pet.png", data: pngBytes }
+    { name: "assets/pet.png", data: pngBytes }, ...extraFiles
   ]) };
 }
 
@@ -609,6 +650,8 @@ petImage?.addEventListener("change", () => {
 
   currentImageName = file.name;
   workshopTemplateId = "";
+  animationPreset = "";
+  assetAttribution = "";
   pendingWorkshopDownload = false;
   preparePetImage();
 });
@@ -736,13 +779,15 @@ async function loadWorkshopTemplate() {
     if (!response.ok || !result.post) throw new Error(result.error || "未找到这个工坊作品");
     const template = result.post;
     const templateConfig = template.config || {};
+    animationPreset = /^animal-\d{1,12}$/.test(templateConfig.animationPreset || '') ? templateConfig.animationPreset : '';
+    assetAttribution = String(templateConfig.assetAttribution || '').slice(0,8000);
     petName.value = templateConfig.name || template.title;
     petLine.value = templateConfig.clickLine || petLine.value;
     petSize.value = templateConfig.size || petSize.value;
     petOpacity.value = templateConfig.opacity || petOpacity.value;
-    petStatus.value = templateConfig.status || petStatus.value;
+    petStatus.value = [...petStatus.options].some(option => option.value === templateConfig.status) ? templateConfig.status : 'companion';
     petAnimation.value = templateConfig.clickAnimation || petAnimation.value;
-    bubbleStyle.value = templateConfig.bubbleStyle || bubbleStyle.value;
+    bubbleStyle.value = [...bubbleStyle.options].some(option => option.value === templateConfig.bubbleStyle) ? templateConfig.bubbleStyle : 'soft';
     petPosition.value = templateConfig.position || petPosition.value;
     alwaysOnTop.checked = templateConfig.alwaysOnTop === true;
     desktopOnly.checked = templateConfig.desktopOnly === true;
@@ -754,7 +799,7 @@ async function loadWorkshopTemplate() {
     doubleClickEffect.value = templateConfig.doubleClickEffect || doubleClickEffect.value;
     cursorFollowMode.value = templateConfig.cursorFollowMode || cursorFollowMode.value;
     proactiveFrequency.value = templateConfig.proactiveFrequency || proactiveFrequency.value;
-    keyboardReaction.value = templateConfig.keyboardReaction || keyboardReaction.value;
+    keyboardReaction.value = [...keyboardReaction.options].some(option => option.value === templateConfig.keyboardReaction) ? templateConfig.keyboardReaction : 'quiet';
     wanderEnabled.checked = templateConfig.wanderEnabled === true;
     hoverBubble.checked = templateConfig.hoverBubble !== false;
     clickParticles.checked = templateConfig.clickParticles !== false;
