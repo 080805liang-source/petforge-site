@@ -29,6 +29,7 @@ const shortcutList = document.querySelector("#shortcut-list");
 const alwaysOnTop = document.querySelector("#always-on-top");
 const desktopOnly = document.querySelector("#desktop-only");
 const petShadow = document.querySelector("#pet-shadow");
+const petMotion = document.querySelector("#pet-motion");
 const hoverEffect = document.querySelector("#hover-effect");
 const leaveEffect = document.querySelector("#leave-effect");
 const idleBehavior = document.querySelector("#idle-behavior");
@@ -54,6 +55,8 @@ let selectedStyle = "original";
 let styledPetBlob = null;
 let previewImageUrl = "";
 let styleRequestId = 0;
+let previewFrameId = 0;
+let previewLastFrame = 0;
 
 const commonShortcutPresets = {
   "浏览器": { label: "打开浏览器", type: "url", target: "https://www.baidu.com/" },
@@ -95,6 +98,8 @@ function getConfig() {
     safeRendering: true,
     desktopOnly: Boolean(desktopOnly.checked),
     shadow: Boolean(petShadow.checked),
+    motionEnabled: Boolean(petMotion.checked),
+    targetFps: 60,
     hoverEffect: hoverEffect.value,
     leaveEffect: leaveEffect.value,
     idleBehavior: idleBehavior.value,
@@ -213,7 +218,25 @@ function updatePreview() {
   previewBubble.classList.toggle("style-dark", bubbleStyle.value === "dark");
   sizeOutput.textContent = `${size}%`;
   opacityOutput.textContent = `${opacity}%`;
+  const motion = petMotion.checked;
+  [petAnimation, hoverEffect, leaveEffect, idleBehavior, doubleClickEffect, cursorFollowMode, proactiveFrequency, keyboardReaction, wanderEnabled, clickParticles, keyboardSync].forEach((control) => { control.disabled = !motion; });
+  if (motion && !previewPet.hidden && !document.hidden) {
+    if (!previewFrameId) previewFrameId = requestAnimationFrame(animatePreview);
+  } else {
+    cancelAnimationFrame(previewFrameId);
+    previewFrameId = 0;
+    previewPet.style.transform = "none";
+  }
 }
+
+function animatePreview(timestamp) {
+  if (timestamp - previewLastFrame >= 1000 / 60 - .5) {
+    previewPet.style.transform = `translateY(${Math.sin(timestamp / 600) * 3}px)`;
+    previewLastFrame = timestamp;
+  }
+  previewFrameId = requestAnimationFrame(animatePreview);
+}
+document.addEventListener("visibilitychange", updatePreview);
 
 function makeCrcTable() {
   const table = new Uint32Array(256);
@@ -480,14 +503,16 @@ function packageReadme(config) {
 - PetForge.exe 已包含运行环境，不需要安装 Python。
 - 右键桌宠可以打开快捷菜单。
 - 左键拖拽可以移动桌宠。
-- 左键点击、鼠标互动和键盘同步会使用你在网站里选择的效果。
+- 默认静态、无阴影。可在右键菜单随时切换“显示柔和阴影”和“动态模式”。
+- 动态模式以 60 帧/秒为目标；开启后，点击、鼠标互动和键盘同步会使用你选择的效果。
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.09.06-zip-stable";
+const PETFORGE_BUILD_VERSION = "2026.11.07-motion-60";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL("assets/PetForge.exe", document.baseURI);
+  appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
   let response;
   try {
     response = await fetch(appUrl, { cache: "no-store" });
@@ -539,7 +564,7 @@ stylePresets.forEach((preset) => {
   });
 });
 
-[petLine, petSize, petOpacity, petStatus, bubbleStyle, petShadow].forEach((control) => {
+[petLine, petSize, petOpacity, petStatus, bubbleStyle, petShadow, petMotion].forEach((control) => {
   control?.addEventListener("input", updatePreview);
   control?.addEventListener("change", updatePreview);
 });
@@ -618,7 +643,8 @@ async function loadWorkshopTemplate() {
     petPosition.value = templateConfig.position || petPosition.value;
     alwaysOnTop.checked = templateConfig.alwaysOnTop === true;
     desktopOnly.checked = templateConfig.desktopOnly === true;
-    petShadow.checked = templateConfig.shadow !== false;
+    petShadow.checked = templateConfig.shadow === true;
+    petMotion.checked = templateConfig.motionEnabled === true;
     hoverEffect.value = templateConfig.hoverEffect || hoverEffect.value;
     leaveEffect.value = templateConfig.leaveEffect || leaveEffect.value;
     idleBehavior.value = templateConfig.idleBehavior || idleBehavior.value;

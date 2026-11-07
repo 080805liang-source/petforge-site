@@ -8,6 +8,7 @@
   letter-spacing: 0;
 }
 .creator-page [hidden] { display: none !important; }
+.creator-page select:disabled, .creator-page .interaction-options input:disabled { opacity: .48; cursor: not-allowed; }
 .creator-page :focus-visible { outline: 2px solid var(--creator-mint); outline-offset: 4px; }
 .creator-page .page-slide { scroll-margin-top: 118px; }
 .creator-page .slide-rail { display: none; }

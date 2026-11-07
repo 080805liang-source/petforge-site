@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import random
 import sys
 import time
@@ -23,6 +24,16 @@ def app_dir() -> Path:
 BASE_DIR = app_dir()
 CONFIG_PATH = BASE_DIR / "config.json"
 IMAGE_PATH = BASE_DIR / "assets" / "pet.png"
+FRAME_SECONDS = 1 / 60
+
+
+def motion_offset(points: list[tuple[float, float]], elapsed: float, duration: float) -> tuple[float, float]:
+    progress = max(0.0, min(1.0, elapsed / duration)) * (len(points) - 1)
+    index = min(int(progress), len(points) - 2)
+    blend = progress - index
+    blend = blend * blend * (3 - 2 * blend)
+    start, end = points[index], points[index + 1]
+    return start[0] + (end[0] - start[0]) * blend, start[1] + (end[1] - start[1]) * blend
 
 
 def fail(message: str) -> None:
@@ -81,17 +92,9 @@ class DesktopPet:
             highlightthickness=0,
         )
         self.canvas.pack()
-        self.shadow_id: int | None = None
-        if self.config.get("shadow", True):
-            self.shadow_id = self.canvas.create_oval(
-                34,
-                self.photo.height() + 42,
-                self.width - 34,
-                self.photo.height() + 76,
-                fill="#222222",
-                outline="",
-                stipple="gray25",
-            )
+        self.shadow_ids: list[int] = []
+        self.shadow_enabled = bool(self.config.get("shadow", False))
+        self.set_shadow_enabled(self.shadow_enabled)
         self.pet_base_x = self.width // 2
         self.pet_base_y = self.photo.height() // 2 + 28
         self.pet_id = self.canvas.create_image(
@@ -102,8 +105,16 @@ class DesktopPet:
         self.bubble_ids: list[int] = []
         self.drag_start = (0, 0)
         self.dragged = False
-        self.idle_phase = 0
         self.motion_active = False
+        self.motion_points: list[tuple[float, float]] = []
+        self.motion_started = 0.0
+        self.motion_duration = 0.0
+        self.motion_enabled = False
+        self.frame_timer = None
+        self.keyboard_timer = None
+        self.wander_timer = None
+        self.timer_precision = False
+        self.particles: list[dict] = []
         self.pending_click: str | None = None
         self.double_click_pending = False
         self.aura_id: int | None = None
@@ -113,18 +124,15 @@ class DesktopPet:
         self.last_cursor_near = False
         self.last_proactive_at = 0.0
         self.typing_active = False
+        self.typing_started = 0.0
         self.typing_ids: list[int] = []
         self.last_typing_hint_at = 0.0
         self.place_window()
         self.build_menu()
         self.bind_events()
+        self.root.bind("<Destroy>", self.on_destroy, add="+")
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
-        self.root.after(120, self.idle)
-        self.root.after(160, self.track_cursor)
-        if self.config.get("keyboardSync", False):
-            self.root.after(90, self.track_keyboard)
-        if self.config.get("wanderEnabled", False):
-            self.root.after(random.randint(18000, 28000), self.wander)
+        self.set_motion_enabled(bool(self.config.get("motionEnabled", True)))
         if self.desktop_only and sys.platform.startswith("win"):
             self.root.after(250, self.sync_desktop_visibility)
 
@@ -173,9 +181,103 @@ class DesktopPet:
                     ),
                 )
         self.menu.add_separator()
+        self.shadow_var = tk.BooleanVar(value=self.shadow_enabled)
+        self.motion_var = tk.BooleanVar(value=bool(self.config.get("motionEnabled", True)))
+        self.menu.add_checkbutton(label="显示柔和阴影", variable=self.shadow_var, command=lambda: self.set_shadow_enabled(self.shadow_var.get(), persist=True))
+        self.menu.add_checkbutton(label="动态模式（目标 60 帧/秒）", variable=self.motion_var, command=lambda: self.set_motion_enabled(self.motion_var.get(), persist=True))
         self.menu.add_command(label="隐藏 10 秒", command=self.hide_temporarily)
         self.menu.add_command(label="切换始终置顶", command=self.toggle_topmost)
         self.menu.add_command(label="退出桌宠", command=self.root.destroy)
+
+    def save_preferences(self) -> None:
+        self.config.update(shadow=self.shadow_enabled, motionEnabled=self.motion_enabled, targetFps=60)
+        try:
+            CONFIG_PATH.write_text(json.dumps(self.config, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError:
+            self.show_bubble("设置已在本次运行生效，当前文件夹无法保存设置。", 2600)
+
+    def set_shadow_enabled(self, enabled: bool, persist: bool = False) -> None:
+        self.shadow_enabled = enabled
+        for item in self.shadow_ids:
+            self.canvas.delete(item)
+        self.shadow_ids = []
+        if enabled:
+            center_y = self.photo.height() + 48
+            # Layer light tones instead of a solid black ellipse; Windows Tk
+            # does not consistently apply stipple patterns to oval fills.
+            for inset, color in [(0, "#eeeae3"), (8, "#e8e4dc"), (16, "#e1ddd5"), (24, "#dad6cf")]:
+                item = self.canvas.create_oval(44 + inset, center_y - 10 + inset / 4, self.width - 44 - inset, center_y + 10 - inset / 4, fill=color, outline="")
+                self.canvas.tag_lower(item)
+                self.shadow_ids.append(item)
+        if persist:
+            self.save_preferences()
+
+    def set_motion_enabled(self, enabled: bool, persist: bool = False) -> None:
+        self.motion_enabled = enabled
+        for field in ("frame_timer", "keyboard_timer", "wander_timer"):
+            timer = getattr(self, field)
+            if timer is not None:
+                self.root.after_cancel(timer)
+                setattr(self, field, None)
+        if sys.platform.startswith("win"):
+            if enabled and not self.timer_precision:
+                self.timer_precision = ctypes.windll.winmm.timeBeginPeriod(1) == 0
+            elif not enabled and self.timer_precision:
+                ctypes.windll.winmm.timeEndPeriod(1)
+                self.timer_precision = False
+        self.motion_active = False
+        self.typing_active = False
+        if self.aura_id is not None:
+            self.canvas.delete(self.aura_id)
+            self.aura_id = None
+        for item in self.typing_ids:
+            self.canvas.delete(item)
+        self.typing_ids = []
+        for particle in self.particles:
+            self.canvas.delete(particle["id"])
+        self.particles = []
+        self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y)
+        if enabled:
+            now = time.perf_counter()
+            self.idle_started = now
+            self.next_idle_action = now + 6
+            self.last_frame_at = now
+            self.next_frame_at = now + FRAME_SECONDS
+            self.frame_timer = self.root.after(17, self.frame)
+            if self.config.get("keyboardSync", False):
+                self.keyboard_timer = self.root.after(90, self.track_keyboard)
+            if self.config.get("wanderEnabled", False):
+                self.wander_timer = self.root.after(random.randint(18000, 28000), self.wander)
+        if persist:
+            self.save_preferences()
+
+    def on_destroy(self, event: tk.Event) -> None:
+        if event.widget == self.root and self.timer_precision:
+            ctypes.windll.winmm.timeEndPeriod(1)
+            self.timer_precision = False
+
+    def frame(self) -> None:
+        self.frame_timer = None
+        if not self.motion_enabled:
+            return
+        now = time.perf_counter()
+        delta = min(now - self.last_frame_at, .1)
+        self.last_frame_at = now
+        self.track_cursor(delta)
+        if self.motion_active:
+            elapsed = now - self.motion_started
+            x, y = motion_offset(self.motion_points, elapsed, self.motion_duration)
+            self.canvas.coords(self.pet_id, self.pet_base_x + x, self.pet_base_y + y)
+            self.motion_active = elapsed < self.motion_duration
+        elif self.typing_active:
+            self.play_typing_step(now)
+        elif not self.dragged:
+            self.idle(now)
+        self.update_particles(now)
+        self.next_frame_at += FRAME_SECONDS
+        if self.next_frame_at <= time.perf_counter():
+            self.next_frame_at = time.perf_counter() + FRAME_SECONDS
+        self.frame_timer = self.root.after(max(1, math.ceil((self.next_frame_at - time.perf_counter()) * 1000)), self.frame)
 
     def bind_events(self) -> None:
         self.canvas.bind("<ButtonPress-1>", self.start_drag)
@@ -250,9 +352,8 @@ class DesktopPet:
         self.show_bubble(self.interaction_text(close), 2400)
 
     def animate(self, close: bool = False, mode: str | None = None) -> None:
-        if self.motion_active:
+        if not self.motion_enabled or self.motion_active or self.typing_active:
             return
-        self.motion_active = True
         mode = mode or self.config.get("clickAnimation", "jump")
         if mode == "shake":
             offsets = [(-10, 0), (10, 0), (-7, 0), (7, 0), (0, 0)]
@@ -280,37 +381,37 @@ class DesktopPet:
             offsets = [(0, lift), (0, lift - 8), (0, -8), (0, 0)]
         self.play_motion(offsets)
 
-    def play_motion(self, offsets: list[tuple[int, int]], index: int = 0) -> None:
-        if index >= len(offsets):
-            self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y)
-            self.motion_active = False
+    def play_motion(self, offsets: list[tuple[int, int]]) -> None:
+        if not self.motion_enabled or self.typing_active:
             return
-        x_offset, y_offset = offsets[index]
-        self.canvas.coords(self.pet_id, self.pet_base_x + x_offset, self.pet_base_y + y_offset)
-        self.root.after(70, lambda: self.play_motion(offsets, index + 1))
+        self.motion_points = [(0, 0), *offsets]
+        self.motion_started = time.perf_counter()
+        self.motion_duration = max(.07, len(offsets) * .07)
+        self.motion_active = True
 
-    def idle(self) -> None:
-        self.idle_phase += 1
+    def idle(self, now: float) -> None:
         if not self.motion_active and not self.typing_active and not self.dragged:
             behavior = self.config.get("idleBehavior", "float")
+            elapsed = now - self.idle_started
             if behavior == "still":
                 bob = 0
             elif behavior == "nap":
-                bob = int(math.sin(self.idle_phase / 11) * 1)
+                bob = math.sin(elapsed / 1.32)
             elif behavior == "look":
-                bob = int(math.sin(self.idle_phase / 5) * 2)
-                if self.idle_phase % 44 == 0:
+                bob = math.sin(elapsed / .6) * 2
+                if now >= self.next_idle_action:
+                    self.next_idle_action = now + 5.28
                     self.play_motion([(5, 0), (-5, 0), (0, 0)])
             elif behavior == "stretch":
-                bob = int(math.sin(self.idle_phase / 5) * 3)
-                if self.idle_phase % 50 == 0:
+                bob = math.sin(elapsed / .6) * 3
+                if now >= self.next_idle_action:
+                    self.next_idle_action = now + 6
                     self.play_motion([(0, 5), (0, -10), (0, -4), (0, 0)])
             else:
-                bob = int(math.sin(self.idle_phase / 5) * 3)
+                bob = math.sin(elapsed / .6) * 3
             if not self.motion_active:
                 look_x, look_y = self.cursor_offset
                 self.canvas.coords(self.pet_id, self.pet_base_x + look_x, self.pet_base_y + bob + look_y)
-        self.root.after(120, self.idle)
 
     def cursor_position(self) -> tuple[int, int] | None:
         if not sys.platform.startswith("win"):
@@ -320,7 +421,7 @@ class DesktopPet:
             return point.x, point.y
         return None
 
-    def track_cursor(self) -> None:
+    def track_cursor(self, delta: float) -> None:
         cursor = self.cursor_position()
         mode = self.config.get("cursorFollowMode", "look")
         if cursor and not self.dragged:
@@ -331,25 +432,22 @@ class DesktopPet:
             distance = max(1, math.hypot(dx, dy))
 
             if mode == "look":
-                self.cursor_offset = (
-                    max(-8, min(8, int(dx / 38))),
-                    max(-4, min(4, int(dy / 55))),
-                )
+                target_x, target_y = max(-8, min(8, dx / 38)), max(-4, min(4, dy / 55))
+                blend = 1 - math.exp(-delta / .09)
+                self.cursor_offset = (self.cursor_offset[0] + (target_x - self.cursor_offset[0]) * blend, self.cursor_offset[1] + (target_y - self.cursor_offset[1]) * blend)
             else:
                 self.cursor_offset = (0, 0)
 
             if mode == "follow" and 170 < distance < 760 and not self.motion_active:
                 target_x = max(8, min(self.root.winfo_screenwidth() - self.width - 8, mouse_x - self.width // 2))
                 target_y = max(36, min(self.root.winfo_screenheight() - self.height - 56, mouse_y - self.height - 18))
-                next_x = round(self.root.winfo_x() + (target_x - self.root.winfo_x()) * .09)
-                next_y = round(self.root.winfo_y() + (target_y - self.root.winfo_y()) * .09)
-                self.root.geometry(f"+{next_x}+{next_y}")
+                self.move_toward(target_x, target_y, delta, 1.7)
             elif mode == "playful" and distance < 210 and not self.motion_active:
                 away_x = self.root.winfo_x() - int(dx * .44)
                 away_y = self.root.winfo_y() - int(dy * .44)
                 safe_x = max(8, min(self.root.winfo_screenwidth() - self.width - 8, away_x))
                 safe_y = max(36, min(self.root.winfo_screenheight() - self.height - 56, away_y))
-                self.root.geometry(f"+{safe_x}+{safe_y}")
+                self.move_toward(safe_x, safe_y, delta, .16)
 
             is_near = distance < 190
             frequency = self.config.get("proactiveFrequency", "gentle")
@@ -359,7 +457,15 @@ class DesktopPet:
                 if frequency != "quiet" and self.config.get("hoverBubble", True):
                     self.show_bubble(random.choice(["鼠标来啦！", "我在看着你哦。", "想和我玩一下吗？"]), 1800)
             self.last_cursor_near = is_near
-        self.root.after(160, self.track_cursor)
+
+    def move_toward(self, target_x: float, target_y: float, delta: float, smooth_seconds: float) -> None:
+        current_x, current_y = self.root.winfo_x(), self.root.winfo_y()
+        previous = getattr(self, "window_position", (current_x, current_y))
+        if abs(current_x - previous[0]) > 1 or abs(current_y - previous[1]) > 1:
+            previous = (current_x, current_y)
+        blend = 1 - math.exp(-delta / smooth_seconds)
+        self.window_position = (previous[0] + (target_x - previous[0]) * blend, previous[1] + (target_y - previous[1]) * blend)
+        self.root.geometry(f"+{round(self.window_position[0])}+{round(self.window_position[1])}")
 
     def is_key_active(self) -> bool:
         if not sys.platform.startswith("win"):
@@ -370,15 +476,19 @@ class DesktopPet:
         return any(user32.GetAsyncKeyState(key) & 0x8000 for key_range in key_ranges for key in key_range)
 
     def track_keyboard(self) -> None:
+        self.keyboard_timer = None
+        if not self.motion_enabled:
+            return
         if self.config.get("keyboardSync", False) and self.is_key_active():
             self.start_typing_effect()
         if self.config.get("keyboardSync", False):
-            self.root.after(90, self.track_keyboard)
+            self.keyboard_timer = self.root.after(90, self.track_keyboard)
 
     def start_typing_effect(self) -> None:
-        if self.typing_active or self.dragged:
+        if not self.motion_enabled or self.typing_active or self.motion_active or self.dragged:
             return
         self.typing_active = True
+        self.typing_started = time.perf_counter()
         keyboard_top = self.photo.height() + 37
         board = self.canvas.create_rectangle(
             self.pet_base_x - 52, keyboard_top, self.pet_base_x + 52, keyboard_top + 20,
@@ -392,10 +502,10 @@ class DesktopPet:
         if self.config.get("keyboardReaction", "bongo") == "cheer" and time.monotonic() - self.last_typing_hint_at > 12:
             self.last_typing_hint_at = time.monotonic()
             self.show_bubble(random.choice(["打字也要加油！", "我在陪你完成它。", "键盘节奏真好听。"]), 1600)
-        self.play_typing_step(0)
 
-    def play_typing_step(self, step: int) -> None:
-        if step >= 9:
+    def play_typing_step(self, now: float) -> None:
+        elapsed = now - self.typing_started
+        if elapsed >= .675:
             self.canvas.coords(self.pet_id, self.pet_base_x, self.pet_base_y)
             for item_id in self.typing_ids:
                 self.canvas.delete(item_id)
@@ -407,11 +517,13 @@ class DesktopPet:
             offsets = [(0, 0), (1, -1), (0, 0)]
         else:
             offsets = [(-5, 5), (5, 1), (-3, 4), (4, 0)]
-        x_offset, y_offset = offsets[step % len(offsets)]
+        sequence = [(0, 0), *[offsets[index % len(offsets)] for index in range(8)], (0, 0)]
+        x_offset, y_offset = motion_offset(sequence, elapsed, .675)
         self.canvas.coords(self.pet_id, self.pet_base_x + x_offset, self.pet_base_y + y_offset)
-        self.root.after(75, lambda: self.play_typing_step(step + 1))
 
     def spawn_particles(self, close: bool = False) -> None:
+        if not self.motion_enabled:
+            return
         symbols = ["✦", "♥", "·"] if close else ["✦", "·", "+"]
         for _ in range(5 if close else 3):
             particle = self.canvas.create_text(
@@ -421,17 +533,25 @@ class DesktopPet:
                 fill=random.choice(["#8ce4ff", "#ffb9dd", "#fff1a6"]),
                 font=("Segoe UI Symbol", 13, "bold"),
             )
-            self.rise_particle(particle, random.randint(-3, 3), 0)
+            self.particles.append({ "id": particle, "start": time.perf_counter(), "x": self.canvas.coords(particle)[0], "y": self.canvas.coords(particle)[1], "vx": random.randint(-3, 3) / .055 })
 
-    def rise_particle(self, particle: int, horizontal: int, step: int) -> None:
-        if step >= 8:
-            self.canvas.delete(particle)
-            return
-        self.canvas.move(particle, horizontal, -5)
-        self.root.after(55, lambda: self.rise_particle(particle, horizontal, step + 1))
+    def update_particles(self, now: float) -> None:
+        remaining = []
+        for particle in self.particles:
+            elapsed = now - particle["start"]
+            if elapsed >= .44:
+                self.canvas.delete(particle["id"])
+            else:
+                self.canvas.coords(particle["id"], particle["x"] + particle["vx"] * elapsed, particle["y"] - elapsed * (5 / .055))
+                remaining.append(particle)
+        self.particles = remaining
 
     def on_hover(self, _event: tk.Event) -> None:
         self.hovered = True
+        if not self.motion_enabled:
+            if self.config.get("hoverBubble", True):
+                self.show_bubble("我在这里，安静陪着你。", 1800)
+            return
         effect = self.config.get("hoverEffect", "halo")
         if effect == "halo" and self.aura_id is None:
             self.aura_id = self.canvas.create_oval(
@@ -453,6 +573,8 @@ class DesktopPet:
         if self.aura_id is not None:
             self.canvas.delete(self.aura_id)
             self.aura_id = None
+        if not self.motion_enabled:
+            return
         effect = self.config.get("leaveEffect", "stay")
         if effect == "goodbye":
             self.show_bubble(random.choice(["我在这里等你。", "一会儿见。", "忙完再来找我吧。"]), 1800)
@@ -469,6 +591,9 @@ class DesktopPet:
         self.show_bubble("我回来啦。", 1800)
 
     def wander(self) -> None:
+        self.wander_timer = None
+        if not self.motion_enabled:
+            return
         if self.config.get("wanderEnabled", False) and not self.dragged and not self.desktop_hidden:
             screen_w = self.root.winfo_screenwidth()
             screen_h = self.root.winfo_screenheight()
@@ -478,7 +603,7 @@ class DesktopPet:
             if self.config.get("hoverBubble", True):
                 self.show_bubble(random.choice(["我来这里看看。", "换个地方陪你。", "巡游完成！"]), 1700)
         if self.config.get("wanderEnabled", False):
-            self.root.after(random.randint(22000, 42000), self.wander)
+            self.wander_timer = self.root.after(random.randint(22000, 42000), self.wander)
 
     def toggle_topmost(self) -> None:
         current = bool(self.root.attributes("-topmost"))
