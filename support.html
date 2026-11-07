@@ -11,7 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#fbfcfb">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
-    <script src="scripts/i18n.js?v=motion-20261107-r1" defer></script>
+    <script src="scripts/i18n.js?v=cutout-20261107-r1" defer></script>
     <script src="scripts/supabase-config.js?v=stable-20260906"></script>
   </head>
   <body class="support-page cat-home">
@@ -57,6 +57,7 @@
 
         <section class="faq-group" aria-labelledby="faq-create-title">
           <h2 id="faq-create-title">图片与桌宠制作</h2>
+            <details><summary>如何自动去掉图片背景？</summary><div class="faq-answer"><p>上传图片后默认自动抠出主体，预览和生成包使用同一张透明 PNG。纯色背景优先快速处理，复杂照片会在浏览器内识别主体；首次使用需要下载本站的识别文件。</p><p>白色身体不会按颜色整片删除。若有漏抠或边缘不理想，可在“图片背景”里改选“智能识别主体”；选择“保留原图背景”即可恢复。多人、遮挡和接近背景色的细节可能需要更换清晰图片。</p></div></details>
           <details><summary>如何切换阴影和动态模式？</summary><div class="faq-answer"><p>创作台默认静态、无阴影。可勾选“柔和阴影”或“动态桌宠”，再生成桌宠包；运行后也可在右键菜单切换并保存。已下载的旧版本需要重新生成下载。</p><p>动态模式以 60 帧/秒为目标，实际流畅度取决于电脑性能。静态模式保留拖动、气泡和快捷入口。</p></div></details>
           <details><summary>支持什么图片？图片太大或预览失败怎么办？</summary><div class="faq-answer"><p>支持 PNG、JPG/JPEG 和 WEBP。透明背景的 PNG 通常更适合桌宠。大图片会占用较多浏览器内存；如果预览卡住，可以先把图片缩小或压缩，再用新版 Edge 或 Chrome 重试。</p><p>桌宠创作页的预览和生成在当前浏览器中处理图片；只有你主动发布到创意工坊时，图片和作品资料才会上传并公开展示。</p></div></details>
           <details><summary>“生成”按钮不可用或提示没有次数？</summary><div class="faq-answer"><p>依次检查图片、预览和登录状态，再确认会员有效或有剩余次数。没有使用权益时，请从账户入口兑换会员码。</p><p>如果登录状态反复消失，刷新页面重新登录；如提示账号服务无法连接，先确认网络，再稍后重试。</p></div></details>

@@ -226,6 +226,11 @@
   .creator-page .systems-section h2, .creator-page .process-section h2 { font-size: 32px; }
   .creator-page .process-list li { grid-template-columns: 1fr; gap: 7px; }
 }
+.creator-page .cutout-controls { margin: 14px 0 22px; }
+.creator-page .cutout-controls > label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+.creator-page .cutout-controls select { width: 100%; }
+.creator-page .cutout-controls p { margin: 9px 0 0; color: #a9c5bf; font-size: 12px; line-height: 1.7; }
+.creator-page .cutout-controls [aria-busy="true"] { color: #a8ddc4; }
 @media (prefers-reduced-motion: reduce) {
   .creator-page *, .creator-page *::before, .creator-page *::after { transition: none !important; }
 }

@@ -10,14 +10,14 @@
     <link rel="stylesheet" href="styles/membership.css?v=redeem-20261107-r2">
     <link rel="preload" as="image" href="assets/brand-cat-20261027.png" fetchpriority="high">
     <link rel="preload" as="image" href="assets/voxel-kitten-preview.svg" fetchpriority="high">
-    <script src="scripts/i18n.js?v=motion-20261107-r1" defer></script>
+    <script src="scripts/i18n.js?v=cutout-20261107-r1" defer></script>
     <script type="importmap">{"imports":{"three":"./scripts/vendor/three/build/three.module.js","three/addons/":"./scripts/vendor/three/addons/"}}</script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#fbfcfb">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
     <script>
-      // Keep shared links from before the cover and creator were separated working.
-      if (new URLSearchParams(location.search).has("template") || ["#studio", "#systems", "#how-it-works"].includes(location.hash)) {
+      // Workshop templates open the studio; the main website always keeps its kitten cover.
+      if (new URLSearchParams(location.search).has("template")) {
         location.replace("creator.html" + location.search + location.hash);
       }
     </script>
@@ -31,7 +31,7 @@
         <label class="language-control"><span class="sr-only">语言</span><select data-language-select aria-label="语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="ja">日本語</option><option value="it">Italiano</option><option value="es">Español</option><option value="fr">Français</option></select></label>
         <button class="nav-cta" type="button" data-member-open>登录</button>
         <a class="nav-cta" href="admin.html" data-admin-dashboard hidden>管理后台</a>
-        <a class="nav-cta" href="creator.html">进入创作台 <span aria-hidden="true">↗</span></a>
+        <a class="nav-cta" href="creator.html#studio">进入创作台 <span aria-hidden="true">↗</span></a>
       </div>
     </header>
     <main>
@@ -45,7 +45,7 @@
           <h1 id="hero-title">先和小猫，<br>打个招呼。</h1>
           <p class="hero-lead">鼠标慢慢移，它就慢慢跟。点击左键，跳一下。<br>准备好了？做一只属于你的桌宠。</p>
           <div class="hero-actions">
-            <a class="button primary" href="creator.html">制作我的桌宠 <span aria-hidden="true">↗</span></a>
+            <a class="button primary" href="creator.html#studio">制作我的桌宠 <span aria-hidden="true">↗</span></a>
             <button id="cat-pounce" class="button text-button" type="button" disabled>让它跳一下 <span aria-hidden="true">♡</span></button>
           </div>
           <p class="cat-detail">从一张你喜欢的图片开始。</p>

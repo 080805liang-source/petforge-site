@@ -8,6 +8,8 @@ const previewBubble = document.querySelector("#preview-bubble");
 const previewEmpty = document.querySelector("#preview-empty");
 const previewStatus = document.querySelector("#preview-status");
 const petImage = document.querySelector("#pet-image");
+const petBackground = document.querySelector("#pet-background");
+const cutoutStatus = document.querySelector("#cutout-status");
 const stylePresets = [...document.querySelectorAll(".style-preset")];
 const petName = document.querySelector("#pet-name");
 const petLine = document.querySelector("#pet-line");
@@ -55,6 +57,10 @@ let selectedStyle = "original";
 let styledPetBlob = null;
 let previewImageUrl = "";
 let styleRequestId = 0;
+let imageRequestId = 0;
+let cutoutPetBlob = null;
+let imageBusy = false;
+let backgroundModule;
 let previewFrameId = 0;
 let previewLastFrame = 0;
 
@@ -462,28 +468,75 @@ function showStyledPet(blob) {
 }
 
 async function applySelectedStyle() {
-  const source = petImage.files?.[0];
+  const source = cutoutPetBlob || petImage.files?.[0];
   if (!source) return;
   const requestId = ++styleRequestId;
+  styledPetBlob = null;
+  setImageBusy(true);
   setStatus(selectedStyle === "original" ? "图片已载入。" : "正在生成风格化桌宠...");
   try {
     const result = await renderStyle(source, selectedStyle);
     if (requestId !== styleRequestId) return;
-    styledPetBlob = selectedStyle === "original" ? null : result;
+    styledPetBlob = result;
     showStyledPet(result);
     heroAssetStatus.textContent = selectedStyle === "original" ? "角色已进入创作舱" : "风格已应用到角色";
-    buildButton.disabled = false;
     setStatus(selectedStyle === "original" ? "图片已载入。现在可以继续调试外观与功能。" : "风格已应用，生成包会使用当前效果。", "success");
     updatePreview();
   } catch (error) {
+    if (requestId !== styleRequestId) return;
     setStatus(`风格处理失败：${error.message}`, "error");
+  } finally {
+    if (requestId === styleRequestId) setImageBusy(false);
+  }
+}
+
+function setImageBusy(busy) {
+  imageBusy = busy;
+  buildButton.disabled = busy || !styledPetBlob;
+  stylePresets.forEach((preset) => { preset.disabled = busy; });
+  cutoutStatus.setAttribute("aria-busy", String(busy));
+}
+
+async function preparePetImage() {
+  const source = petImage.files?.[0];
+  if (!source) return;
+  const requestId = ++imageRequestId;
+  ++styleRequestId;
+  cutoutPetBlob = null;
+  styledPetBlob = null;
+  setImageBusy(true);
+  const messages = {
+    preparing: "正在抠出主体…",
+    model: "首次使用正在准备智能抠图，请稍候…",
+    segment: "正在识别人物、宠物或插画主体…"
+  };
+  cutoutStatus.textContent = messages.preparing;
+  try {
+    backgroundModule?.cancelCutout();
+    if (!/^image\/(png|jpeg|webp)$/.test(source.type) || source.size > 20 * 1024 * 1024) throw new Error("invalid-image");
+    const mode = petBackground.value;
+    if (mode !== "original") {
+      backgroundModule ||= await import("./background-removal.js");
+      if (requestId !== imageRequestId) return;
+    }
+    const result = mode === "original" ? { blob: source, kind: "original" } : await backgroundModule.cutoutImage(source, mode, (phase) => {
+      if (requestId === imageRequestId) cutoutStatus.textContent = messages[phase];
+    });
+    if (requestId !== imageRequestId) return;
+    cutoutPetBlob = result.blob;
+    cutoutStatus.textContent = result.kind === "original" ? "已保留原图背景。" : result.kind === "transparent" ? "图片已有透明背景，已保留原有细节。" : "主体已抠出，预览与生成的桌宠均使用透明背景。";
+    await applySelectedStyle();
+  } catch (error) {
+    if (requestId !== imageRequestId) return;
+    cutoutStatus.textContent = error.message === "invalid-image" ? "请上传不超过 20 MB 的 PNG、JPG 或 WEBP 图片。" : "未能完成抠图，请重试智能识别，或选择保留原图背景。";
+    setStatus(cutoutStatus.textContent, "error");
+    setImageBusy(false);
   }
 }
 
 async function getPetPngBytes(config) {
-  if (styledPetBlob || petImage.files?.[0]) {
-    return blobToPngBytes(styledPetBlob || petImage.files[0], config.size);
-  }
+  if (imageBusy) throw new Error("浏览器正在处理图片，请稍候。");
+  if (styledPetBlob) return blobToPngBytes(styledPetBlob, config.size);
   throw new Error("请先上传你的桌宠图片");
 }
 
@@ -548,9 +601,10 @@ petImage?.addEventListener("change", () => {
   if (!file) return;
 
   currentImageName = file.name;
-  styledPetBlob = null;
-  applySelectedStyle();
+  preparePetImage();
 });
+
+petBackground?.addEventListener("change", preparePetImage);
 
 stylePresets.forEach((preset) => {
   preset.addEventListener("click", () => {
