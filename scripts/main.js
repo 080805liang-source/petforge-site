@@ -45,11 +45,12 @@ const clickParticles = document.querySelector("#click-particles");
 const soundHint = document.querySelector("#sound-hint");
 const keyboardSync = document.querySelector("#keyboard-sync");
 const interactionNote = document.querySelector("#interaction-note");
-const exportButton = document.querySelector("#export-config");
+const publishButton = document.querySelector("#publish-workshop");
+const publishStatus = document.querySelector("#publish-workshop-status");
 const buildButton = document.querySelector("#build-package");
 const buildStatus = document.querySelector("#build-status");
 const encoder = new TextEncoder();
-const supabaseConfig = window.PETFORGE_SUPABASE;
+const workshopApi = window.PETFORGE_MEMBERSHIP?.apiUrl;
 
 let currentImageName = "";
 let customShortcuts = [];
@@ -61,6 +62,10 @@ let imageRequestId = 0;
 let cutoutPetBlob = null;
 let imageBusy = false;
 let backgroundModule;
+let publishing = false;
+let workshopTemplateId = "";
+let pendingWorkshopDownload = false;
+let sharedImageSize = 0;
 let previewFrameId = 0;
 let previewLastFrame = 0;
 
@@ -101,7 +106,7 @@ function getConfig() {
     bubbleStyle: bubbleStyle.value,
     position: petPosition.value,
     alwaysOnTop: Boolean(alwaysOnTop.checked),
-    safeRendering: true,
+    safeRendering: false,
     desktopOnly: Boolean(desktopOnly.checked),
     shadow: Boolean(petShadow.checked),
     motionEnabled: Boolean(petMotion.checked),
@@ -493,6 +498,7 @@ async function applySelectedStyle() {
 function setImageBusy(busy) {
   imageBusy = busy;
   buildButton.disabled = busy || !styledPetBlob;
+  publishButton.disabled = busy || publishing || !styledPetBlob;
   stylePresets.forEach((preset) => { preset.disabled = busy; });
   cutoutStatus.setAttribute("aria-busy", String(busy));
 }
@@ -536,6 +542,7 @@ async function preparePetImage() {
 
 async function getPetPngBytes(config) {
   if (imageBusy) throw new Error("浏览器正在处理图片，请稍候。");
+  if (workshopTemplateId && styledPetBlob === cutoutPetBlob && config.size === sharedImageSize) return new Uint8Array(await styledPetBlob.arrayBuffer());
   if (styledPetBlob) return blobToPngBytes(styledPetBlob, config.size);
   throw new Error("请先上传你的桌宠图片");
 }
@@ -561,7 +568,7 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.07-motion-60-r2";
+const PETFORGE_BUILD_VERSION = "2026.11.07-transparent-workshop-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL("assets/PetForge.exe", document.baseURI);
@@ -601,6 +608,8 @@ petImage?.addEventListener("change", () => {
   if (!file) return;
 
   currentImageName = file.name;
+  workshopTemplateId = "";
+  pendingWorkshopDownload = false;
   preparePetImage();
 });
 
@@ -648,11 +657,52 @@ shortcutTemplate?.addEventListener("change", () => {
 
 addShortcutButton?.addEventListener("click", addCustomShortcut);
 
-exportButton?.addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(getConfig(), null, 2)], {
-    type: "application/json;charset=utf-8"
+function blobDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("图片读取失败，请重试。"));
+    reader.readAsDataURL(blob);
   });
-  downloadBlob(blob, "desktop-pet-config.json");
+}
+
+publishButton?.addEventListener("click", async () => {
+  const membership = window.PetForgeMembership;
+  if (!membership?.current()) { membership?.open(); return; }
+  if (imageBusy || !styledPetBlob || publishing) return;
+  publishing = true;
+  publishButton.disabled = true;
+  publishStatus.textContent = "正在发布当前图片与全部设置…";
+  try {
+    const config = getConfig();
+    const bytes = await getPetPngBytes(config);
+    const image = new Blob([bytes], { type: "image/png" });
+    const bitmap = await createImageBitmap(image);
+    const ratio = Math.min(1, 160 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
+    canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const preview = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    const payload = JSON.stringify({ config, image: await blobDataUrl(image), preview: await blobDataUrl(preview), description: config.clickLine });
+    const uploadId = crypto.randomUUID().replaceAll("-", "");
+    const total = Math.ceil(payload.length / 24000);
+    for (let index = 0; index < total; index++) {
+      await membership.request("/workshop/upload", { method: "POST", body: JSON.stringify({ uploadId, index, total, data: payload.slice(index * 24000, (index + 1) * 24000) }) });
+    }
+    const result = await membership.request("/workshop", { method: "POST", body: JSON.stringify({ uploadId }) });
+    publishStatus.replaceChildren(document.createTextNode("已发布，其他人可以直接使用。"));
+    const link = document.createElement("a");
+    link.href = `workshop.html?highlight=${encodeURIComponent(result.id)}#workshop-feed`;
+    link.textContent = "查看工坊作品";
+    publishStatus.append(" ", link);
+  } catch (error) {
+    publishStatus.textContent = `发布失败：${error.message}`;
+  } finally {
+    publishing = false;
+    setImageBusy(imageBusy);
+  }
 });
 
 buildButton?.addEventListener("click", async () => {
@@ -661,7 +711,7 @@ buildButton?.addEventListener("click", async () => {
 
   try {
     const result = await buildPackageInBrowser();
-    if (window.PetForgeMembership?.consumeUse) await window.PetForgeMembership.consumeUse();
+    if (window.PetForgeMembership?.consumeUse) await window.PetForgeMembership.consumeUse(workshopTemplateId);
     downloadBlob(result.blob, `PETFORGE-${result.name}.zip`);
     const usageMessage = window.PetForgeMembership?.isUnlimited?.() ? "本次为无限使用权益，未扣次数。桌宠 ZIP 已下载；解压全部文件后即可启动。" : "本次使用已扣除 1 次。桌宠 ZIP 已下载；解压全部文件后即可启动。";
     setStatus(usageMessage, "success");
@@ -677,15 +727,14 @@ updatePreview();
 renderShortcuts();
 async function loadWorkshopTemplate() {
   const templateId = new URLSearchParams(window.location.search).get("template");
-  if (!templateId || !supabaseConfig) return;
+  if (!templateId || !workshopApi) return;
+  setImageBusy(true);
   setStatus("正在载入工坊桌宠...");
   try {
-    const response = await fetch(`${supabaseConfig.url}/rest/v1/workshop_pets?id=eq.${encodeURIComponent(templateId)}&is_public=eq.true&select=title,image_path,config`, {
-      headers: { apikey: supabaseConfig.publishableKey, Authorization: `Bearer ${supabaseConfig.publishableKey}` }
-    });
-    const records = await response.json();
-    if (!response.ok || !records?.[0]) throw new Error("未找到这个工坊作品");
-    const template = records[0];
+    const response = await fetch(`${workshopApi}/workshop/${encodeURIComponent(templateId)}`);
+    const result = await response.json();
+    if (!response.ok || !result.post) throw new Error(result.error || "未找到这个工坊作品");
+    const template = result.post;
     const templateConfig = template.config || {};
     petName.value = templateConfig.name || template.title;
     petLine.value = templateConfig.clickLine || petLine.value;
@@ -719,18 +768,45 @@ async function loadWorkshopTemplate() {
       preset.classList.toggle("is-selected", selected);
       preset.setAttribute("aria-pressed", String(selected));
     });
-    const imageResponse = await fetch(`${supabaseConfig.url}/storage/v1/object/public/${supabaseConfig.bucket}/${template.image_path}`);
+    const imageResponse = await fetch(template.image);
     if (!imageResponse.ok) throw new Error("无法读取这个作品的图片");
     const imageBlob = await imageResponse.blob();
-    const imageFile = new File([imageBlob], template.image_path.split("/").pop() || "pet.png", { type: imageBlob.type || "image/png" });
+    if (template.imageSha256) {
+      const digest = await crypto.subtle.digest("SHA-256", await imageBlob.arrayBuffer());
+      const hash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+      if (hash !== template.imageSha256) throw new Error("作品图片校验失败，请刷新重试。");
+    }
+    const imageFile = new File([imageBlob], "pet.png", { type: "image/png" });
     const transfer = new DataTransfer();
     transfer.items.add(imageFile);
     petImage.files = transfer.files;
-    petImage.dispatchEvent(new Event("change"));
+    // The shared PNG already includes cutout and style. Reuse its exact pixels.
+    currentImageName = "pet.png";
+    cutoutPetBlob = imageBlob;
+    styledPetBlob = imageBlob;
+    showStyledPet(imageBlob);
+    workshopTemplateId = templateId;
+    sharedImageSize = Number(templateConfig.size);
+    cutoutStatus.textContent = "已使用作品原图与配置，不会重复抠图或叠加滤镜。";
+    setImageBusy(false);
     renderShortcuts();
     updatePreview();
+    setStatus("工坊作品已完整载入，可直接生成相同的桌宠。", "success");
+    if (new URLSearchParams(location.search).get("download") === "1") {
+      await window.PetForgeMembership?.refresh();
+      pendingWorkshopDownload = true;
+      if (window.PetForgeMembership?.isActive()) { pendingWorkshopDownload = false; buildButton.click(); }
+      else window.PetForgeMembership?.open();
+    }
   } catch (error) {
+    setImageBusy(false);
     setStatus(`工坊作品载入失败：${error.message}`, "error");
   }
 }
+window.addEventListener("petforge:membership-change", (event) => {
+  if (pendingWorkshopDownload && event.detail.active && !imageBusy && styledPetBlob) {
+    pendingWorkshopDownload = false;
+    buildButton.click();
+  }
+});
 loadWorkshopTemplate();

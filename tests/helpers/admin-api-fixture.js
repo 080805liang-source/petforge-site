@@ -18,6 +18,7 @@ export function createAdminTestApi(seed = {}) {
     constructor(name) { this.name = name; this.conditions = {}; this.offset = 0; this.size = Infinity; this.order = null; }
     where(conditions) { this.conditions = conditions; return this; }
     limit(size) { this.size = size; return this; }
+    field() { return this; }
     skip(offset) { this.offset = offset; return this; }
     orderBy(key, direction) { this.order = [key, direction]; return this; }
     values() {

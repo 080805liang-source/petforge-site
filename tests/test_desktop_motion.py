@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from desktop_app import DesktopPet, motion_offset
+from desktop_app import DesktopPet, motion_offset, transparent_color
 
 
 class Canvas:
@@ -84,6 +84,14 @@ def pet():
 
 
 class DesktopMotionTests(unittest.TestCase):
+    def test_transparency_key_never_erases_a_color_present_in_the_pet(self):
+        colors = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (255, 255, 255)]
+        photo = SimpleNamespace(width=lambda: len(colors), height=lambda: 1, get=lambda x, _y: colors[x])
+        key = transparent_color(photo)
+        rgb = tuple(int(key[i:i+2], 16) for i in (1, 3, 5))
+        self.assertNotIn(rgb, colors)
+        self.assertLess(max(rgb), 16, 'unused dark key avoids a bright fringe')
+
     def test_shadow_is_optional_and_never_uses_solid_black(self):
         instance = pet()
         instance.set_shadow_enabled(False)

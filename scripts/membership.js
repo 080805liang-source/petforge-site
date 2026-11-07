@@ -77,7 +77,7 @@ async function refreshBalance() {
   authPanel.hidden = true; balancePanel.hidden = false; renderBalance(); return true;
 }
 async function requireActive() { await refreshBalance(); if (!member) { openMember(); return false; } if (!isActive()) { openMember(); redeemNote.textContent = "请先兑换会员码，再继续使用。"; return false; } return true; }
-async function consumeUse() { const data = await request("/consume", { method: "POST", body: JSON.stringify({ amount: 1 }) }); credits = Number(data.credits || 0); renderBalance(); return true; }
+async function consumeUse(workshopId = "") { const data = await request("/consume", { method: "POST", body: JSON.stringify({ amount: 1, ...(workshopId ? { workshopId } : {}) }) }); credits = Number(data.credits || 0); renderBalance(); return true; }
 
 window.PetForgeMembership = { requireActive, consumeUse, isActive, isUnlimited, isAdmin: () => Boolean(member?.isAdmin), current: () => member, request, open: openMember, refresh: refreshBalance };
 authTriggers.forEach((button) => button.addEventListener("click", openMember));

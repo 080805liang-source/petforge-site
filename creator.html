@@ -54,7 +54,7 @@
             <h2 id="studio-title">桌宠创作台</h2>
           </div>
           <div class="studio-actions">
-            <p class="studio-state"><span></span> 本地处理 · 你的图片不会离开当前浏览器</p>
+            <p class="studio-state"><span></span> 制作时本地处理 · 发布作品时才会上传</p>
             <a class="studio-workshop-link" href="workshop.html">创意工坊 <span aria-hidden="true">↗</span></a>
           </div>
         </div>
@@ -240,7 +240,8 @@
 
             <div class="action-stack">
               <button id="build-package" class="button primary wide" type="button" disabled data-membership-required>生成 Windows 桌宠 ZIP <span aria-hidden="true">→</span></button>
-              <button id="export-config" class="button secondary wide" type="button" data-membership-required>导出制作配置</button>
+              <button id="publish-workshop" class="button secondary wide" type="button" disabled>一键发布到创意工坊</button>
+              <p id="publish-workshop-status" class="interaction-intro" role="status">发布后，所有人可查看并使用当前图片、互动设置和快捷入口。</p>
             </div>
             <p id="build-status" class="panel-note" role="status">请先上传你的桌宠图片，再生成 Windows 桌宠 ZIP。公开免警告安装版正在准备 Microsoft Store。</p>
           </section>
@@ -331,10 +332,10 @@
     </dialog>
     <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/supabase-config.js?v=stable-20260906"></script>
-    <script src="scripts/i18n.js?v=outline-20261107-r1" defer></script>
+    <script src="scripts/i18n.js?v=workshop-20261107-r3" defer></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
-    <script src="scripts/membership.js?v=redeem-20261107-r2" defer></script>
-    <script src="scripts/main.js?v=outline-20261107-r1" defer></script>
+    <script src="scripts/membership.js?v=workshop-20261107-r1" defer></script>
+    <script src="scripts/main.js?v=workshop-20261107-r2" defer></script>
     <script src="scripts/analytics.js?v=admin-dashboard-20261107-r2" defer></script>
   </body>
 </html>

@@ -27,6 +27,17 @@ IMAGE_PATH = BASE_DIR / "assets" / "pet.png"
 FRAME_SECONDS = 1 / 60
 
 
+def transparent_color(photo) -> str:
+    # Pick an unused near-black color: the key must never erase real artwork,
+    # and antialiased PNG edges must not blend with a bright magenta backing.
+    colors = {photo.get(x, y) for y in range(photo.height()) for x in range(photo.width())}
+    for value in range(1, 0x1000000):
+        rgb = (value & 255, (value >> 8) & 255, (value >> 16) & 255)
+        if rgb not in colors:
+            return "#{:02x}{:02x}{:02x}".format(*rgb)
+    raise ValueError("无法为桌宠选择透明颜色")
+
+
 def motion_offset(points: list[tuple[float, float]], elapsed: float, duration: float) -> tuple[float, float]:
     progress = max(0.0, min(1.0, elapsed / duration)) * (len(points) - 1)
     index = min(int(progress), len(points) - 2)
@@ -61,17 +72,12 @@ class DesktopPet:
         self.root = tk.Tk()
         self.root.title(self.config.get("name", "PetForge"))
         self.root.overrideredirect(True)
-        # Transparent, always-on-top Tk windows can render as black overlays on
-        # some Windows graphics drivers. Use safe rendering by default.
-        self.safe_rendering = bool(self.config.get("safeRendering", True))
-        self.background = "#f7f4ef" if self.safe_rendering else "#ff00ff"
-        self.root.configure(bg=self.background)
-        if not self.safe_rendering:
-            self.root.attributes("-transparentcolor", "#ff00ff")
+        # The canvas padding must be transparent too, including for older
+        # configuration files that requested an opaque compatibility panel.
         self.root.attributes("-topmost", bool(self.config.get("alwaysOnTop", False)))
         self.desktop_only = bool(self.config.get("desktopOnly", False))
         self.desktop_hidden = False
-        opacity = max(0.25, min(1.0, float(self.config.get("opacity", 96)) / 100))
+        opacity = max(0.25, min(1.0, float(self.config.get("opacity", 100)) / 100))
         self.root.attributes("-alpha", opacity)
 
         try:
@@ -79,6 +85,10 @@ class DesktopPet:
         except tk.TclError as exc:
             self.root.destroy()
             fail(f"无法加载桌宠图片：{exc}")
+
+        self.background = transparent_color(self.photo)
+        self.root.configure(bg=self.background)
+        self.root.attributes("-transparentcolor", self.background)
 
         max_width = max(180, self.root.winfo_screenwidth() - 120)
         max_height = max(180, self.root.winfo_screenheight() - 160)
