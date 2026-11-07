@@ -111,6 +111,7 @@ class DesktopPet:
         self.motion_duration = 0.0
         self.motion_enabled = False
         self.frame_timer = None
+        self.static_timer = None
         self.keyboard_timer = None
         self.wander_timer = None
         self.timer_precision = False
@@ -214,7 +215,7 @@ class DesktopPet:
 
     def set_motion_enabled(self, enabled: bool, persist: bool = False) -> None:
         self.motion_enabled = enabled
-        for field in ("frame_timer", "keyboard_timer", "wander_timer"):
+        for field in ("frame_timer", "static_timer", "keyboard_timer", "wander_timer"):
             timer = getattr(self, field)
             if timer is not None:
                 self.root.after_cancel(timer)
@@ -248,6 +249,9 @@ class DesktopPet:
                 self.keyboard_timer = self.root.after(90, self.track_keyboard)
             if self.config.get("wanderEnabled", False):
                 self.wander_timer = self.root.after(random.randint(18000, 28000), self.wander)
+        else:
+            self.last_frame_at = time.perf_counter()
+            self.static_timer = self.root.after(100, self.static_tick)
         if persist:
             self.save_preferences()
 
@@ -278,6 +282,15 @@ class DesktopPet:
         if self.next_frame_at <= time.perf_counter():
             self.next_frame_at = time.perf_counter() + FRAME_SECONDS
         self.frame_timer = self.root.after(max(1, math.ceil((self.next_frame_at - time.perf_counter()) * 1000)), self.frame)
+
+    def static_tick(self) -> None:
+        self.static_timer = None
+        if self.motion_enabled:
+            return
+        now = time.perf_counter()
+        self.track_cursor(min(now - self.last_frame_at, .2))
+        self.last_frame_at = now
+        self.static_timer = self.root.after(100, self.static_tick)
 
     def bind_events(self) -> None:
         self.canvas.bind("<ButtonPress-1>", self.start_drag)

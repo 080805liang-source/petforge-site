@@ -75,6 +75,7 @@ def pet():
     instance.dragged = False
     instance.timer_precision = False
     instance.frame_timer = None
+    instance.static_timer = None
     instance.keyboard_timer = None
     instance.wander_timer = None
     instance.cursor_offset = (0, 0)
@@ -104,6 +105,17 @@ class DesktopMotionTests(unittest.TestCase):
         self.assertFalse(instance.particles)
         self.assertFalse(instance.root.tasks)
 
+    def test_static_mode_preserves_low_frequency_cursor_follow(self):
+        instance = pet()
+        ticks = []
+        instance.track_cursor = ticks.append
+        with patch('desktop_app.sys.platform', 'test'), patch('desktop_app.time.perf_counter', lambda: instance.root.now):
+            instance.set_motion_enabled(False)
+            instance.root.now = .1
+            instance.static_tick()
+        self.assertEqual(ticks, [.1])
+        self.assertIn(instance.static_timer, instance.root.tasks)
+
     def test_timed_animation_interpolates_and_returns_home(self):
         points = [(0, 0), (0, -24), (0, 0)]
         self.assertEqual(motion_offset(points, 0, .28), (0, 0))
@@ -128,8 +140,12 @@ class DesktopMotionTests(unittest.TestCase):
             self.assertGreaterEqual(instance.canvas.draws - start, 59)
             self.assertLessEqual(instance.canvas.draws - start, 61)
             instance.set_motion_enabled(False)
-            self.assertFalse(instance.root.tasks)
+            self.assertEqual(len(instance.root.tasks), 1)
             self.assertEqual(instance.canvas.coords('pet'), (150, 138))
+            instance.root.tasks.clear()
+            instance.static_tick()
+            self.assertEqual(len(instance.root.tasks), 1)
+            self.assertIn(instance.static_timer, instance.root.tasks)
 
     def test_cursor_follow_speed_is_independent_of_frame_rate(self):
         positions = []

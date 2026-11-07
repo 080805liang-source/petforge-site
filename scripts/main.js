@@ -219,7 +219,7 @@ function updatePreview() {
   sizeOutput.textContent = `${size}%`;
   opacityOutput.textContent = `${opacity}%`;
   const motion = petMotion.checked;
-  [petAnimation, hoverEffect, leaveEffect, idleBehavior, doubleClickEffect, cursorFollowMode, proactiveFrequency, keyboardReaction, wanderEnabled, clickParticles, keyboardSync].forEach((control) => { control.disabled = !motion; });
+  [petAnimation, hoverEffect, leaveEffect, idleBehavior, doubleClickEffect, proactiveFrequency, keyboardReaction, wanderEnabled, clickParticles, keyboardSync].forEach((control) => { control.disabled = !motion; });
   if (motion && !previewPet.hidden && !document.hidden) {
     if (!previewFrameId) previewFrameId = requestAnimationFrame(animatePreview);
   } else {
