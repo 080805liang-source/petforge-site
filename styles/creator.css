@@ -144,6 +144,22 @@
 .creator-page footer { min-height: 100px; color: #afc1c7; background: #0b151c; font-family: inherit; font-size: 12px; letter-spacing: 0; }
 .creator-page footer a:hover { color: #fff; }
 
+.creator-page .feedback-trigger { border-color: rgba(182, 232, 213, .48); color: #d6eee2; }
+.creator-page .admin-dashboard-trigger { border-color: rgba(221, 196, 148, .52); color: #f1e4c7; }
+.feedback-dialog .membership-panel { padding: 38px; }
+.feedback-dialog .membership-panel h2 { max-width: 360px; font-size: 27px; }
+.feedback-dialog .membership-panel label { display: grid; gap: 7px; margin: 13px 0; color: #b4c7d8; font-size: 12px; font-weight: 700; }
+.feedback-dialog .membership-panel select, .feedback-dialog .membership-panel textarea { width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #2b4964; border-radius: 8px; outline: none; background: #0c1a28; color: #f5fbff; font: inherit; }
+.feedback-dialog .membership-panel textarea { resize: vertical; line-height: 1.6; }
+.feedback-dialog .membership-panel select:focus, .feedback-dialog .membership-panel textarea:focus { border-color: #8ad8ff; box-shadow: 0 0 0 2px rgba(138,216,255,.12); }
+.feedback-dialog .membership-panel textarea::placeholder { color: #8199ad; }
+.feedback-dialog .membership-panel form { display: grid; gap: 5px; }
+@media (max-width: 600px) {
+  .creator-page .feedback-trigger, .creator-page .admin-dashboard-trigger { max-width: 90px; overflow: hidden; padding-inline: 9px; white-space: nowrap; }
+  .feedback-dialog .membership-panel { padding: 42px 25px 30px; }
+  .feedback-dialog .membership-panel h2 { font-size: 24px; }
+}
+
 @media (max-width: 1279px) {
   .creator-page .site-header { flex-wrap: wrap; gap: 8px 18px; }
   .creator-page .nav-links { order: 3; justify-content: center; width: 100%; flex-wrap: wrap; }

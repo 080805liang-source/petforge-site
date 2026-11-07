@@ -6,8 +6,8 @@
     <meta name="description" content="上传自己的图片，定制交互与快捷菜单，生成专属 Windows 桌宠。">
     <title>桌宠创作台 | PET FORGE</title>
     <link rel="stylesheet" href="styles/main.css?v=stable-20260906">
-    <link rel="stylesheet" href="styles/membership.css?v=auth-20260921">
-    <link rel="stylesheet" href="styles/creator.css?v=creator-glass-20261027-r5">
+    <link rel="stylesheet" href="styles/membership.css?v=redeem-20261107-r2">
+    <link rel="stylesheet" href="styles/creator.css?v=admin-20261107">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#07101a">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
@@ -30,7 +30,9 @@
         <button id="install-pwa" class="nav-cta pwa-install" type="button" hidden>安装应用</button>
         <a class="support-icon-link" href="support.html" aria-label="帮助与支持" title="帮助与支持">?</a>
         <label class="language-control"><span class="sr-only">语言</span><select data-language-select aria-label="语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="ja">日本語</option><option value="it">Italiano</option><option value="es">Español</option><option value="fr">Français</option></select></label>
-        <button class="nav-cta" type="button" data-member-open>登录 / 购买次数</button>
+        <button class="nav-cta feedback-trigger" type="button" data-feedback-open>问题反馈</button>
+        <a class="nav-cta admin-dashboard-trigger" href="admin.html" data-admin-dashboard hidden>管理后台</a>
+        <button class="nav-cta" type="button" data-member-open>登录 / 兑换会员码</button>
       </div>
     </header>
 
@@ -276,7 +278,7 @@
       <button class="membership-close" type="button" data-member-close aria-label="关闭">×</button>
       <section id="membership-auth" class="membership-panel">
         <p class="eyebrow"><span></span> PET FORGE ACCOUNT</p>
-        <h2 id="membership-title">登录后，<br><em>按次数使用。</em></h2>
+        <h2 id="membership-title">登录后，<br><em>兑换会员码。</em></h2>
         <div class="membership-switch" role="group" aria-label="账号操作"><button class="is-active" type="button" data-member-mode="login">登录</button><button type="button" data-member-mode="signup">注册</button></div>
         <div class="membership-switch identity-switch" role="group" aria-label="登录方式"><button class="is-active" type="button" data-identity-mode="email">邮箱</button><button type="button" data-identity-mode="phone">手机号</button></div>
         <form id="membership-auth-form">
@@ -292,36 +294,35 @@
       </section>
       <section id="membership-vip" class="membership-panel" hidden>
         <p class="eyebrow"><span></span> PET FORGE BALANCE</p>
-        <h2 id="membership-vip-title">我的使用次数</h2>
-        <p id="membership-vip-status" class="membership-intro">每生成一次桌宠包消耗 1 次。</p>
-        <button id="membership-buy-credits" class="button primary wide" type="button">购买 3 次 · ¥9.90 <span>→</span></button>
-        <p id="membership-order-note" class="membership-note" role="status"></p>
-        <section id="membership-admin" class="membership-admin" hidden>
-          <p>管理员订单确认</p>
-          <input id="membership-confirm-order-id" type="text" placeholder="输入订单号">
-          <button id="membership-confirm-order" class="button secondary wide" type="button">确认收款并增加 3 次</button>
-          <p id="membership-admin-note" class="membership-note" role="status"></p>
-        </section>
+        <h2 id="membership-vip-title">我的会员</h2>
+        <p id="membership-vip-status" class="membership-intro">兑换后激活会员，有效期内不限生成次数。</p>
+        <form id="membership-redeem-form"><label for="membership-code">会员码<input id="membership-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="43" placeholder="输入你已获得的 PAW- 会员码" required></label><button id="membership-redeem-submit" class="button primary wide" type="submit">兑换会员码 <span>→</span></button></form>
+        <p class="membership-intro">在其他平台获得会员码后，在此兑换。本站不提供支付或购买服务。</p>
+        <p id="membership-redeem-note" class="membership-note" role="status"></p>
         <button id="membership-signout" class="membership-text-button" type="button">退出当前账号</button>
       </section>
     </dialog>
-    <dialog id="payment-dialog" class="membership-dialog payment-dialog" aria-labelledby="payment-title">
-      <button class="membership-close" type="button" data-payment-close aria-label="关闭">×</button>
+    <dialog id="feedback-dialog" class="membership-dialog feedback-dialog" aria-labelledby="feedback-title">
+      <button class="membership-close" type="button" data-feedback-close aria-label="关闭">×</button>
       <section class="membership-panel">
-        <p class="eyebrow"><span></span> ALIPAY PAYMENT</p>
-        <h2 id="payment-title">扫码购买 3 次</h2>
-        <p class="membership-intro">支付 ¥9.90 后，保存订单号并联系管理员确认。确认后次数会自动到账。</p>
-        <div class="payment-qr-frame"><img id="payment-qr" src="assets/alipay-qr.png" alt="支付宝收款二维码"><p id="payment-qr-missing" hidden>尚未配置支付宝二维码，请联系管理员。</p></div>
-        <p class="payment-order">订单号：<strong id="payment-order-id"></strong></p>
-        <p id="payment-note" class="membership-note" role="status"></p>
-        <button class="button secondary wide" type="button" data-payment-close>我已扫码，关闭</button>
+        <p class="eyebrow"><span></span> PET FORGE / FEEDBACK</p>
+        <h2 id="feedback-title">告诉我们遇到什么问题</h2>
+        <p class="membership-intro">提交后会进入管理员工作台。请勿填写密码或验证码。</p>
+        <form id="feedback-form">
+          <label>问题类型<select id="feedback-category" required><option value="bug">功能异常</option><option value="account">账号登录</option><option value="payment">会员码与次数</option><option value="idea">改进建议</option><option value="other">其他</option></select></label>
+          <label>问题描述<textarea id="feedback-message" minlength="8" maxlength="3000" rows="4" required placeholder="请描述你希望我们解决的问题"></textarea></label>
+          <label>复现步骤或补充信息<textarea id="feedback-details" maxlength="3000" rows="3" placeholder="可填写操作步骤、浏览器/系统版本或报错内容"></textarea></label>
+          <button id="feedback-submit" class="button primary wide" type="submit">提交反馈 <span>→</span></button>
+        </form>
+        <p id="feedback-note" class="membership-note" role="status"></p>
       </section>
     </dialog>
     <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/supabase-config.js?v=stable-20260906"></script>
-    <script src="scripts/i18n.js?v=i18n-20261024-r1" defer></script>
+    <script src="scripts/i18n.js?v=redeem-20261107-r2" defer></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
-    <script src="scripts/membership.js?v=auth-20260921" defer></script>
-    <script src="scripts/main.js?v=zip-20260906" defer></script>
+    <script src="scripts/membership.js?v=redeem-20261107-r2" defer></script>
+    <script src="scripts/main.js?v=redeem-20261107-r2" defer></script>
+    <script src="scripts/analytics.js?v=admin-dashboard-20261107-r2" defer></script>
   </body>
 </html>

@@ -584,7 +584,8 @@ buildButton?.addEventListener("click", async () => {
     const result = await buildPackageInBrowser();
     if (window.PetForgeMembership?.consumeUse) await window.PetForgeMembership.consumeUse();
     downloadBlob(result.blob, `PETFORGE-${result.name}.zip`);
-    setStatus("本次使用已扣除 1 次。桌宠 ZIP 已下载；解压全部文件后即可启动。", "success");
+    const usageMessage = window.PetForgeMembership?.isUnlimited?.() ? "本次为无限使用权益，未扣次数。桌宠 ZIP 已下载；解压全部文件后即可启动。" : "本次使用已扣除 1 次。桌宠 ZIP 已下载；解压全部文件后即可启动。";
+    setStatus(usageMessage, "success");
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : "生成过程异常，请刷新后重试。";
     setStatus(`生成失败：${message}`, "error");

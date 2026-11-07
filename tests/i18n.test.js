@@ -53,8 +53,8 @@ test("language switch translates common support and account text", () => {
 test("dynamic account messages translate while preserving user labels", () => {
   const translator = createTranslator();
   translator.setLanguage("en");
-  assert.equal(translator.translate("3 次可用 · 购买"), "3 uses · Buy");
-  assert.equal(translator.translate("已确认，用户新增 3 次。"), "Confirmed; added 3 uses.");
+  assert.equal(translator.translate("3 次可用 · 兑换"), "3 uses · Redeem");
+  assert.equal(translator.translate("兑换会员码"), "Redeem access code");
   assert.equal(translator.translate("移除 小猫花花"), "Remove 小猫花花");
   assert.equal(translator.translate("小猫花花"), "小猫花花");
 });
