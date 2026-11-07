@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-workshop-20261107-r3";
+const CACHE_NAME = "petforge-pwa-workshop-preview-20261107-r1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,13 +9,13 @@ const APP_SHELL = [
   "./manifest.json",
   "./styles/main.css?v=stable-20260906",
   "./styles/membership.css?v=redeem-20261107-r2",
-  "./styles/workshop.css?v=workshop-20261107-r2",
+  "./styles/workshop.css?v=workshop-preview-20261107-r1",
   "./styles/cat-home.css?v=kitten-ready-20261024-r2",
   "./styles/support.css?v=support-20261024-r1",
   "./styles/creator.css?v=outline-20261107-r1",
   "./styles/admin.css?v=redeem-20261107-r2",
   "./scripts/cat-home.js?v=wand-attached-20261024-r1",
-  "./scripts/i18n.js?v=workshop-20261107-r3",
+  "./scripts/i18n.js?v=workshop-preview-20261107-r1",
   "./scripts/cat-motion.js?v=voxel-20261023-r1",
   "./scripts/kitten-model.js?v=voxel-20261023-r1",
   "./scripts/teaser-cursor.js?v=teaser-20261024-r4",
@@ -36,7 +36,7 @@ const APP_SHELL = [
   "./scripts/membership.js?v=workshop-20261107-r1",
   "./scripts/admin.js?v=redeem-20261107-r2",
   "./scripts/analytics.js?v=admin-dashboard-20261107-r2",
-  "./scripts/workshop.js?v=workshop-20261107-r1",
+  "./scripts/workshop.js?v=workshop-preview-20261107-r1",
   "./scripts/supabase-config.js",
   "./scripts/pwa.js",
   "./assets/creator-studio-3d.png",

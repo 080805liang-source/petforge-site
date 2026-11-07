@@ -13,7 +13,25 @@ function setStatus(message, error = false) { status.textContent = message; statu
 function createCard(post) {
   const article = document.createElement("article"); article.className = "workshop-card"; article.id = `creation-${post.id}`;
   const media = document.createElement("div"); media.className = "workshop-card-media";
-  const image = document.createElement("img"); image.src = post.preview; image.alt = post.title; image.loading = "lazy";
+  const image = document.createElement("img"); image.alt = post.title; image.loading = "lazy"; image.decoding = "async";
+  const imageStatus = document.createElement("span"); imageStatus.className = "workshop-image-status"; imageStatus.textContent = "正在加载预览..."; imageStatus.setAttribute("role", "status");
+  media.setAttribute("aria-busy", "true");
+  image.addEventListener("load", () => { imageStatus.hidden = true; media.setAttribute("aria-busy", "false"); });
+  let retried = false;
+  image.addEventListener("error", async () => {
+    if (!retried) {
+      retried = true;
+      try {
+        const response = await fetch(`${api}/workshop/${encodeURIComponent(post.id)}`);
+        const result = await response.json();
+        if (!response.ok || !result.post?.image) throw new Error("Missing image");
+        image.src = result.post.image;
+        return;
+      } catch (_) { /* Keep the card usable when both image sources fail. */ }
+    }
+    image.hidden = true; media.setAttribute("aria-busy", "false"); imageStatus.textContent = "预览暂时无法显示，可点击查看配置";
+  });
+  media.append(image, imageStatus); image.src = post.preview;
   const main = document.createElement("div"); main.className = "workshop-card-main";
   const meta = document.createElement("div"); meta.className = "card-meta";
   const author = document.createElement("strong"); author.textContent = post.author; author.dataset.userContent = "true";
