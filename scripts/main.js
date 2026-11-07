@@ -110,7 +110,7 @@ function getConfig() {
     desktopOnly: Boolean(desktopOnly.checked),
     shadow: Boolean(petShadow.checked),
     motionEnabled: Boolean(petMotion.checked),
-    targetFps: 60,
+    targetFps: 120,
     hoverEffect: hoverEffect.value,
     leaveEffect: leaveEffect.value,
     idleBehavior: idleBehavior.value,
@@ -564,11 +564,11 @@ function packageReadme(config) {
 - 右键桌宠可以打开快捷菜单。
 - 左键拖拽可以移动桌宠。
 - 默认静态、无阴影。可在右键菜单随时切换“显示柔和阴影”和“动态模式”。
-- 动态模式以 60 帧/秒为目标；开启后，点击、鼠标互动和键盘同步会使用你选择的效果。
+- 动态模式以 120 帧/秒为目标；开启后，点击、鼠标互动和键盘同步会使用你选择的效果。
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.07-transparent-workshop-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.07-smooth-120fps-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL("assets/PetForge.exe", document.baseURI);
@@ -748,8 +748,8 @@ async function loadWorkshopTemplate() {
     desktopOnly.checked = templateConfig.desktopOnly === true;
     petShadow.checked = templateConfig.shadow === true;
     petMotion.checked = templateConfig.motionEnabled === true;
-    hoverEffect.value = templateConfig.hoverEffect || hoverEffect.value;
-    leaveEffect.value = templateConfig.leaveEffect || leaveEffect.value;
+    hoverEffect.value = templateConfig.hoverEffect === "halo" ? "none" : (templateConfig.hoverEffect || "none");
+    leaveEffect.value = templateConfig.leaveEffect === "dim" ? "stay" : (templateConfig.leaveEffect || "stay");
     idleBehavior.value = templateConfig.idleBehavior || idleBehavior.value;
     doubleClickEffect.value = templateConfig.doubleClickEffect || doubleClickEffect.value;
     cursorFollowMode.value = templateConfig.cursorFollowMode || cursorFollowMode.value;

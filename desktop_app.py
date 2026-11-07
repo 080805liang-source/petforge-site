@@ -24,7 +24,8 @@ def app_dir() -> Path:
 BASE_DIR = app_dir()
 CONFIG_PATH = BASE_DIR / "config.json"
 IMAGE_PATH = BASE_DIR / "assets" / "pet.png"
-FRAME_SECONDS = 1 / 60
+TARGET_FPS = 120
+FRAME_SECONDS = 1 / TARGET_FPS
 
 
 def transparent_color(photo) -> str:
@@ -114,6 +115,9 @@ class DesktopPet:
         )
         self.bubble_ids: list[int] = []
         self.drag_start = (0, 0)
+        self.drag_origin = (0, 0)
+        self.drag_target = None
+        self.pointer_down = False
         self.dragged = False
         self.motion_active = False
         self.motion_points: list[tuple[float, float]] = []
@@ -195,13 +199,13 @@ class DesktopPet:
         self.shadow_var = tk.BooleanVar(value=self.shadow_enabled)
         self.motion_var = tk.BooleanVar(value=bool(self.config.get("motionEnabled", True)))
         self.menu.add_checkbutton(label="显示柔和阴影", variable=self.shadow_var, command=lambda: self.set_shadow_enabled(self.shadow_var.get(), persist=True))
-        self.menu.add_checkbutton(label="动态模式（目标 60 帧/秒）", variable=self.motion_var, command=lambda: self.set_motion_enabled(self.motion_var.get(), persist=True))
+        self.menu.add_checkbutton(label=f"动态模式（目标 {TARGET_FPS} 帧/秒）", variable=self.motion_var, command=lambda: self.set_motion_enabled(self.motion_var.get(), persist=True))
         self.menu.add_command(label="隐藏 10 秒", command=self.hide_temporarily)
         self.menu.add_command(label="切换始终置顶", command=self.toggle_topmost)
         self.menu.add_command(label="退出桌宠", command=self.root.destroy)
 
     def save_preferences(self) -> None:
-        self.config.update(shadow=self.shadow_enabled, motionEnabled=self.motion_enabled, targetFps=60)
+        self.config.update(shadow=self.shadow_enabled, motionEnabled=self.motion_enabled, targetFps=TARGET_FPS)
         try:
             CONFIG_PATH.write_text(json.dumps(self.config, ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError:
@@ -254,7 +258,7 @@ class DesktopPet:
             self.next_idle_action = now + 6
             self.last_frame_at = now
             self.next_frame_at = now + FRAME_SECONDS
-            self.frame_timer = self.root.after(17, self.frame)
+            self.frame_timer = self.root.after(math.ceil(FRAME_SECONDS * 1000), self.frame)
             if self.config.get("keyboardSync", False):
                 self.keyboard_timer = self.root.after(90, self.track_keyboard)
             if self.config.get("wanderEnabled", False):
@@ -277,15 +281,18 @@ class DesktopPet:
         now = time.perf_counter()
         delta = min(now - self.last_frame_at, .1)
         self.last_frame_at = now
-        self.track_cursor(delta)
-        if self.motion_active:
+        if self.pointer_down and self.drag_target is not None:
+            self.move_window(*self.drag_target)
+        elif not self.pointer_down:
+            self.track_cursor(delta)
+        if self.motion_active and not self.pointer_down:
             elapsed = now - self.motion_started
             x, y = motion_offset(self.motion_points, elapsed, self.motion_duration)
             self.canvas.coords(self.pet_id, self.pet_base_x + x, self.pet_base_y + y)
             self.motion_active = elapsed < self.motion_duration
-        elif self.typing_active:
+        elif self.typing_active and not self.pointer_down:
             self.play_typing_step(now)
-        elif not self.dragged:
+        elif not self.dragged and not self.pointer_down:
             self.idle(now)
         self.update_particles(now)
         self.next_frame_at += FRAME_SECONDS
@@ -298,7 +305,8 @@ class DesktopPet:
         if self.motion_enabled:
             return
         now = time.perf_counter()
-        self.track_cursor(min(now - self.last_frame_at, .2))
+        if not self.pointer_down:
+            self.track_cursor(min(now - self.last_frame_at, .2))
         self.last_frame_at = now
         self.static_timer = self.root.after(100, self.static_tick)
 
@@ -313,17 +321,26 @@ class DesktopPet:
         self.root.bind("<Escape>", lambda _event: self.root.destroy())
 
     def start_drag(self, event: tk.Event) -> None:
-        self.drag_start = (event.x, event.y)
+        self.drag_start = (event.x_root, event.y_root)
+        self.drag_origin = (self.root.winfo_x(), self.root.winfo_y())
+        self.pointer_down = True
+        self.drag_target = None
         self.dragged = False
 
     def drag(self, event: tk.Event) -> None:
-        dx, dy = event.x - self.drag_start[0], event.y - self.drag_start[1]
+        dx, dy = event.x_root - self.drag_start[0], event.y_root - self.drag_start[1]
         if abs(dx) > 4 or abs(dy) > 4:
             self.dragged = True
             self.cancel_pending_click()
-        self.root.geometry(f"+{self.root.winfo_x() + dx}+{self.root.winfo_y() + dy}")
+        self.drag_target = (self.drag_origin[0] + dx, self.drag_origin[1] + dy)
+        if not self.motion_enabled:
+            self.move_window(*self.drag_target)
 
     def release_left(self, _event: tk.Event) -> None:
+        if self.drag_target is not None:
+            self.move_window(*self.drag_target)
+        self.pointer_down = False
+        self.drag_target = None
         if self.dragged:
             self.dragged = False
             return
@@ -461,11 +478,12 @@ class DesktopPet:
             else:
                 self.cursor_offset = (0, 0)
 
-            if mode == "follow" and 170 < distance < 760 and not self.motion_active:
-                target_x = max(8, min(self.root.winfo_screenwidth() - self.width - 8, mouse_x - self.width // 2))
-                target_y = max(36, min(self.root.winfo_screenheight() - self.height - 56, mouse_y - self.height - 18))
-                self.move_toward(target_x, target_y, delta, 1.7)
-            elif mode == "playful" and distance < 210 and not self.motion_active:
+            stop_distance = max(80, min(140, self.width * .4))
+            if mode == "follow" and distance > stop_distance + 6:
+                target_x = max(8, min(self.root.winfo_screenwidth() - self.width - 8, mouse_x - self.width // 2 - dx / distance * stop_distance))
+                target_y = max(36, min(self.root.winfo_screenheight() - self.height - 56, mouse_y - self.height // 2 - dy / distance * stop_distance))
+                self.move_toward(target_x, target_y, delta, .22, max_speed=900)
+            elif mode == "playful" and distance < 210:
                 away_x = self.root.winfo_x() - int(dx * .44)
                 away_y = self.root.winfo_y() - int(dy * .44)
                 safe_x = max(8, min(self.root.winfo_screenwidth() - self.width - 8, away_x))
@@ -481,14 +499,23 @@ class DesktopPet:
                     self.show_bubble(random.choice(["鼠标来啦！", "我在看着你哦。", "想和我玩一下吗？"]), 1800)
             self.last_cursor_near = is_near
 
-    def move_toward(self, target_x: float, target_y: float, delta: float, smooth_seconds: float) -> None:
+    def move_window(self, x: float, y: float) -> None:
+        self.window_position = (x, y)
+        if (round(x), round(y)) != (self.root.winfo_x(), self.root.winfo_y()):
+            self.root.geometry(f"{round(x):+d}{round(y):+d}")
+
+    def move_toward(self, target_x: float, target_y: float, delta: float, smooth_seconds: float, max_speed: float | None = None) -> None:
         current_x, current_y = self.root.winfo_x(), self.root.winfo_y()
         previous = getattr(self, "window_position", (current_x, current_y))
         if abs(current_x - previous[0]) > 1 or abs(current_y - previous[1]) > 1:
             previous = (current_x, current_y)
         blend = 1 - math.exp(-delta / smooth_seconds)
-        self.window_position = (previous[0] + (target_x - previous[0]) * blend, previous[1] + (target_y - previous[1]) * blend)
-        self.root.geometry(f"+{round(self.window_position[0])}+{round(self.window_position[1])}")
+        step_x, step_y = (target_x - previous[0]) * blend, (target_y - previous[1]) * blend
+        length = math.hypot(step_x, step_y)
+        if max_speed is not None and length > max_speed * delta:
+            scale = max_speed * delta / length
+            step_x, step_y = step_x * scale, step_y * scale
+        self.move_window(previous[0] + step_x, previous[1] + step_y)
 
     def is_key_active(self) -> bool:
         if not sys.platform.startswith("win"):
@@ -575,14 +602,8 @@ class DesktopPet:
             if self.config.get("hoverBubble", True):
                 self.show_bubble("我在这里，安静陪着你。", 1800)
             return
-        effect = self.config.get("hoverEffect", "halo")
-        if effect == "halo" and self.aura_id is None:
-            self.aura_id = self.canvas.create_oval(
-                18, 18, self.width - 18, self.photo.height() + 52,
-                outline="#8ddcff", width=2,
-            )
-            self.canvas.tag_lower(self.aura_id, self.pet_id)
-        elif effect == "greeting" and self.config.get("hoverBubble", True):
+        effect = self.config.get("hoverEffect", "none")
+        if effect == "greeting" and self.config.get("hoverBubble", True):
             self.show_bubble(random.choice(["你好呀，我看到你啦。", "今天也一起加油。", "摸摸我吧！"]), 1800)
         elif effect == "hop":
             self.animate(mode="jump")

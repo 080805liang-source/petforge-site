@@ -63,6 +63,7 @@ def pet():
     instance.canvas = Canvas()
     instance.photo = SimpleNamespace(height=lambda: 220)
     instance.width = 300
+    instance.height = 316
     instance.pet_id = 'pet'
     instance.pet_base_x, instance.pet_base_y = 150, 138
     instance.shadow_ids = []
@@ -73,6 +74,8 @@ def pet():
     instance.motion_active = False
     instance.typing_active = False
     instance.dragged = False
+    instance.pointer_down = False
+    instance.drag_target = None
     instance.timer_precision = False
     instance.frame_timer = None
     instance.static_timer = None
@@ -133,7 +136,7 @@ class DesktopMotionTests(unittest.TestCase):
             self.assertEqual(positions[-1], (0, 0))
             self.assertTrue(all(-24 <= value[1] <= 0 for value in positions))
 
-    def test_dynamic_scheduler_targets_60_fps_and_stops_when_disabled(self):
+    def test_dynamic_scheduler_targets_120_fps_and_stops_when_disabled(self):
         instance = pet()
         with patch('desktop_app.sys.platform', 'test'), patch('desktop_app.time.perf_counter', lambda: instance.root.now):
             instance.set_motion_enabled(True)
@@ -145,8 +148,8 @@ class DesktopMotionTests(unittest.TestCase):
                 instance.root.now = at
                 del instance.root.tasks[timer]
                 callback()
-            self.assertGreaterEqual(instance.canvas.draws - start, 59)
-            self.assertLessEqual(instance.canvas.draws - start, 61)
+            self.assertGreaterEqual(instance.canvas.draws - start, 119)
+            self.assertLessEqual(instance.canvas.draws - start, 121)
             instance.set_motion_enabled(False)
             self.assertEqual(len(instance.root.tasks), 1)
             self.assertEqual(instance.canvas.coords('pet'), (150, 138))
@@ -171,6 +174,54 @@ class DesktopMotionTests(unittest.TestCase):
         with patch('desktop_app.webbrowser.open') as open_url:
             instance.open_target('url', 'https://example.com/')
             open_url.assert_called_once_with('https://example.com/')
+
+    def test_hover_never_adds_the_old_halo_even_for_a_saved_template(self):
+        for config in ({}, {'hoverEffect': 'halo'}, {'hoverEffect': 'none'}):
+            instance = pet()
+            instance.config = config
+            instance.motion_enabled = True
+            instance.on_hover(None)
+            self.assertFalse(instance.canvas.items)
+
+    def test_drag_uses_screen_coordinates_and_commits_the_latest_pointer(self):
+        instance = pet()
+        instance.motion_enabled = True
+        instance.pending_click = None
+        instance.root.position = (100, 100)
+        instance.start_drag(SimpleNamespace(x_root=150, y_root=150))
+        instance.drag(SimpleNamespace(x_root=250, y_root=190))
+        instance.drag(SimpleNamespace(x_root=300, y_root=210))
+        self.assertEqual(instance.root.position, (100, 100), 'events coalesce until the next frame')
+        instance.release_left(None)
+        self.assertEqual(instance.root.position, (250, 160))
+        self.assertFalse(instance.pointer_down)
+        self.assertFalse(instance.root.tasks, 'dragging must not trigger a click animation')
+
+    def test_follow_does_not_stop_when_the_cursor_is_far_away(self):
+        instance = pet()
+        del instance.track_cursor
+        instance.config = {'cursorFollowMode': 'follow', 'proactiveFrequency': 'quiet'}
+        instance.root.winfo_screenwidth = lambda: 2560
+        instance.root.winfo_screenheight = lambda: 1440
+        instance.cursor_position = lambda: (1800, 600)
+        instance.last_cursor_near = False
+        instance.last_proactive_at = 0
+        instance.motion_active = True
+        instance.track_cursor(1 / 120)
+        x, y = instance.window_position
+        self.assertGreater(x, 0)
+        self.assertLessEqual((x*x+y*y)**.5, 900 / 120 + 1e-6)
+
+    def test_holding_the_pet_suspends_autonomous_follow(self):
+        instance = pet()
+        ticks = []
+        instance.track_cursor = ticks.append
+        instance.pointer_down = True
+        with patch('desktop_app.time.perf_counter', lambda: instance.root.now):
+            instance.set_motion_enabled(False)
+            instance.root.now = .1
+            instance.static_tick()
+        self.assertFalse(ticks)
 
 
 if __name__ == '__main__':

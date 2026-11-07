@@ -21,6 +21,7 @@ test('publishing requires login; public readers receive the same PNG and complet
   assert.equal(result.body.post.config.motionEnabled, false);
   assert.equal(result.body.post.config.keyboardSync, false);
   assert.equal(result.body.post.config.safeRendering, false);
+  assert.equal(result.body.post.config.targetFps, 120);
   assert.deepEqual(result.body.post.config.customShortcuts, config.customShortcuts);
   assert.equal(JSON.stringify(result.body).includes('test@example.com'), false);
   const list = await api.call('GET', '/workshop');

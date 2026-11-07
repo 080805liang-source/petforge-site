@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-workshop-preview-20261107-r1";
+const CACHE_NAME = "petforge-pwa-smooth-20261107-r1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -15,7 +15,7 @@ const APP_SHELL = [
   "./styles/creator.css?v=outline-20261107-r1",
   "./styles/admin.css?v=redeem-20261107-r2",
   "./scripts/cat-home.js?v=wand-attached-20261024-r1",
-  "./scripts/i18n.js?v=workshop-preview-20261107-r1",
+  "./scripts/i18n.js?v=smooth-20261107-r1",
   "./scripts/cat-motion.js?v=voxel-20261023-r1",
   "./scripts/kitten-model.js?v=voxel-20261023-r1",
   "./scripts/teaser-cursor.js?v=teaser-20261024-r4",
@@ -29,7 +29,7 @@ const APP_SHELL = [
   "./assets/voxel-kitten-preview.svg",
   "./assets/feature-cat-white-20261027.png",
   "./assets/desktop-pet-scene.webp",
-  "./scripts/main.js?v=workshop-20261107-r2",
+  "./scripts/main.js?v=smooth-20261107-r1",
   "./scripts/background-removal.js?v=outline-20261107-r1",
   "./scripts/background-worker.js?v=outline-20261107-r1",
   "./scripts/background-matte.js?v=outline-20261107-r1",

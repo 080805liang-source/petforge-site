@@ -144,7 +144,7 @@
                 <label><input id="always-on-top" type="checkbox"><span>始终置顶</span><i></i></label>
                 <label title="打开其他应用时自动隐藏，回到桌面后显示"><input id="desktop-only" type="checkbox"><span>仅在桌面显示</span><i></i></label>
                 <label><input id="pet-shadow" type="checkbox"><span>柔和阴影（可选）</span><i></i></label>
-                <label><input id="pet-motion" type="checkbox"><span>动态桌宠 · 60 帧/秒</span><i></i></label>
+                <label><input id="pet-motion" type="checkbox"><span>动态桌宠 · 120 帧/秒</span><i></i></label>
               </div>
               <p class="interaction-intro">默认静态、无阴影。开启动态后播放互动动作；关闭后保留拖动、气泡和快捷入口。</p>
             </div>
@@ -158,19 +158,17 @@
               <div class="select-grid interaction-selects">
                 <label>鼠标移到身上时
                   <select id="hover-effect">
-                    <option value="halo">出现柔光光环</option>
+                    <option value="none">安静不打扰</option>
                     <option value="greeting">主动打招呼</option>
                     <option value="hop">轻轻跳一下</option>
                     <option value="sparkle">冒出星光粒子</option>
                     <option value="shy">害羞地躲一躲</option>
-                    <option value="none">安静不打扰</option>
                   </select>
                 </label>
                 <label>鼠标离开时
                   <select id="leave-effect">
                     <option value="stay">留在原地等待</option>
                     <option value="goodbye">说一句再见</option>
-                    <option value="dim">轻轻收起光环</option>
                     <option value="hide">短暂藏起来</option>
                   </select>
                 </label>
@@ -332,10 +330,10 @@
     </dialog>
     <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/supabase-config.js?v=stable-20260906"></script>
-    <script src="scripts/i18n.js?v=workshop-20261107-r3" defer></script>
+    <script src="scripts/i18n.js?v=smooth-20261107-r1" defer></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
     <script src="scripts/membership.js?v=workshop-20261107-r1" defer></script>
-    <script src="scripts/main.js?v=workshop-20261107-r2" defer></script>
+    <script src="scripts/main.js?v=smooth-20261107-r1" defer></script>
     <script src="scripts/analytics.js?v=admin-dashboard-20261107-r2" defer></script>
   </body>
 </html>
