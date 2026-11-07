@@ -10,7 +10,7 @@ export function cancelCutout() {
 export function cutoutImage(blob, mode, onProgress) {
   cancelCutout();
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL("./background-worker.js", import.meta.url), { type: "module" });
+    const worker = new Worker(new URL("./background-worker.js?v=outline-20261107-r1", import.meta.url), { type: "module" });
     activeWorker = worker;
     const finish = () => {
       clearTimeout(timeout);

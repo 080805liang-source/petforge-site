@@ -516,7 +516,7 @@ async function preparePetImage() {
     if (!/^image\/(png|jpeg|webp)$/.test(source.type) || source.size > 20 * 1024 * 1024) throw new Error("invalid-image");
     const mode = petBackground.value;
     if (mode !== "original") {
-      backgroundModule ||= await import("./background-removal.js");
+      backgroundModule ||= await import("./background-removal.js?v=outline-20261107-r1");
       if (requestId !== imageRequestId) return;
     }
     const result = mode === "original" ? { blob: source, kind: "original" } : await backgroundModule.cutoutImage(source, mode, (phase) => {

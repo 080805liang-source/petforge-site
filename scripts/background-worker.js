@@ -1,4 +1,4 @@
-import { removeEdgeBackground, applySubjectMask, subjectBounds } from "./background-matte.js";
+import { removeEdgeBackground, extractOutlinedSubject, applySubjectMask, subjectBounds } from "./background-matte.js?v=outline-20261107-r1";
 
 const MODEL = new URL("../assets/models/u2netp.onnx", import.meta.url).href;
 const RUNTIME = new URL("./vendor/onnx/", import.meta.url).href;
@@ -73,7 +73,8 @@ self.onmessage = async ({ data: { blob, mode } }) => {
       self.postMessage({ blob, kind: "transparent" });
       return;
     }
-    const result = mode === "auto" && fast ? fast.data : applySubjectMask(pixels.data, await smartMask(canvas));
+    const outline = extractOutlinedSubject(pixels);
+    const result = outline ? outline.data : mode === "auto" && fast ? fast.data : applySubjectMask(pixels.data, await smartMask(canvas), canvas.width, canvas.height);
     const bounds = subjectBounds(result, canvas.width, canvas.height);
     context.putImageData(new ImageData(result, canvas.width, canvas.height), 0, 0);
     const cropped = new OffscreenCanvas(bounds.width, bounds.height);

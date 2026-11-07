@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { removeEdgeBackground, applySubjectMask, subjectBounds } from "../scripts/background-matte.js";
+import { removeEdgeBackground, extractOutlinedSubject, applySubjectMask, subjectBounds } from "../scripts/background-matte.js";
 
 function image(width = 30, height = 30, color = [255, 255, 255, 255]) {
   const data = new Uint8ClampedArray(width * height * 4);
@@ -49,17 +49,63 @@ test("complex backgrounds and blank images use segmentation instead of an unsafe
   assert.equal(removeEdgeBackground(image()), null);
 });
 
-test("subject mask multiplies existing transparency and rejects empty/full masks", () => {
+test("subject mask preserves original colors and alpha rather than fading interior paint", () => {
   const source = image(10, 10);
   const mask = new Float32Array(100);
   mask[55] = 1;
   mask[56] = .5;
   source.data[55 * 4 + 3] = 128;
-  const result = applySubjectMask(source.data, mask);
+  const result = applySubjectMask(source.data, mask, 10, 10);
   assert.equal(result[55 * 4 + 3], 128);
-  assert.equal(result[56 * 4 + 3], 128);
+  assert.equal(result[56 * 4 + 3], 255, "model confidence must not dim the original white paint");
   assert.equal(result[3], 0);
-  assert.throws(() => applySubjectMask(source.data, new Float32Array(100)), /no-subject/);
-  assert.throws(() => applySubjectMask(source.data, new Float32Array(100).fill(1)), /no-subject/);
+  assert.throws(() => applySubjectMask(source.data, new Float32Array(100), 10, 10), /no-subject/);
+  assert.throws(() => applySubjectMask(source.data, new Float32Array(100).fill(1), 10, 10), /no-subject/);
   assert.throws(() => subjectBounds(new Uint8ClampedArray(16), 2, 2), /no-subject/);
+});
+
+test("outlined characters keep every interior RGBA pixel and exclude detached background decorations", () => {
+  const source = image(40, 40, [255, 238, 244, 255]);
+  for (let y = 6; y <= 33; y++) for (let x = 7; x <= 32; x++) {
+    const edge = x === 7 || x === 32 || y === 6 || y === 33;
+    pixel(source, x, y, edge ? [10, 10, 10, 255] : y < 13 ? [255, 255, 255, 255] : x < 20 ? [230, 150, 180, 255] : [250, 220, 200, 255]);
+  }
+  pixel(source, 2, 2, [20, 20, 20, 255]);
+  const result = extractOutlinedSubject(source);
+  assert.equal(result.kind, "outline");
+  assert.equal(alpha(result.data, 40, 2, 2), 0, "detached background sparkle is excluded");
+  for (let y = 6; y <= 33; y++) for (let x = 7; x <= 32; x++) {
+    const i = (y * 40 + x) * 4;
+    assert.deepEqual(result.data.slice(i, i + 4), source.data.slice(i, i + 4), `original pixel at ${x},${y}`);
+  }
+});
+
+test("smart silhouette fills erroneous holes in white clothing and removes disconnected sparkles", () => {
+  const source = image(20, 20);
+  const mask = new Float32Array(400);
+  for (let y = 4; y <= 15; y++) for (let x = 4; x <= 15; x++) mask[y * 20 + x] = .7;
+  mask[10 * 20 + 10] = 0;
+  mask[1 * 20 + 1] = 1;
+  const result = applySubjectMask(source.data, mask, 20, 20);
+  assert.deepEqual(result.slice((10 * 20 + 10) * 4, (10 * 20 + 10) * 4 + 4), new Uint8ClampedArray([255,255,255,255]));
+  assert.equal(alpha(result, 20, 5, 5), 255, "interior stays fully opaque");
+  assert.equal(alpha(result, 20, 1, 1), 0, "background decoration stays outside silhouette");
+});
+
+test("gray antialiased outline gaps do not expose or erase the inner paint", () => {
+  const source = image(40, 40);
+  for (let y = 6; y <= 33; y++) for (let x = 7; x <= 32; x++) {
+    if (x === 7 || x === 32 || y === 6 || y === 33) pixel(source, x, y, [10, 10, 10, 255]);
+    else pixel(source, x, y, [248, 220, 230, 255]);
+  }
+  pixel(source, 20, 6, [130, 130, 130, 255]);
+  const result = extractOutlinedSubject(source);
+  assert.ok(result, "lighter outline closes without falling back to an interior-fading mask");
+  const center = (20 * 40 + 20) * 4;
+  assert.deepEqual([...result.data.slice(center, center + 4)], [248, 220, 230, 255]);
+});
+
+test("non outlined photographs fall back to general subject detection", () => {
+  assert.equal(extractOutlinedSubject(image(40, 40, [60, 60, 60, 255])), null);
+  assert.equal(extractOutlinedSubject(image()), null);
 });

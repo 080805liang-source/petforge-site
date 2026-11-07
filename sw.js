@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-cutout-20261107-r1";
+const CACHE_NAME = "petforge-pwa-outline-20261107-r1";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,10 +12,10 @@ const APP_SHELL = [
   "./styles/workshop.css",
   "./styles/cat-home.css?v=kitten-ready-20261024-r2",
   "./styles/support.css?v=support-20261024-r1",
-  "./styles/creator.css?v=cutout-20261107-r1",
+  "./styles/creator.css?v=outline-20261107-r1",
   "./styles/admin.css?v=redeem-20261107-r2",
   "./scripts/cat-home.js?v=wand-attached-20261024-r1",
-  "./scripts/i18n.js?v=cutout-20261107-r1",
+  "./scripts/i18n.js?v=outline-20261107-r1",
   "./scripts/cat-motion.js?v=voxel-20261023-r1",
   "./scripts/kitten-model.js?v=voxel-20261023-r1",
   "./scripts/teaser-cursor.js?v=teaser-20261024-r4",
@@ -29,10 +29,10 @@ const APP_SHELL = [
   "./assets/voxel-kitten-preview.svg",
   "./assets/feature-cat-white-20261027.png",
   "./assets/desktop-pet-scene.webp",
-  "./scripts/main.js?v=cutout-20261107-r1",
-  "./scripts/background-removal.js",
-  "./scripts/background-worker.js",
-  "./scripts/background-matte.js",
+  "./scripts/main.js?v=outline-20261107-r1",
+  "./scripts/background-removal.js?v=outline-20261107-r1",
+  "./scripts/background-worker.js?v=outline-20261107-r1",
+  "./scripts/background-matte.js?v=outline-20261107-r1",
   "./scripts/membership.js?v=redeem-20261107-r2",
   "./scripts/admin.js?v=redeem-20261107-r2",
   "./scripts/analytics.js?v=admin-dashboard-20261107-r2",
