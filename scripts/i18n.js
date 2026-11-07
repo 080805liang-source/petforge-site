@@ -1,5 +1,7 @@
 (function () {
   const rows = [
+    ["删除作品", "Delete creation", "作品を削除", "Elimina creazione", "Eliminar creación", "Supprimer la création"],
+    ["作品已删除，公开链接已失效。", "Creation deleted. Its public link no longer works.", "作品を削除しました。公開リンクは無効です。", "Creazione eliminata. Il collegamento pubblico non funziona più.", "Creación eliminada. Su enlace público ya no funciona.", "Création supprimée. Son lien public ne fonctionne plus."],
     ["预览动作", "Preview motion", "動きを見る", "Anteprima movimento", "Ver movimiento", "Voir le mouvement"],
     ["停止预览", "Stop preview", "プレビュー停止", "Ferma anteprima", "Detener vista previa", "Arrêter l’aperçu"],
     ["加载动作…", "Loading motion…", "動きを読み込み中…", "Caricamento movimento…", "Cargando movimiento…", "Chargement du mouvement…"],

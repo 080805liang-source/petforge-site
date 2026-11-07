@@ -66,6 +66,25 @@ test('workshop usage counts only successful generation and obeys credit limits a
   assert.equal(api.rows.cp_admin_events.length, 1);
 });
 
+test('deletion requires ownership, removes the record and blocks old links and generation', async () => {
+  const api = createAdminTestApi();
+  const created = await api.call('POST', '/workshop', payload(), 'owner-session');
+  const path = `/workshop/${created.body.id}`;
+  assert.equal((await api.call('DELETE', path)).status, 401);
+  assert.equal((await api.call('DELETE', path, null, 'user-session')).status, 403);
+  assert.equal((await api.call('GET', path)).status, 200);
+  assert.equal((await api.call('DELETE', path, null, 'owner-session')).status, 200);
+  assert.equal(api.rows.pf_workshop.length, 0);
+  assert.equal((await api.call('GET', path)).status, 404);
+  assert.equal((await api.call('GET', '/workshop')).body.total, 0);
+  assert.equal((await api.call('POST', '/consume', {amount:1,workshopId:created.body.id}, 'user-session')).status, 404);
+  assert.equal(api.rows.cp_users.find(u=>u._id==='user').credits, 1);
+  const second = await api.call('POST', '/workshop', payload(), 'user-session');
+  assert.equal((await api.call('DELETE', `/workshop/${second.body.id}`, null, 'owner-session')).status, 200);
+  const options=await api.main({httpMethod:'OPTIONS',path,headers:{}});
+  assert.match(options.headers['access-control-allow-methods'], /DELETE/);
+});
+
 test('invalid images, executable schemes and private account fields are rejected or excluded', async () => {
   const api = createAdminTestApi();
   const bad = payload(); bad.image = 'data:image/svg+xml;base64,PHN2Zz4=';

@@ -1,0 +1,827 @@
+{
+  "checkedAt": "2026-11-08",
+  "method": "参考图视觉比对 + 官方角色资料、原作/发行方资料核对。保留常用中文译名并列出原文全名；没有公开姓氏的角色不补造姓氏。游戏和虚拟歌手分别标注实际IP类型。",
+  "identifiedCount": 48,
+  "unresolvedCount": 2,
+  "characters": [
+    {
+      "id": "pf-curated-anime-4425-1",
+      "sourceImage": "IMG_4425.PNG",
+      "image": "assets/workshop/anime/anime-4425-1.png",
+      "status": "identified",
+      "ip": "孤独摇滚！",
+      "ipType": "anime",
+      "character": "后藤一里",
+      "originalName": "後藤ひとり / Hitori Gotoh",
+      "aliases": [
+        "后藤独"
+      ],
+      "sources": [
+        "https://bocchi.rocks/tv/caststaff/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《孤独摇滚！》后藤一里"
+    },
+    {
+      "id": "pf-curated-anime-4426-1",
+      "sourceImage": "IMG_4426.PNG",
+      "image": "assets/workshop/anime/anime-4426-1.png",
+      "status": "identified",
+      "ip": "孤独摇滚！",
+      "ipType": "anime",
+      "character": "山田凉",
+      "originalName": "山田リョウ / Ryo Yamada",
+      "aliases": [],
+      "sources": [
+        "https://bocchi.rocks/tv/caststaff/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《孤独摇滚！》山田凉"
+    },
+    {
+      "id": "pf-curated-anime-4427-1",
+      "sourceImage": "IMG_4427.PNG",
+      "image": "assets/workshop/anime/anime-4427-1.png",
+      "status": "identified",
+      "ip": "孤独摇滚！",
+      "ipType": "anime",
+      "character": "喜多郁代",
+      "originalName": "喜多郁代 / Ikuyo Kita",
+      "aliases": [],
+      "sources": [
+        "https://bocchi.rocks/tv/caststaff/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《孤独摇滚！》喜多郁代"
+    },
+    {
+      "id": "pf-curated-anime-4428-1",
+      "sourceImage": "IMG_4428.PNG",
+      "image": "assets/workshop/anime/anime-4428-1.png",
+      "status": "identified",
+      "ip": "孤独摇滚！",
+      "ipType": "anime",
+      "character": "伊地知虹夏",
+      "originalName": "伊地知虹夏 / Nijika Ijichi",
+      "aliases": [],
+      "sources": [
+        "https://bocchi.rocks/tv/caststaff/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《孤独摇滚！》伊地知虹夏"
+    },
+    {
+      "id": "pf-curated-anime-4429-1",
+      "sourceImage": "IMG_4429.PNG",
+      "image": "assets/workshop/anime/anime-4429-1.png",
+      "status": "identified",
+      "ip": "轻音少女",
+      "ipType": "anime",
+      "character": "平泽唯",
+      "originalName": "平沢唯 / Yui Hirasawa",
+      "aliases": [],
+      "sources": [
+        "https://www.tbs.co.jp/anime/k-on/k-on_tv/chara/chara.html"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《轻音少女》平泽唯 · 01"
+    },
+    {
+      "id": "pf-curated-anime-4429-2",
+      "sourceImage": "IMG_4429.PNG",
+      "image": "assets/workshop/anime/anime-4429-2.png",
+      "status": "identified",
+      "ip": "轻音少女",
+      "ipType": "anime",
+      "character": "中野梓",
+      "originalName": "中野梓 / Azusa Nakano",
+      "aliases": [],
+      "sources": [
+        "https://www.tbs.co.jp/anime/k-on/k-on_tv/chara/chara.html"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《轻音少女》中野梓"
+    },
+    {
+      "id": "pf-curated-anime-4429-3",
+      "sourceImage": "IMG_4429.PNG",
+      "image": "assets/workshop/anime/anime-4429-3.png",
+      "status": "identified",
+      "ip": "轻音少女",
+      "ipType": "anime",
+      "character": "琴吹紬",
+      "originalName": "琴吹紬 / Tsumugi Kotobuki",
+      "aliases": [],
+      "sources": [
+        "https://www.tbs.co.jp/anime/k-on/k-on_tv/chara/chara.html"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《轻音少女》琴吹紬"
+    },
+    {
+      "id": "pf-curated-anime-4429-4",
+      "sourceImage": "IMG_4429.PNG",
+      "image": "assets/workshop/anime/anime-4429-4.png",
+      "status": "identified",
+      "ip": "轻音少女",
+      "ipType": "anime",
+      "character": "秋山澪",
+      "originalName": "秋山澪 / Mio Akiyama",
+      "aliases": [],
+      "sources": [
+        "https://www.tbs.co.jp/anime/k-on/k-on_tv/chara/chara.html"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《轻音少女》秋山澪"
+    },
+    {
+      "id": "pf-curated-anime-4429-5",
+      "sourceImage": "IMG_4429.PNG",
+      "image": "assets/workshop/anime/anime-4429-5.png",
+      "status": "identified",
+      "ip": "轻音少女",
+      "ipType": "anime",
+      "character": "田井中律",
+      "originalName": "田井中律 / Ritsu Tainaka",
+      "aliases": [],
+      "sources": [
+        "https://www.tbs.co.jp/anime/k-on/k-on_tv/chara/chara.html"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《轻音少女》田井中律"
+    },
+    {
+      "id": "pf-curated-anime-4430-1",
+      "sourceImage": "IMG_4430.PNG",
+      "image": "assets/workshop/anime/anime-4430-1.png",
+      "status": "identified",
+      "ip": "piapro characters",
+      "ipType": "virtual-singer",
+      "character": "初音未来",
+      "originalName": "初音ミク / Hatsune Miku",
+      "aliases": [],
+      "sources": [
+        "https://piapro.net/pages/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《piapro characters》初音未来 · 01"
+    },
+    {
+      "id": "pf-curated-anime-4431-1",
+      "sourceImage": "IMG_4431.PNG",
+      "image": "assets/workshop/anime/anime-4431-1.png",
+      "status": "identified",
+      "ip": "piapro characters",
+      "ipType": "virtual-singer",
+      "character": "初音未来",
+      "originalName": "初音ミク / Hatsune Miku",
+      "aliases": [],
+      "sources": [
+        "https://piapro.net/pages/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《piapro characters》初音未来 · 02"
+    },
+    {
+      "id": "pf-curated-anime-4432-1",
+      "sourceImage": "IMG_4432.PNG",
+      "image": "assets/workshop/anime/anime-4432-1.png",
+      "status": "identified",
+      "ip": "piapro characters",
+      "ipType": "virtual-singer",
+      "character": "初音未来",
+      "originalName": "初音ミク / Hatsune Miku",
+      "aliases": [],
+      "sources": [
+        "https://piapro.net/pages/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《piapro characters》初音未来 · 03"
+    },
+    {
+      "id": "pf-curated-anime-4433-1",
+      "sourceImage": "IMG_4433.PNG",
+      "image": "assets/workshop/anime/anime-4433-1.png",
+      "status": "identified",
+      "ip": "piapro characters",
+      "ipType": "virtual-singer",
+      "character": "初音未来",
+      "originalName": "初音ミク / Hatsune Miku",
+      "aliases": [],
+      "sources": [
+        "https://piapro.net/pages/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《piapro characters》初音未来 · 04"
+    },
+    {
+      "id": "pf-curated-anime-4434-1",
+      "sourceImage": "IMG_4434.PNG",
+      "image": "assets/workshop/anime/anime-4434-1.png",
+      "status": "identified",
+      "ip": "蜡笔小新",
+      "ipType": "anime",
+      "character": "肥嘟嘟左卫门",
+      "originalName": "ぶりぶりざえもん / Buriburizaemon",
+      "aliases": [],
+      "sources": [
+        "https://manga-shinchan.com/search/tag/69"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《蜡笔小新》肥嘟嘟左卫门 · 01"
+    },
+    {
+      "id": "pf-curated-anime-4435-1",
+      "sourceImage": "IMG_4435.PNG",
+      "image": "assets/workshop/anime/anime-4435-1.png",
+      "status": "identified",
+      "ip": "蜡笔小新",
+      "ipType": "anime",
+      "character": "肥嘟嘟左卫门",
+      "originalName": "ぶりぶりざえもん / Buriburizaemon",
+      "aliases": [],
+      "sources": [
+        "https://manga-shinchan.com/search/tag/69"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《蜡笔小新》肥嘟嘟左卫门 · 02"
+    },
+    {
+      "id": "pf-curated-anime-4436-1",
+      "sourceImage": "IMG_4436.PNG",
+      "image": "assets/workshop/anime/anime-4436-1.png",
+      "status": "identified",
+      "ip": "蜡笔小新",
+      "ipType": "anime",
+      "character": "肥嘟嘟左卫门",
+      "originalName": "ぶりぶりざえもん / Buriburizaemon",
+      "aliases": [],
+      "sources": [
+        "https://manga-shinchan.com/search/tag/69"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《蜡笔小新》肥嘟嘟左卫门 · 03"
+    },
+    {
+      "id": "pf-curated-anime-4437-1",
+      "sourceImage": "IMG_4437.PNG",
+      "image": "assets/workshop/anime/anime-4437-1.png",
+      "status": "identified",
+      "ip": "蜡笔小新",
+      "ipType": "anime",
+      "character": "肥嘟嘟左卫门",
+      "originalName": "ぶりぶりざえもん / Buriburizaemon",
+      "aliases": [],
+      "sources": [
+        "https://manga-shinchan.com/search/tag/69"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《蜡笔小新》肥嘟嘟左卫门 · 04"
+    },
+    {
+      "id": "pf-curated-anime-4438-1",
+      "sourceImage": "IMG_4438.PNG",
+      "image": "assets/workshop/anime/anime-4438-1.png",
+      "status": "identified",
+      "ip": "蜡笔小新",
+      "ipType": "anime",
+      "character": "肥嘟嘟左卫门",
+      "originalName": "ぶりぶりざえもん / Buriburizaemon",
+      "aliases": [],
+      "sources": [
+        "https://manga-shinchan.com/search/tag/69"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《蜡笔小新》肥嘟嘟左卫门 · 05"
+    },
+    {
+      "id": "pf-curated-anime-4439-1",
+      "sourceImage": "IMG_4439.PNG",
+      "image": "assets/workshop/anime/anime-4439-1.png",
+      "status": "identified",
+      "ip": "Re:从零开始的异世界生活",
+      "ipType": "anime",
+      "character": "爱蜜莉雅",
+      "originalName": "エミリア / Emilia",
+      "aliases": [
+        "艾米莉亚"
+      ],
+      "sources": [
+        "https://re-zero-anime.jp/tv/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《Re:从零开始的异世界生活》爱蜜莉雅"
+    },
+    {
+      "id": "pf-curated-anime-4439-2",
+      "sourceImage": "IMG_4439.PNG",
+      "image": "assets/workshop/anime/anime-4439-2.png",
+      "status": "identified",
+      "ip": "Re:从零开始的异世界生活",
+      "ipType": "anime",
+      "character": "碧翠丝",
+      "originalName": "ベアトリス / Beatrice",
+      "aliases": [
+        "贝阿特丽丝"
+      ],
+      "sources": [
+        "https://re-zero-anime.jp/tv/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《Re:从零开始的异世界生活》碧翠丝"
+    },
+    {
+      "id": "pf-curated-anime-4439-3",
+      "sourceImage": "IMG_4439.PNG",
+      "image": "assets/workshop/anime/anime-4439-3.png",
+      "status": "identified",
+      "ip": "Re:从零开始的异世界生活",
+      "ipType": "anime",
+      "character": "蕾姆",
+      "originalName": "レム / Rem",
+      "aliases": [],
+      "sources": [
+        "https://re-zero-anime.jp/tv/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《Re:从零开始的异世界生活》蕾姆"
+    },
+    {
+      "id": "pf-curated-anime-4439-4",
+      "sourceImage": "IMG_4439.PNG",
+      "image": "assets/workshop/anime/anime-4439-4.png",
+      "status": "identified",
+      "ip": "Re:从零开始的异世界生活",
+      "ipType": "anime",
+      "character": "拉姆",
+      "originalName": "ラム / Ram",
+      "aliases": [],
+      "sources": [
+        "https://re-zero-anime.jp/tv/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《Re:从零开始的异世界生活》拉姆"
+    },
+    {
+      "id": "pf-curated-anime-4440-1",
+      "sourceImage": "IMG_4440.PNG",
+      "image": "assets/workshop/anime/anime-4440-1.png",
+      "status": "identified",
+      "ip": "Charlotte（夏洛特）",
+      "ipType": "anime",
+      "character": "友利奈绪",
+      "originalName": "友利奈緒 / Nao Tomori",
+      "aliases": [],
+      "sources": [
+        "https://charlotte-anime.jp/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《Charlotte（夏洛特）》友利奈绪 · 01"
+    },
+    {
+      "id": "pf-curated-anime-4441-1",
+      "sourceImage": "IMG_4441.PNG",
+      "image": "assets/workshop/anime/anime-4441-1.png",
+      "status": "identified",
+      "ip": "Charlotte（夏洛特）",
+      "ipType": "anime",
+      "character": "友利奈绪",
+      "originalName": "友利奈緒 / Nao Tomori",
+      "aliases": [],
+      "sources": [
+        "https://charlotte-anime.jp/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《Charlotte（夏洛特）》友利奈绪 · 02"
+    },
+    {
+      "id": "pf-curated-anime-4442-1",
+      "sourceImage": "IMG_4442.PNG",
+      "image": "assets/workshop/anime/anime-4442-1.png",
+      "status": "identified",
+      "ip": "蜡笔小新",
+      "ipType": "anime",
+      "character": "肥嘟嘟左卫门",
+      "originalName": "ぶりぶりざえもん / Buriburizaemon",
+      "aliases": [],
+      "sources": [
+        "https://manga-shinchan.com/search/tag/69"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《蜡笔小新》肥嘟嘟左卫门 · 06"
+    },
+    {
+      "id": "pf-curated-anime-4443-1",
+      "sourceImage": "IMG_4443.PNG",
+      "image": "assets/workshop/anime/anime-4443-1.png",
+      "status": "identified",
+      "ip": "魔卡少女樱",
+      "ipType": "anime",
+      "character": "木之本樱",
+      "originalName": "木之本桜 / Sakura Kinomoto",
+      "aliases": [],
+      "sources": [
+        "https://ccsakura-official.com/core_sys/images/main/cont/special/paper/vol01.pdf"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《魔卡少女樱》木之本樱 · 01"
+    },
+    {
+      "id": "pf-curated-anime-4444-1",
+      "sourceImage": "IMG_4444.PNG",
+      "image": "assets/workshop/anime/anime-4444-1.png",
+      "status": "identified",
+      "ip": "魔卡少女樱",
+      "ipType": "anime",
+      "character": "木之本樱",
+      "originalName": "木之本桜 / Sakura Kinomoto",
+      "aliases": [],
+      "sources": [
+        "https://ccsakura-official.com/core_sys/images/main/cont/special/paper/vol01.pdf"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《魔卡少女樱》木之本樱 · 02"
+    },
+    {
+      "id": "pf-curated-anime-4445-1",
+      "sourceImage": "IMG_4445.PNG",
+      "image": "assets/workshop/anime/anime-4445-1.png",
+      "status": "identified",
+      "ip": "森林冰火人（Fireboy and Watergirl）",
+      "ipType": "game",
+      "character": "火男孩（Fireboy）",
+      "originalName": "Fireboy",
+      "aliases": [
+        "火娃",
+        "火男"
+      ],
+      "sources": [
+        "https://armorgames.com/play/3434/fireboy-and-watergirl-in-the-forest-temple"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《森林冰火人（Fireboy and Watergirl）》火男孩（Fireboy）"
+    },
+    {
+      "id": "pf-curated-anime-4446-1",
+      "sourceImage": "IMG_4446.PNG",
+      "image": "assets/workshop/anime/anime-4446-1.png",
+      "status": "identified",
+      "ip": "森林冰火人（Fireboy and Watergirl）",
+      "ipType": "game",
+      "character": "水女孩（Watergirl）",
+      "originalName": "Watergirl",
+      "aliases": [
+        "水娃",
+        "水女"
+      ],
+      "sources": [
+        "https://armorgames.com/play/3434/fireboy-and-watergirl-in-the-forest-temple"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《森林冰火人（Fireboy and Watergirl）》水女孩（Watergirl）"
+    },
+    {
+      "id": "pf-curated-anime-4447-1",
+      "sourceImage": "IMG_4447.PNG",
+      "image": "assets/workshop/anime/anime-4447-1.png",
+      "status": "unresolved",
+      "ip": null,
+      "ipType": null,
+      "character": null,
+      "originalName": null,
+      "aliases": [],
+      "sources": [],
+      "identificationBasis": "已检索但未找到足以确认所属IP和角色正式全名的出处；不根据外观自行命名。",
+      "title": "原图 IMG_4447（角色待核实）"
+    },
+    {
+      "id": "pf-curated-anime-4448-1",
+      "sourceImage": "IMG_4448.PNG",
+      "image": "assets/workshop/anime/anime-4448-1.png",
+      "status": "identified",
+      "ip": "Charlotte（夏洛特）",
+      "ipType": "anime",
+      "character": "乙坂有宇",
+      "originalName": "乙坂有宇 / Yuu Otosaka",
+      "aliases": [],
+      "sources": [
+        "https://charlotte-anime.jp/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《Charlotte（夏洛特）》乙坂有宇"
+    },
+    {
+      "id": "pf-curated-anime-4449-1",
+      "sourceImage": "IMG_4449.PNG",
+      "image": "assets/workshop/anime/anime-4449-1.png",
+      "status": "identified",
+      "ip": "葬送的芙莉莲",
+      "ipType": "anime",
+      "character": "芙莉莲",
+      "originalName": "フリーレン / Frieren",
+      "aliases": [],
+      "sources": [
+        "https://frieren-anime.jp/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《葬送的芙莉莲》芙莉莲"
+    },
+    {
+      "id": "pf-curated-anime-4450-1",
+      "sourceImage": "IMG_4450.PNG",
+      "image": "assets/workshop/anime/anime-4450-1.png",
+      "status": "identified",
+      "ip": "葬送的芙莉莲",
+      "ipType": "anime",
+      "character": "欣梅尔",
+      "originalName": "ヒンメル / Himmel",
+      "aliases": [],
+      "sources": [
+        "https://frieren-anime.jp/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《葬送的芙莉莲》欣梅尔"
+    },
+    {
+      "id": "pf-curated-anime-4451-1",
+      "sourceImage": "IMG_4451.PNG",
+      "image": "assets/workshop/anime/anime-4451-1.png",
+      "status": "identified",
+      "ip": "葬送的芙莉莲",
+      "ipType": "anime",
+      "character": "菲伦",
+      "originalName": "フェルン / Fern",
+      "aliases": [],
+      "sources": [
+        "https://frieren-anime.jp/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《葬送的芙莉莲》菲伦"
+    },
+    {
+      "id": "pf-curated-anime-4452-1",
+      "sourceImage": "IMG_4452.PNG",
+      "image": "assets/workshop/anime/anime-4452-1.png",
+      "status": "identified",
+      "ip": "葬送的芙莉莲",
+      "ipType": "anime",
+      "character": "修塔尔克",
+      "originalName": "シュタルク / Stark",
+      "aliases": [],
+      "sources": [
+        "https://frieren-anime.jp/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《葬送的芙莉莲》修塔尔克"
+    },
+    {
+      "id": "pf-curated-anime-4453-1",
+      "sourceImage": "IMG_4453.PNG",
+      "image": "assets/workshop/anime/anime-4453-1.png",
+      "status": "identified",
+      "ip": "杀戮的天使",
+      "ipType": "game-and-anime",
+      "character": "瑞吉儿·加德纳",
+      "originalName": "レイチェル・ガードナー / Rachel Gardner",
+      "aliases": [
+        "瑞依",
+        "Ray",
+        "蕾切尔·加德纳"
+      ],
+      "sources": [
+        "https://satsuriku.com/package.html?cat=vol03"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《杀戮的天使》瑞吉儿·加德纳"
+    },
+    {
+      "id": "pf-curated-anime-4454-1",
+      "sourceImage": "IMG_4454.PNG",
+      "image": "assets/workshop/anime/anime-4454-1.png",
+      "status": "identified",
+      "ip": "元气少女缘结神",
+      "ipType": "anime",
+      "character": "桃园奈奈生",
+      "originalName": "桃園奈々生 / Nanami Momozono",
+      "aliases": [],
+      "sources": [
+        "https://www.tv-tokyo.co.jp/anime/kamisama/chara/index.html"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《元气少女缘结神》桃园奈奈生"
+    },
+    {
+      "id": "pf-curated-anime-4455-1",
+      "sourceImage": "IMG_4455.PNG",
+      "image": "assets/workshop/anime/anime-4455-1.png",
+      "status": "unresolved",
+      "ip": null,
+      "ipType": null,
+      "character": null,
+      "originalName": null,
+      "aliases": [],
+      "sources": [],
+      "identificationBasis": "已检索但未找到足以确认所属IP和角色正式全名的出处；不根据外观自行命名。",
+      "title": "原图 IMG_4455（角色待核实）"
+    },
+    {
+      "id": "pf-curated-anime-4456-1",
+      "sourceImage": "IMG_4456.PNG",
+      "image": "assets/workshop/anime/anime-4456-1.png",
+      "status": "identified",
+      "ip": "无畏契约（VALORANT）",
+      "ipType": "game",
+      "character": "暮蝶（Clove）",
+      "originalName": "Clove",
+      "aliases": [],
+      "sources": [
+        "https://playvalorant.com/en-us/agents/",
+        "https://playvalorant.com/en-us/agents/clove/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《无畏契约（VALORANT）》暮蝶（Clove）"
+    },
+    {
+      "id": "pf-curated-anime-4457-1",
+      "sourceImage": "IMG_4457.PNG",
+      "image": "assets/workshop/anime/anime-4457-1.png",
+      "status": "identified",
+      "ip": "无畏契约（VALORANT）",
+      "ipType": "game",
+      "character": "捷风（Jett）",
+      "originalName": "Jett",
+      "aliases": [],
+      "sources": [
+        "https://playvalorant.com/en-us/agents/",
+        "https://playvalorant.com/en-us/agents/jett/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《无畏契约（VALORANT）》捷风（Jett）"
+    },
+    {
+      "id": "pf-curated-anime-4458-1",
+      "sourceImage": "IMG_4458.PNG",
+      "image": "assets/workshop/anime/anime-4458-1.png",
+      "status": "identified",
+      "ip": "无畏契约（VALORANT）",
+      "ipType": "game",
+      "character": "霓虹（Neon）",
+      "originalName": "Neon",
+      "aliases": [],
+      "sources": [
+        "https://playvalorant.com/en-us/agents/",
+        "https://playvalorant.com/en-us/agents/neon/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《无畏契约（VALORANT）》霓虹（Neon）"
+    },
+    {
+      "id": "pf-curated-anime-4459-1",
+      "sourceImage": "IMG_4459.PNG",
+      "image": "assets/workshop/anime/anime-4459-1.png",
+      "status": "identified",
+      "ip": "无畏契约（VALORANT）",
+      "ipType": "game",
+      "character": "贤者（Sage）",
+      "originalName": "Sage",
+      "aliases": [],
+      "sources": [
+        "https://playvalorant.com/en-us/agents/",
+        "https://playvalorant.com/en-us/agents/sage/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《无畏契约（VALORANT）》贤者（Sage）"
+    },
+    {
+      "id": "pf-curated-anime-4460-1",
+      "sourceImage": "IMG_4460.PNG",
+      "image": "assets/workshop/anime/anime-4460-1.png",
+      "status": "identified",
+      "ip": "无畏契约（VALORANT）",
+      "ipType": "game",
+      "character": "芮娜（Reyna）",
+      "originalName": "Reyna",
+      "aliases": [],
+      "sources": [
+        "https://playvalorant.com/en-us/agents/",
+        "https://playvalorant.com/en-us/agents/reyna/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《无畏契约（VALORANT）》芮娜（Reyna）"
+    },
+    {
+      "id": "pf-curated-anime-4461-1",
+      "sourceImage": "IMG_4461.PNG",
+      "image": "assets/workshop/anime/anime-4461-1.png",
+      "status": "identified",
+      "ip": "轻音少女",
+      "ipType": "anime",
+      "character": "平泽唯",
+      "originalName": "平沢唯 / Yui Hirasawa",
+      "aliases": [],
+      "sources": [
+        "https://www.tbs.co.jp/anime/k-on/k-on_tv/chara/chara.html"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《轻音少女》平泽唯 · 02"
+    },
+    {
+      "id": "pf-curated-anime-4462-1",
+      "sourceImage": "IMG_4462.PNG",
+      "image": "assets/workshop/anime/anime-4462-1.png",
+      "status": "identified",
+      "ip": "电锯人",
+      "ipType": "anime-and-manga",
+      "character": "帕瓦",
+      "originalName": "パワー / Power",
+      "aliases": [],
+      "sources": [
+        "https://www.chainsawman.dog/tvseries/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《电锯人》帕瓦"
+    },
+    {
+      "id": "pf-curated-anime-4462-2",
+      "sourceImage": "IMG_4462.PNG",
+      "image": "assets/workshop/anime/anime-4462-2.png",
+      "status": "identified",
+      "ip": "电锯人",
+      "ipType": "anime-and-manga",
+      "character": "玛奇玛",
+      "originalName": "マキマ / Makima",
+      "aliases": [],
+      "sources": [
+        "https://www.chainsawman.dog/tvseries/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《电锯人》玛奇玛"
+    },
+    {
+      "id": "pf-curated-anime-4462-3",
+      "sourceImage": "IMG_4462.PNG",
+      "image": "assets/workshop/anime/anime-4462-3.png",
+      "status": "identified",
+      "ip": "电锯人",
+      "ipType": "anime-and-manga",
+      "character": "天使恶魔",
+      "originalName": "天使の悪魔 / Angel Devil",
+      "aliases": [],
+      "sources": [
+        "https://www.chainsawman.dog/tvseries/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《电锯人》天使恶魔"
+    },
+    {
+      "id": "pf-curated-anime-4462-4",
+      "sourceImage": "IMG_4462.PNG",
+      "image": "assets/workshop/anime/anime-4462-4.png",
+      "status": "identified",
+      "ip": "电锯人",
+      "ipType": "anime-and-manga",
+      "character": "蕾塞",
+      "originalName": "レゼ / Reze",
+      "aliases": [],
+      "sources": [
+        "https://www.chainsawman.dog/tvseries/character/",
+        "https://www.chainsawman.dog/movie_reze/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《电锯人》蕾塞"
+    },
+    {
+      "id": "pf-curated-anime-4462-5",
+      "sourceImage": "IMG_4462.PNG",
+      "image": "assets/workshop/anime/anime-4462-5.png",
+      "status": "identified",
+      "ip": "电锯人",
+      "ipType": "anime-and-manga",
+      "character": "东山小红",
+      "originalName": "東山コベニ / Kobeni Higashiyama",
+      "aliases": [],
+      "sources": [
+        "https://www.chainsawman.dog/tvseries/character/"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《电锯人》东山小红"
+    },
+    {
+      "id": "pf-curated-anime-4462-6",
+      "sourceImage": "IMG_4462.PNG",
+      "image": "assets/workshop/anime/anime-4462-6.png",
+      "status": "identified",
+      "ip": "电锯人",
+      "ipType": "anime-and-manga",
+      "character": "三鹰朝",
+      "originalName": "三鷹アサ / Asa Mitaka",
+      "aliases": [],
+      "sources": [
+        "https://www.chainsawman.dog/tvseries/character/",
+        "https://books.shueisha.co.jp/items/contents.html?jdcn=08X10000000024401500"
+      ],
+      "identificationBasis": "对照参考图的发型、服装、配饰及官方角色资料核对；角色身份识别，不代表同人图作者或授权已确认。",
+      "title": "《电锯人》三鹰朝"
+    }
+  ]
+}

@@ -78,10 +78,12 @@ function createCard(post) {
   meta.append(author, downloads); actions.append(use, configure); main.append(meta, title, description, actions);
   const user = window.PetForgeMembership?.current();
   if (user && (user.id === post.authorId || user.isAdmin)) {
-    const remove = document.createElement("button"); remove.className = "membership-text-button"; remove.type = "button"; remove.textContent = "取消分享";
+    const remove = document.createElement("button"); remove.className = "membership-text-button"; remove.type = "button"; remove.textContent = "删除作品";
+    remove.setAttribute('aria-label', `${post.title}：删除作品`);
     remove.addEventListener("click", async () => {
+      if (!window.confirm(`确定删除作品“${post.title}”吗？删除后，其他人将无法再查看或使用；已下载的副本不会被撤回。`)) return;
       remove.disabled = true;
-      try { await window.PetForgeMembership.request(`/workshop/${encodeURIComponent(post.id)}`, { method: "PUT", body: JSON.stringify({ isPublic: false }) }); await loadPosts(); setStatus("已取消作品分享。"); }
+      try { await window.PetForgeMembership.request(`/workshop/${encodeURIComponent(post.id)}`, { method: "DELETE" }); await loadPosts(); setStatus("作品已删除，公开链接已失效。"); }
       catch (error) { setStatus(error.message, true); remove.disabled = false; }
     });
     main.append(remove);
