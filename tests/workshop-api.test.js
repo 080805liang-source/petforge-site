@@ -8,6 +8,18 @@ const png = `data:image/png;base64,${readFileSync(new URL('../assets/pwa-icon-19
 const config = { name: '像素小猫', size: 100, opacity: 100, clickLine: '你好', motionEnabled: false, shadow: false, visualStyle: 'chrome', keyboardSync: false, alwaysOnTop: true, customShortcuts: [{ label: '微信', type: 'app', target: 'weixin://', appPaths: ['%ProgramFiles%\\WeChat\\WeChat.exe'] }], safeRendering: true };
 const payload = () => ({ config: structuredClone(config), image: png, preview: png, description: '测试配置' });
 
+test('the public Pages site can use membership and workshop without allowing unrelated sites', async () => {
+  const api=createAdminTestApi();
+  for(const origin of ['https://petforge-desktop.pages.dev','https://080805liang-source.github.io']) {
+    const response=await api.main({httpMethod:'OPTIONS',path:'/auth/login',headers:{origin}});
+    assert.equal(response.headers['access-control-allow-origin'],origin);
+    assert.match(response.headers['access-control-allow-methods'],/DELETE/);
+  }
+  const origin='https://unrelated.pages.dev';
+  const denied=await api.main({httpMethod:'OPTIONS',path:'/auth/login',headers:{origin}});
+  assert.notEqual(denied.headers['access-control-allow-origin'],origin);
+});
+
 test('category and literal search cover every page and exclude unpublished creations', async () => {
   const posts=Array.from({length:55},(_,i)=>({_id:`animal-${i}`,userId:'owner',author:'精选',title:`动物${i}`,description:i===49?'灰兔 [特别]':'真实动作',category:'animal',curated:true,isPublic:true,createdAt:new Date(2026,0,i+1).toISOString()}));
   posts.push({_id:'anime-1',title:'动漫',category:'anime',curated:true,isPublic:true},{_id:'private',title:'灰兔 [特别]',category:'animal',curated:true,isPublic:false},{_id:'old-community',title:'旧作品',isPublic:true});
