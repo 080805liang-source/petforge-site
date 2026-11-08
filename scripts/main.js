@@ -575,22 +575,10 @@ function packageReadme(config) {
 const PETFORGE_BUILD_VERSION = "2026.11.07-catalog-r1";
 
 async function getDesktopAppBytes() {
-  const appUrl = new URL("assets/PetForge.exe", document.baseURI);
+  const appUrl = new URL(window.location.hostname === 'petforge-desktop.pages.dev' ? '/runtime' : 'assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  let response;
-  try {
-    response = await fetch(appUrl, { cache: "no-store" });
-  } catch {
-    throw new Error(`桌宠运行核心没有下载成功。请刷新后重试；若仍失败，请确认打开的是最新国内版（${PETFORGE_BUILD_VERSION}）。`);
-  }
-  if (!response.ok) {
-    throw new Error(`桌宠运行核心暂时不可用（HTTP ${response.status}）。请刷新后重试；若持续出现，请重新部署最新包。`);
-  }
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (bytes.length < 1024 || bytes[0] !== 0x4d || bytes[1] !== 0x5a) {
-    throw new Error("桌宠运行核心文件不完整。请刷新后重试；若持续出现，请重新部署最新包。");
-  }
-  return bytes;
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=security-20261108-r2');
+  return fetchDesktopRuntime(appUrl);
 }
 
 async function buildPackageInBrowser() {

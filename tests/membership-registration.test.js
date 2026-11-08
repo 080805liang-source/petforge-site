@@ -19,16 +19,17 @@ function setup(sendFailure = false) {
     querySelectorAll: key => key === '[data-member-mode]' ? modes : key === '[data-identity-mode]' ? identities : [],
     addEventListener() {}
   };
-  runInNewContext(readFileSync(new URL('../scripts/membership.js', import.meta.url), 'utf8'), {
-    document, window: { PETFORGE_MEMBERSHIP: { apiUrl: 'https://api.example', sessionKey: 'session' } },
-    localStorage: { getItem: () => '', setItem() {}, removeItem() {} },
-    setInterval: callback => { timers.push(callback); return timers.length; }, clearInterval() {},
-    fetch: async (url, options) => {
-      requests.push({ url, body: JSON.parse(options.body) });
+  const mockedFetch = async (url, options = {}) => {
+      requests.push({ url, body: options.body ? JSON.parse(options.body) : undefined });
       return url.endsWith('/auth/send-email-code') && !sendFailure
         ? { ok: true, json: async () => ({ challengeId: 'challenge', retryAfter: 60 }) }
         : { ok: false, status: 503, json: async () => ({ error: '服务暂时不可用' }) };
-    }
+    };
+  runInNewContext(readFileSync(new URL('../scripts/membership.js', import.meta.url), 'utf8'), {
+    document, window: { PETFORGE_MEMBERSHIP: { apiUrl: 'https://api.example', sessionKey: 'session' }, PetForgeSession: { fetch: async (path, options = {}) => mockedFetch('https://api.example' + path, options) } },
+    localStorage: { getItem: () => '', setItem() {}, removeItem() {} },
+    setInterval: callback => { timers.push(callback); return timers.length; }, clearInterval() {},
+
   });
   const get = key => elements.get(key);
   return { get, requests, timers, submit: () => get('#membership-auth-form').listeners.submit({ preventDefault() {} }) };

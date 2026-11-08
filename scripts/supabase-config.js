@@ -10,8 +10,10 @@ window.PETFORGE_SUPABASE = {
 // Membership is shared with Cloud Paw Memorial. CloudBase owns accounts, card codes and VIP expiry.
 const cloudBaseOrigin = "https://cloud-paw-vip-cn-d0eub7r110788a3-1460995143.ap-shanghai.app.tcloudbase.com";
 const isCloudBaseSite = /\.app\.tcloudbase\.com$/i.test(window.location.hostname);
+const isPublicSite = window.location.hostname === "petforge-desktop.pages.dev";
 const isLocalSite = /^(?:localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
 window.PETFORGE_MEMBERSHIP = {
-  apiUrl: isCloudBaseSite || isLocalSite ? "/api" : `${cloudBaseOrigin}/api`,
+  cookieSession: isPublicSite,
+  apiUrl: isPublicSite || isCloudBaseSite || isLocalSite ? "/api" : `${cloudBaseOrigin}/api`,
   sessionKey: "cloud-paw-session"
 };

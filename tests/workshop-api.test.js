@@ -46,7 +46,9 @@ test('publishing requires login; public readers receive the same PNG and complet
   assert.equal(result.body.post.config.keyboardSync, false);
   assert.equal(result.body.post.config.safeRendering, false);
   assert.equal(result.body.post.config.targetFps, 120);
-  assert.deepEqual(result.body.post.config.customShortcuts, config.customShortcuts);
+  assert.equal(result.body.post.config.customShortcuts[0].target, 'weixin://');
+  assert.equal(result.body.post.config.customShortcuts[0].label, '微信');
+  assert.ok(result.body.post.config.customShortcuts[0].appPaths.includes('%ProgramFiles%\\Tencent\\WeChat\\WeChat.exe'));
   assert.equal(JSON.stringify(result.body).includes('test@example.com'), false);
   const list = await api.call('GET', '/workshop');
   assert.equal(list.body.total, 1);

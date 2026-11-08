@@ -34,12 +34,12 @@ let mode = "login";
 let identityMode = "email";
 let credits = 0;
 let member = null;
-let sessionToken = config ? localStorage.getItem(config.sessionKey) || "" : "";
+
 let pendingFeedback = false;
 let emailChallenge = null;
 
 function openMember() { if (dialog && !dialog.open) dialog.showModal(); }
-function saveSession(token) { sessionToken = token || ""; if (sessionToken) localStorage.setItem(config.sessionKey, sessionToken); else localStorage.removeItem(config.sessionKey); }
+
 const isUnlimited = () => Boolean(member?.isAdmin || (member?.vipExpiresAt && new Date(member.vipExpiresAt) > new Date()));
 const isActive = () => isUnlimited() || credits > 0;
 function setHeaderState(signedIn) { authTriggers.forEach((button) => { button.textContent = signedIn ? (member?.isAdmin ? "管理员 · 无限使用" : isUnlimited() ? "会员已激活 · 我的账户" : credits > 0 ? `${credits} 次可用 · 兑换` : "激活会员") : "登录 / 兑换会员码"; }); if (adminDashboardLink) adminDashboardLink.hidden = !Boolean(signedIn && member?.isAdmin); document.body.dataset.memberActive = String(Boolean(signedIn && isActive())); }
@@ -78,16 +78,15 @@ function setIdentityMode(nextMode) {
 async function request(path, options = {}) {
   if (!config?.apiUrl) throw new Error("账号服务暂未配置。");
   let response;
-  try { response = await fetch(`${config.apiUrl}${path}`, { ...options, headers: { "content-type": "application/json", ...(sessionToken ? { authorization: `Bearer ${sessionToken}` } : {}), ...(options.headers || {}) } }); }
+  try { response = await window.PetForgeSession.fetch(path, options); }
   catch (_) { throw new Error("账号服务暂时无法连接，请检查网络后重试。"); }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw Object.assign(new Error(body.error || "请求失败，请稍后重试。"), { status: response.status });
   return body;
 }
 async function refreshBalance() {
-  if (!sessionToken) { member = null; credits = 0; authPanel.hidden = false; balancePanel.hidden = true; setHeaderState(false); return false; }
   try { const data = await request("/me"); member = data.user; credits = Number(member.credits || 0); }
-  catch (error) { if (error.status === 401) saveSession(""); member = null; credits = 0; authPanel.hidden = false; balancePanel.hidden = true; authNote.textContent = error.message; setHeaderState(false); return false; }
+  catch (error) { member = null; credits = 0; authPanel.hidden = false; balancePanel.hidden = true; if (error.status !== 401) authNote.textContent = error.message; setHeaderState(false); return false; }
   authPanel.hidden = true; balancePanel.hidden = false; renderBalance(); return true;
 }
 async function requireActive() { await refreshBalance(); if (!member) { openMember(); return false; } if (!isActive()) { openMember(); redeemNote.textContent = "请先兑换会员码，再继续使用。"; return false; } return true; }
@@ -141,7 +140,7 @@ sendEmailCodeButton?.addEventListener("click", async () => {
   } catch (error) { authNote.textContent = error.message; sendEmailCodeButton.disabled = false; }
 });
 
-authForm?.addEventListener("submit", async (event) => { event.preventDefault(); if (mode === "signup" && passwordInput.value !== confirmPasswordInput.value) { authNote.textContent = "两次输入的密码不一致。"; return; } if (mode === "signup" && (!emailChallenge || emailChallenge.email !== emailInput.value.trim().toLowerCase())) { authNote.textContent = "请先获取当前邮箱的验证码。"; return; } authSubmit.disabled = true; authNote.textContent = mode === "login" ? "正在登录…" : "正在注册…"; const body = { identity: identityMode, email: emailInput.value.trim().toLowerCase(), phone: phoneInput.value.trim(), password: passwordInput.value, confirmPassword: confirmPasswordInput.value, challengeId: emailChallenge?.id, emailCode: emailCodeInput.value.trim() }; try { const data = await request(mode === "login" ? "/auth/login" : "/auth/signup", { method: "POST", body: JSON.stringify(body) }); saveSession(data.token); authNote.textContent = "操作成功。"; await refreshBalance(); if (pendingFeedback && member) { pendingFeedback = false; dialog?.close(); feedbackDialog?.showModal(); } } catch (error) { authNote.textContent = error.message; } finally { authSubmit.disabled = false; } });
+authForm?.addEventListener("submit", async (event) => { event.preventDefault(); if (mode === "signup" && passwordInput.value !== confirmPasswordInput.value) { authNote.textContent = "两次输入的密码不一致。"; return; } if (mode === "signup" && (!emailChallenge || emailChallenge.email !== emailInput.value.trim().toLowerCase())) { authNote.textContent = "请先获取当前邮箱的验证码。"; return; } authSubmit.disabled = true; authNote.textContent = mode === "login" ? "正在登录…" : "正在注册…"; const body = { identity: identityMode, email: emailInput.value.trim().toLowerCase(), phone: phoneInput.value.trim(), password: passwordInput.value, confirmPassword: confirmPasswordInput.value, challengeId: emailChallenge?.id, emailCode: emailCodeInput.value.trim() }; try { const data = await request(mode === "login" ? "/auth/login" : "/auth/signup", { method: "POST", body: JSON.stringify(body) }); authNote.textContent = "操作成功。"; await refreshBalance(); if (pendingFeedback && member) { pendingFeedback = false; dialog?.close(); feedbackDialog?.showModal(); } } catch (error) { authNote.textContent = error.message; } finally { authSubmit.disabled = false; } });
 redeemForm?.addEventListener("submit", async (event) => {
   event.preventDefault(); redeemSubmit.disabled = true; redeemNote.textContent = "正在验证会员码…";
   try {
@@ -151,5 +150,5 @@ redeemForm?.addEventListener("submit", async (event) => {
   } catch (error) { redeemNote.textContent = error.message; }
   finally { redeemSubmit.disabled = false; }
 });
-document.querySelector("#membership-signout")?.addEventListener("click", async () => { try { await request("/auth/logout", { method: "POST" }); } catch (_) {} saveSession(""); await refreshBalance(); });
+document.querySelector("#membership-signout")?.addEventListener("click", async () => { try { await request("/auth/logout", { method: "POST" }); } catch (_) {} await refreshBalance(); });
 setMode("login"); setIdentityMode("email"); refreshBalance();

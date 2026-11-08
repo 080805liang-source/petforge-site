@@ -1,4 +1,5 @@
-import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
+import { contentSecurityPolicy, staticHeaders } from './security-policy.mjs';
 
 await rm("dist", { recursive: true, force: true });
 await rm("dist-site", { recursive: true, force: true });
@@ -10,6 +11,16 @@ for (const entry of ["index.html", "creator.html", "admin.html", "workshop.html"
   await cp(entry, `dist/${entry}`, { recursive: true });
   await cp(entry, `dist/client/${entry}`, { recursive: true });
   await cp(entry, `dist-site/${entry}`, { recursive: true });
+}
+
+const pages = ['index.html', 'creator.html', 'admin.html', 'workshop.html', 'support.html'];
+const html = await Promise.all(pages.map(path => readFile(path, 'utf8')));
+const csp = contentSecurityPolicy(html);
+for (const directory of ['dist', 'dist/client', 'dist-site']) {
+  await writeFile(`${directory}/_headers`, staticHeaders(csp));
+  for (let index = 0; index < pages.length; index++) {
+    await writeFile(`${directory}/${pages[index]}`, html[index].replace('<meta charset="utf-8">', `<meta charset="utf-8">\n    <meta http-equiv="Content-Security-Policy" content="${csp}">\n    <meta name="referrer" content="no-referrer">`));
+  }
 }
 
 await mkdir("dist/server", { recursive: true });

@@ -1,6 +1,5 @@
 (() => {
   const config = window.PETFORGE_MEMBERSHIP;
-  const sessionKey = config?.sessionKey || "cloud-paw-session";
   const loginCard = document.querySelector("#admin-login-card");
   const dashboard = document.querySelector("#admin-dashboard");
   const loginForm = document.querySelector("#admin-login-form");
@@ -10,12 +9,9 @@
   const signoutButton = document.querySelector("#admin-signout");
   const state = { offset: 0, limit: 20, totalUsers: 0, feedbackOffset: 0, codesOffset: 0 };
 
-  const session = () => localStorage.getItem(sessionKey) || "";
-  const saveSession = (token) => token ? localStorage.setItem(sessionKey, token) : localStorage.removeItem(sessionKey);
   const api = async (path, options = {}) => {
     if (!config?.apiUrl) throw new Error("账号服务暂未配置。");
-    const token = session();
-    const response = await fetch(`${config.apiUrl}${path}`, { ...options, headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) } });
+    const response = await window.PetForgeSession.fetch(path, options);
     const body = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(body.error || "请求失败，请稍后重试。");
     return body;
@@ -130,12 +126,12 @@
     try {
       const data = await api("/auth/login", { method: "POST", body: JSON.stringify({ identity: "email", email: document.querySelector("#admin-email").value.trim().toLowerCase(), password: document.querySelector("#admin-password").value }) });
       if (!data.user?.isAdmin) throw new Error("这个账号没有管理员权限。");
-      saveSession(data.token); showDashboard();
+      showDashboard();
     } catch (error) { loginNote.textContent = error.message; }
     finally { loginSubmit.disabled = false; }
   });
   refreshButton?.addEventListener("click", async () => { refreshButton.disabled = true; await Promise.all([loadOverview(), loadUsers(), loadFeedback(), loadCodes()]); refreshButton.disabled = false; });
-  signoutButton?.addEventListener("click", async () => { try { await api("/auth/logout", { method: "POST" }); } catch (_) {} saveSession(""); showLogin("已退出管理员工作台。"); });
+  signoutButton?.addEventListener("click", async () => { try { await api("/auth/logout", { method: "POST" }); } catch (_) {} showLogin("已退出管理员工作台。"); });
   document.querySelector("#users-prev")?.addEventListener("click", () => { state.offset = Math.max(0, state.offset - state.limit); loadUsers(); });
   document.querySelector("#users-next")?.addEventListener("click", () => { state.offset += state.limit; loadUsers(); });
   document.querySelector("#feedback-filter")?.addEventListener("change", () => { state.feedbackOffset = 0; loadFeedback(); });
