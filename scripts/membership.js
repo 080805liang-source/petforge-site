@@ -15,7 +15,6 @@ const redeemForm = document.querySelector("#membership-redeem-form");
 const redeemInput = document.querySelector("#membership-code");
 const redeemNote = document.querySelector("#membership-redeem-note");
 const redeemSubmit = document.querySelector("#membership-redeem-submit");
-const sendCodeButton = document.querySelector("#membership-send-code");
 const sendEmailCodeButton = document.querySelector("#membership-send-email-code");
 const authTriggers = [...document.querySelectorAll("[data-member-open]")];
 const adminDashboardLink = document.querySelector("[data-admin-dashboard]");
@@ -23,12 +22,10 @@ const modeButtons = [...document.querySelectorAll("[data-member-mode]")];
 const identityButtons = [...document.querySelectorAll("[data-identity-mode]")];
 const emailField = document.querySelector("#membership-email-field");
 const phoneField = document.querySelector("#membership-phone-field");
-const smsField = document.querySelector("#membership-sms-field");
 const emailCodeField = document.querySelector("#membership-email-code-field");
 const confirmPasswordField = document.querySelector("#membership-confirm-password-field");
 const emailInput = document.querySelector("#membership-email");
 const phoneInput = document.querySelector("#membership-phone");
-const smsInput = document.querySelector("#membership-sms-code");
 const emailCodeInput = document.querySelector("#membership-email-code");
 const passwordInput = document.querySelector("#membership-password");
 const confirmPasswordInput = document.querySelector("#membership-confirm-password");
@@ -39,6 +36,7 @@ let credits = 0;
 let member = null;
 let sessionToken = config ? localStorage.getItem(config.sessionKey) || "" : "";
 let pendingFeedback = false;
+let emailChallenge = null;
 
 function openMember() { if (dialog && !dialog.open) dialog.showModal(); }
 function saveSession(token) { sessionToken = token || ""; if (sessionToken) localStorage.setItem(config.sessionKey, sessionToken); else localStorage.removeItem(config.sessionKey); }
@@ -53,14 +51,30 @@ function renderBalance() {
 }
 function updateVerificationFields() {
   const signup = mode === "signup";
-  const email = identityMode === "email";
-  emailCodeField.hidden = !signup || !email;
-  smsField.hidden = !signup || email;
-  emailCodeInput.required = signup && email;
-  smsInput.required = signup && !email;
+  emailCodeField.hidden = !signup;
+  emailCodeInput.required = signup;
+  passwordInput.autocomplete = signup ? "new-password" : "current-password";
 }
-function setMode(nextMode) { mode = nextMode; modeButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.memberMode === mode)); authSubmit.innerHTML = `${mode === "login" ? "登录" : "注册"} <span>→</span>`; confirmPasswordField.hidden = mode !== "signup"; confirmPasswordInput.required = mode === "signup"; updateVerificationFields(); authNote.textContent = ""; }
-function setIdentityMode(nextMode) { identityMode = nextMode; identityButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.identityMode === identityMode)); emailField.hidden = identityMode !== "email"; phoneField.hidden = identityMode !== "phone"; emailInput.required = identityMode === "email"; phoneInput.required = identityMode === "phone"; updateVerificationFields(); }
+function setMode(nextMode) {
+  mode = nextMode;
+  modeButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.memberMode === mode));
+  identityButtons.forEach((button) => { button.hidden = mode === "signup" && button.dataset.identityMode === "phone"; });
+  if (mode === "signup") setIdentityMode("email");
+  authSubmit.innerHTML = `${mode === "login" ? "登录" : "注册"} <span>→</span>`;
+  confirmPasswordField.hidden = mode !== "signup";
+  confirmPasswordInput.required = mode === "signup";
+  updateVerificationFields();
+  authNote.textContent = mode === "signup" ? "注册使用邮箱验证码；已有手机号账号可切换手机号登录。" : "";
+}
+function setIdentityMode(nextMode) {
+  identityMode = mode === "signup" ? "email" : nextMode;
+  identityButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.identityMode === identityMode));
+  emailField.hidden = identityMode !== "email";
+  phoneField.hidden = identityMode !== "phone";
+  emailInput.required = identityMode === "email";
+  phoneInput.required = identityMode === "phone";
+  updateVerificationFields();
+}
 async function request(path, options = {}) {
   if (!config?.apiUrl) throw new Error("账号服务暂未配置。");
   let response;
@@ -106,9 +120,28 @@ modeButtons.forEach((button) => button.addEventListener("click", () => setMode(b
 identityButtons.forEach((button) => button.addEventListener("click", () => setIdentityMode(button.dataset.identityMode)));
 document.addEventListener("click", (event) => { const locked = event.target.closest("[data-membership-required]"); if (!locked || isActive()) return; event.preventDefault(); event.stopImmediatePropagation(); openMember(); }, true);
 document.addEventListener("change", (event) => { if (event.target?.id !== "pet-image" || isActive()) return; event.target.value = ""; openMember(); }, true);
-sendCodeButton?.addEventListener("click", async () => { const phone = phoneInput.value.trim(); if (!/^1\d{10}$/.test(phone)) { authNote.textContent = "请输入有效的 11 位手机号。"; return; } sendCodeButton.disabled = true; authNote.textContent = "正在发送验证码…"; try { await request("/auth/send-code", { method: "POST", body: JSON.stringify({ phone }) }); authNote.textContent = "验证码已发送，请在 10 分钟内输入。"; } catch (error) { authNote.textContent = error.message; } finally { setTimeout(() => { sendCodeButton.disabled = false; }, 60000); } });
-sendEmailCodeButton?.addEventListener("click", async () => { const email = emailInput.value.trim().toLowerCase(); if (!/^\S+@\S+\.\S+$/.test(email)) { authNote.textContent = "请输入有效邮箱后再发送验证码。"; return; } sendEmailCodeButton.disabled = true; authNote.textContent = "正在发送邮箱验证码…"; try { await request("/auth/send-email-code", { method: "POST", body: JSON.stringify({ email }) }); authNote.textContent = "验证码已发送，请检查邮箱（包括垃圾邮件）。"; } catch (error) { authNote.textContent = error.message; } finally { setTimeout(() => { sendEmailCodeButton.disabled = false; }, 60000); } });
-authForm?.addEventListener("submit", async (event) => { event.preventDefault(); if (mode === "signup" && passwordInput.value !== confirmPasswordInput.value) { authNote.textContent = "两次输入的密码不一致。"; return; } authSubmit.disabled = true; authNote.textContent = mode === "login" ? "正在登录…" : "正在注册…"; const body = { identity: identityMode, email: emailInput.value.trim().toLowerCase(), phone: phoneInput.value.trim(), password: passwordInput.value, confirmPassword: confirmPasswordInput.value, smsCode: smsInput.value.trim(), emailCode: emailCodeInput.value.trim() }; try { const data = await request(mode === "login" ? "/auth/login" : "/auth/signup", { method: "POST", body: JSON.stringify(body) }); saveSession(data.token); authNote.textContent = "操作成功。"; await refreshBalance(); if (pendingFeedback && member) { pendingFeedback = false; dialog?.close(); feedbackDialog?.showModal(); } } catch (error) { authNote.textContent = error.message; } finally { authSubmit.disabled = false; } });
+emailInput?.addEventListener("input", () => { emailChallenge = null; emailCodeInput.value = ""; });
+sendEmailCodeButton?.addEventListener("click", async () => {
+  const email = emailInput.value.trim().toLowerCase();
+  if (!/^[.0-9a-z_-]{1,40}@[.0-9a-z_-]{1,40}\.[a-z]{1,10}$/i.test(email)) { authNote.textContent = "请输入有效邮箱后再发送验证码。"; return; }
+  emailChallenge = null;
+  sendEmailCodeButton.disabled = true;
+  authNote.textContent = "正在发送邮箱验证码…";
+  try {
+    const data = await request("/auth/send-email-code", { method: "POST", body: JSON.stringify({ email }) });
+    if (emailInput.value.trim().toLowerCase() === email) emailChallenge = { email, id: data.challengeId };
+    authNote.textContent = "验证码已发送，请检查邮箱（包括垃圾邮件）。";
+    const availableAt = Date.now() + data.retryAfter * 1000;
+    const countdown = setInterval(() => {
+      const seconds = Math.ceil((availableAt - Date.now()) / 1000);
+      sendEmailCodeButton.textContent = seconds > 0 ? `${seconds}s` : "发送验证码";
+      if (seconds <= 0) { clearInterval(countdown); sendEmailCodeButton.disabled = false; }
+    }, 1000);
+    sendEmailCodeButton.textContent = `${data.retryAfter}s`;
+  } catch (error) { authNote.textContent = error.message; sendEmailCodeButton.disabled = false; }
+});
+
+authForm?.addEventListener("submit", async (event) => { event.preventDefault(); if (mode === "signup" && passwordInput.value !== confirmPasswordInput.value) { authNote.textContent = "两次输入的密码不一致。"; return; } if (mode === "signup" && (!emailChallenge || emailChallenge.email !== emailInput.value.trim().toLowerCase())) { authNote.textContent = "请先获取当前邮箱的验证码。"; return; } authSubmit.disabled = true; authNote.textContent = mode === "login" ? "正在登录…" : "正在注册…"; const body = { identity: identityMode, email: emailInput.value.trim().toLowerCase(), phone: phoneInput.value.trim(), password: passwordInput.value, confirmPassword: confirmPasswordInput.value, challengeId: emailChallenge?.id, emailCode: emailCodeInput.value.trim() }; try { const data = await request(mode === "login" ? "/auth/login" : "/auth/signup", { method: "POST", body: JSON.stringify(body) }); saveSession(data.token); authNote.textContent = "操作成功。"; await refreshBalance(); if (pendingFeedback && member) { pendingFeedback = false; dialog?.close(); feedbackDialog?.showModal(); } } catch (error) { authNote.textContent = error.message; } finally { authSubmit.disabled = false; } });
 redeemForm?.addEventListener("submit", async (event) => {
   event.preventDefault(); redeemSubmit.disabled = true; redeemNote.textContent = "正在验证会员码…";
   try {

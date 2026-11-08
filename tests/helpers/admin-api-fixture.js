@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 const require = createRequire(import.meta.url);
 const source = readFileSync(new URL('../../云爪纪念馆/cloud-paw-api/tencent-cloudbase/index.js', import.meta.url), 'utf8');
 
-export function createAdminTestApi(seed = {}) {
+export function createAdminTestApi(seed = {}, options = {}) {
   let sequence = 0;
   const now = new Date().toISOString();
   const rows = {
@@ -59,7 +59,7 @@ export function createAdminTestApi(seed = {}) {
     return operation;
   } };
   const exports = {};
-  runInNewContext(source, { exports, require: (name) => name === '@cloudbase/node-sdk' ? { init: () => ({ database: () => db }) } : require(name), process: { env: {} }, console, Buffer, URL, Intl, Date, Set });
+  runInNewContext(source, { exports, require: (name) => name === '@cloudbase/node-sdk' ? { init: () => ({ database: () => db }) } : name === 'https' && options.https ? options.https : require(name), process: { env: {} }, console, Buffer, URL, Intl, Date, Set });
   return {
     rows,
     main: exports.main,

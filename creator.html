@@ -295,8 +295,7 @@
         <form id="membership-auth-form">
           <label id="membership-email-field">邮箱<input id="membership-email" type="email" autocomplete="email" placeholder="name@example.com"></label>
           <label id="membership-phone-field" hidden>手机号<input id="membership-phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="请输入手机号"></label>
-          <div id="membership-email-code-field" class="sms-field" hidden><label>邮箱验证码<input id="membership-email-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位验证码"></label><button id="membership-send-email-code" class="button secondary" type="button">发送验证码</button></div>
-          <div id="membership-sms-field" class="sms-field" hidden><label>短信验证码<input id="membership-sms-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位验证码"></label><button id="membership-send-code" class="button secondary" type="button">获取验证码</button></div>
+          <div id="membership-email-code-field" class="sms-field" hidden><label>邮箱验证码<input id="membership-email-code" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位验证码"></label><button id="membership-send-email-code" class="button secondary" type="button">发送验证码</button></div>
           <label>密码<input id="membership-password" type="password" autocomplete="current-password" minlength="8" placeholder="至少 8 位" required></label>
           <label id="membership-confirm-password-field" hidden>再次确认密码<input id="membership-confirm-password" type="password" autocomplete="new-password" minlength="8" placeholder="请再次输入密码"></label>
           <button id="membership-auth-submit" class="button primary wide" type="submit">登录 <span>→</span></button>
@@ -330,9 +329,9 @@
     </dialog>
     <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/supabase-config.js?v=stable-20260906"></script>
-    <script src="scripts/i18n.js?v=identity-20261108-r1" defer></script>
+    <script src="scripts/i18n.js?v=email-20261108-r1" defer></script>
     <script src="scripts/pwa.js?v=pwa-20260919" defer></script>
-    <script src="scripts/membership.js?v=workshop-20261107-r1" defer></script>
+    <script src="scripts/membership.js?v=email-20261108-r1" defer></script>
     <script src="scripts/main.js?v=catalog-20261107-r2" defer></script>
     <script src="scripts/analytics.js?v=admin-dashboard-20261107-r2" defer></script>
   </body>
