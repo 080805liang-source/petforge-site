@@ -88,7 +88,7 @@
 .creator-page .desktop-coordinate { color: #a8c3cd; }
 .creator-page .studio-shell { overflow: clip; }
 .creator-page .preview-panel { position: sticky; top: 110px; }
-.creator-page .preview-desktop { height: clamp(380px, 54svh, 560px); min-height: 380px; scroll-margin-top: 150px; }
+.creator-page .preview-desktop { height: clamp(460px, 58svh, 600px); min-height: 460px; scroll-margin-top: 150px; }
 .creator-page .preview-actor { position: absolute; top: 0; left: 0; z-index: 3; display: block; padding: 0; border: 0; border-radius: 18px; background: transparent; color: inherit; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; will-change: transform; }
 .creator-page .preview-actor:active { cursor: grabbing; }
 .creator-page .preview-actor:focus-visible { outline-offset: 8px; }
@@ -113,14 +113,14 @@
 .creator-page .preview-chat-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .creator-page .preview-chat-heading strong { font-size: 14px; }
 .creator-page .preview-chat-heading button { min-height: 28px; width: 28px; padding: 0; font-size: 20px; }
-.creator-page .preview-chat-mode { margin: 5px 0 10px; color: #b8cfc6; font-size: 10px; line-height: 1.6; }
-.creator-page .preview-chat-log { max-height: 100px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.creator-page .preview-chat-mode { margin: 3px 0 7px; color: #b8cfc6; font-size: 10px; line-height: 1.3; }
+.creator-page .preview-chat-log { max-height: 80px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .creator-page .preview-chat-log:empty::before { display: block; content: '♡'; padding: 12px; color: #b6e8d5; font-size: 28px; text-align: center; }
 .creator-page .preview-chat-log p { margin: 0 15px 9px 0; padding: 9px 11px; border-radius: 10px 10px 10px 3px; background: #263f44; color: #eef9f4; font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .creator-page .preview-chat-log .from-user { margin: 0 0 9px 15px; border-radius: 10px 10px 3px 10px; background: #35594e; }
 .creator-page .preview-chat-log b { display: block; margin-bottom: 3px; color: #b6e8d5; font-size: 10px; }
-.creator-page .preview-chat-label { display: block; margin: 8px 0 5px; color: #c8dcd6; font-size: 11px; }
-.creator-page .preview-chat-compose { display: flex; gap: 6px; }
+.creator-page .preview-chat-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.creator-page .preview-chat-compose { display: flex; gap: 6px; margin-top: 8px; }
 .creator-page .preview-chat-compose input { min-width: 0; height: 36px; font-size: 12px; }
 .creator-page .preview-chat-compose button { flex-shrink: 0; }
 .creator-page .desktop-topbar button { padding: 4px 8px; border: 1px solid #658780; border-radius: 7px; background: #28443f; color: #e3f6ec; font: inherit; cursor: pointer; }

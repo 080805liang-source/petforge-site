@@ -592,12 +592,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.09-interactive-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.09-interactive-r2";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=interactive-20261109-r1');
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=interactive-20261109-r2');
   return fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`));
 }
 
@@ -869,7 +869,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=interactive-20261109-r1').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=interactive-20261109-r2').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame});
     updatePreview();
   }).catch(() => {

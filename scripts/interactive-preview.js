@@ -215,6 +215,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     pointer = null;
     measure(); reset();
     if (!chat.hidden) {
+      position = constrainPosition({x:(bounds.width-bounds.petWidth)/2,y:52},bounds);
       chatInput.focus({preventScroll:true});
       shell.scrollIntoView({block:'start',behavior:reducedMotion.matches ? 'instant' : 'smooth'});
       announce('本地回复体验 · AI 服务尚未接入');
