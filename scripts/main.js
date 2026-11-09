@@ -136,7 +136,7 @@ function getConfig() {
     leaveEffect: leaveEffect.value,
     idleBehavior: idleBehavior.value,
     doubleClickEffect: doubleClickEffect.value,
-    cursorFollowMode: cursorFollowMode.value,
+    cursorFollowMode: animationPreset ? 'none' : cursorFollowMode.value,
     proactiveFrequency: proactiveFrequency.value,
     keyboardReaction: keyboardReaction.value,
     wanderEnabled: Boolean(wanderEnabled.checked),
@@ -232,6 +232,9 @@ function safeName(name) {
 }
 
 function updatePreview() {
+  cursorFollowMode.closest('label').hidden = Boolean(animationPreset);
+  cursorFollowMode.disabled = Boolean(animationPreset);
+  if (animationPreset) cursorFollowMode.value = 'none';
   const size = Number(petSize.value);
   const opacity = Number(petOpacity.value);
   previewPet.style.width = `${Math.round(210 * size / 100)}px`;
@@ -603,12 +606,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.09-recovery-animals-r5";
+const PETFORGE_BUILD_VERSION = "2026.11.09-recovery-animals-r6";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=recovery-20261109-r5');
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=recovery-20261109-r6');
   return fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`));
 }
 
