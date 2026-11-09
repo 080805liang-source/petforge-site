@@ -79,9 +79,10 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
+    const {createPetAnimation} = await import('./pet-animation.js?v=photo-pets-20261109-r1');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
-    animalPreview = { meta, bitmap, started: performance.now() };
+    animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
     previewAnimal.width = meta.width; previewAnimal.height = meta.height;
     updatePreview();
   } catch (_) { /* The still preview and package retry remain available. */ }
@@ -264,12 +265,16 @@ function updatePreview() {
 
 function renderAnimalFrame(timestamp) {
   if (animalPreview && !previewAnimal.hidden) {
-    const {meta,bitmap,started} = animalPreview;
-    const i = Math.floor((timestamp - started) * meta.fps / 1000) % meta.count;
+    const {meta,bitmap,player} = animalPreview;
+    const i = player.frame(timestamp);
     const context = previewAnimal.getContext('2d');
     context.clearRect(0,0,meta.width,meta.height);
     context.drawImage(bitmap,i%meta.columns*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,0,0,meta.width,meta.height);
   }
+}
+
+function playPetAction(name) {
+  return Boolean(petMotion.checked && animalPreview?.player.play(name, performance.now()));
 }
 document.addEventListener("visibilitychange", updatePreview);
 
@@ -593,12 +598,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.09-shortcut-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.09-photo-pets-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=shortcut-20261109-r1');
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=photo-pets-20261109-r1');
   return fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`));
 }
 
@@ -870,8 +875,8 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=shortcut-20261109-r1').then(({createInteractivePreview}) => {
-    interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame});
+  import('./interactive-preview.js?v=photo-pets-20261109-r1').then(({createInteractivePreview}) => {
+    interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions)});
     updatePreview();
   }).catch(() => {
     document.querySelector('#preview-feedback').textContent = '互动预览未能加载，请刷新后重试。';

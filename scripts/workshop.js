@@ -30,7 +30,8 @@ function addMotionPreview(post, media, image) {
       bitmap=atlas;
       canvas.width=meta.width;canvas.height=meta.height;const context=canvas.getContext('2d');const started=performance.now();
       canvas.hidden=false;image.hidden=true;button.textContent='停止预览';
-      const draw=now=>{if(!playing || current!==token)return;const i=Math.floor((now-started)*meta.fps/1000)%meta.count;context.clearRect(0,0,meta.width,meta.height);context.drawImage(atlas,i%meta.columns*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,0,0,meta.width,meta.height);frameId=requestAnimationFrame(draw);};
+      const idle=meta.clips?.idle || {start:0,count:meta.count,fps:meta.fps};
+      const draw=now=>{if(!playing || current!==token)return;const i=idle.start+Math.floor((now-started)*idle.fps/1000)%idle.count;context.clearRect(0,0,meta.width,meta.height);context.drawImage(atlas,i%meta.columns*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,0,0,meta.width,meta.height);frameId=requestAnimationFrame(draw);};
       frameId=requestAnimationFrame(draw);
     } catch {stop();button.textContent='重试预览';}
   });
@@ -67,7 +68,7 @@ function createCard(post) {
   const title = document.createElement("h3"); title.textContent = post.title; title.dataset.userContent = "true";
   const description = document.createElement("p"); description.textContent = post.description; description.dataset.userContent = "true";
   const badge = document.createElement('span'); badge.className='workshop-kind';
-  badge.textContent = post.category === 'animal' ? '实拍动作 · 鼠标跟随' : post.category === 'anime' ? '静态陪伴 · 保留原色' : '社区创作';
+  badge.textContent = post.category === 'animal' ? '写实形象 · 可互动' : post.category === 'anime' ? '静态陪伴 · 保留原色' : '社区创作';
   media.append(badge);
   addMotionPreview(post,media,image);
   const actions = document.createElement("div"); actions.className = "card-actions";

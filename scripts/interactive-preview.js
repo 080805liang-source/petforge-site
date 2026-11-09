@@ -33,7 +33,7 @@ export function pickReply(topics, text, topic = 'default', random = Math.random)
   return replies[Math.min(replies.length - 1, Math.floor(random() * replies.length))];
 }
 
-export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame}) {
+export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame, playPetAction = () => false, hasPetActions = () => false}) {
   const shell = document.querySelector('[data-preview-shell]'), actor = document.querySelector('#preview-actor');
   const image = document.querySelector('#preview-pet'), canvas = document.querySelector('#preview-animal');
   const bubble = document.querySelector('#preview-bubble'), particles = document.querySelector('#preview-particles');
@@ -90,7 +90,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   }
   function singleClick() {
     if (!hasImage()) return;
-    animate(config.clickAnimation);
+    if (!playPetAction('pet')) animate(config.clickAnimation);
     if (config.clickParticles) burst();
     say(clickCount++ === 0 ? config.clickLine : config.status === 'sleeping' ? '困了就歇一会儿，我陪你。' : config.clickLine);
     announce('单击互动已播放');
@@ -98,6 +98,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   function doubleClick() {
     clearTimeout(clickTimer);
     if (!hasImage()) return;
+    if (playPetAction('play')) { say('再陪我玩一会儿吧。'); announce('逗玩互动已播放'); return; }
     const effect = config.doubleClickEffect;
     if (effect === 'spin') { animate('spin'); burst(true); say('转个圈给你看！'); }
     else if (effect === 'celebrate') { animate('glow'); burst(true); say('今天也值得庆祝。'); }
@@ -171,7 +172,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     keyboard.hidden = !(moving && config.keyboardSync && now < typingUntil);
     bubble.style.left = `${clamp(visible.x - 15,12,Math.max(12,bounds.width - Math.min(240,bounds.width * .8) - 12))}px`;
     bubble.style.top = `${Math.max(45,visible.y - bubble.offsetHeight - 12)}px`;
-    if (moving) renderAnimalFrame(now);
+    if (config.motionEnabled) renderAnimalFrame(now);
   }
   function tick(now) {
     frame = 0;
@@ -184,11 +185,12 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     const ready = hasImage(); actor.hidden = !ready || (windowOpen && config.desktopOnly);
     actor.classList.toggle('is-topmost',config.alwaysOnTop);
     buttons.forEach(button => { button.disabled = !ready || (button.dataset.previewAction === 'typing' && (!config.motionEnabled || !config.keyboardSync)); });
+    buttons.filter(button => ['pet','play','sleep','wake'].includes(button.dataset.previewAction)).forEach(button => { button.hidden = !hasPetActions(); button.disabled = !ready || !config.motionEnabled; });
     const motionButton = buttons.find(button => button.dataset.previewAction === 'motion');
     const motionText = config.motionEnabled ? '暂停动态试用' : '开启动态试用';
     motionButton.textContent = window.PETFORGE_I18N?.translate(motionText) || motionText;
     motionButton.setAttribute('aria-pressed',String(config.motionEnabled));
-    note.textContent = !ready ? '上传图片后开始互动' : config.animationPreset ? '写实动作 · 在原位陪伴' : ({look:'在框内移动鼠标，看看它的回应',follow:'在框内移动鼠标，它会慢慢靠近',playful:'把鼠标移近，看看它往哪儿躲',none:'试试点击、双击或拖动它'}[config.cursorFollowMode]);
+    note.textContent = !ready ? '上传图片后开始互动' : config.animationPreset ? '单击摸头 · 双击逗玩 · 右键更多互动' : ({look:'在框内移动鼠标，看看它的回应',follow:'在框内移动鼠标，它会慢慢靠近',playful:'把鼠标移近，看看它往哪儿躲',none:'试试点击、双击或拖动它'}[config.cursorFollowMode]);
     if (!ready || document.hidden) {
       cancelAnimationFrame(frame); frame = 0;
       if (!ready) { bubble.hidden = true; particles.replaceChildren(); closeChat(false); }
@@ -249,6 +251,10 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   chat.addEventListener('keydown',event => { if (event.key === 'Escape') { event.stopPropagation(); closeChat(); } });
   buttons.forEach(button => button.addEventListener('click',() => {
     const kind = button.dataset.previewAction;
+    if (['pet','play','sleep','wake'].includes(kind) && playPetAction(kind)) {
+      const line = {pet:'摸摸头，今天也有你陪着。',play:'再陪我玩一会儿吧。',sleep:'我闭眼歇一会儿，醒了再陪你。',wake:'睡醒啦，我在这里。'}[kind];
+      say(line); announce(line);
+    }
     if (kind === 'motion') {
       const control = document.querySelector('#pet-motion'); control.checked = !control.checked;
       control.dispatchEvent(new Event('change',{bubbles:true}));
@@ -300,6 +306,10 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
       button.addEventListener('click',() => { menu.hidden = true; handler(); }); menu.append(button);
     }
     item('和它聊聊',() => { if (chat.hidden) toggleChat(); });
+    if (hasPetActions()) for (const [key,label] of [['pet','摸摸头'],['play','逗它玩'],['sleep','闭眼休息'],['wake','叫醒它']]) item(label,() => {
+      if (playPetAction(key)) { say(label); announce(label); }
+      else announce('请先开启动态试用');
+    });
     item('试试单击',singleClick); item('试试双击',doubleClick);
     for (const shortcut of config.customShortcuts) item(shortcut.label,() => { say(shortcut.label); announce('快捷入口预览：生成后会打开对应应用或网址'); });
     const rect = shell.getBoundingClientRect(); menu.hidden = false;

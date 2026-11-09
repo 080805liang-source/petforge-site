@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 from response_bank import ResponseBank
 from desktop_shortcut import create_desktop_shortcut
+from pet_animation import PetAnimation
 from ctypes import wintypes
 
 
@@ -77,6 +78,7 @@ class DesktopPet:
         self.animation_frames = []
         self.animation_meta = {}
         self.animation_frame_index = -1
+        self.pet_animation = None
         self.root = tk.Tk()
         self.root.title(self.config.get("name", "PetForge"))
         self.root.overrideredirect(True)
@@ -186,6 +188,9 @@ class DesktopPet:
         self.menu = tk.Menu(self.root, tearoff=False)
         self.menu.add_command(label="和我互动", command=self.interact)
         self.menu.add_command(label="和我聊聊（本地回复）", command=self.chat)
+        if self.pet_animation and self.pet_animation.has_actions:
+            for key, label in [('pet', '摸摸头'), ('play', '逗它玩'), ('sleep', '闭眼休息'), ('wake', '叫醒它')]:
+                self.menu.add_command(label=label, command=lambda action=key: self.pet_action(action))
         for label, topic in [('给我一点鼓励', 'focus'), ('我想休息一下', 'break'), ('分享好消息', 'celebrate')]:
             self.menu.add_command(label=label, command=lambda key=topic: self.show_bubble(self.responses.reply(topic=key), 5500))
         self.menu.add_command(
@@ -373,6 +378,8 @@ class DesktopPet:
     def double_click(self, _event: tk.Event) -> None:
         self.cancel_pending_click()
         self.double_click_pending = True
+        if self.pet_action('play'):
+            return
         effect = self.config.get("doubleClickEffect", "cuddle")
         if effect == "spin":
             self.animate(mode="spin")
@@ -425,6 +432,7 @@ class DesktopPet:
                 frame.tk.call(str(frame), 'copy', str(atlas), '-from', x, y, x + width, y + height)
                 self.animation_frames.append(frame)
             self.animation_meta = meta
+            self.pet_animation = PetAnimation(meta)
             self.photo = self.animation_frames[0]
         except (OSError, ValueError, KeyError, TypeError, tk.TclError):
             self.animation_frames = []
@@ -432,19 +440,30 @@ class DesktopPet:
     def update_animation(self, now: float) -> None:
         if not getattr(self, 'animation_frames', None) or self.pointer_down:
             return
-        count = len(self.animation_frames)
-        fps = max(1, min(60, float(self.animation_meta.get('fps', 12))))
-        index = int(now * fps) % count
+        index = self.pet_animation.frame(now)
         if index != self.animation_frame_index:
             self.animation_frame_index = index
             self.canvas.itemconfigure(self.pet_id, image=self.animation_frames[index])
 
     def interact(self, close: bool = False) -> None:
         self.pending_click = None
-        self.animate(close=close)
+        if not self.pet_action('play' if close else 'pet'):
+            self.animate(close=close)
         if self.config.get("clickParticles", True):
             self.spawn_particles(close=close)
         self.show_bubble(self.interaction_text(close), 5500)
+
+    def pet_action(self, name: str) -> bool:
+        player = getattr(self, 'pet_animation', None)
+        if not player or not player.has_actions:
+            return False
+        if not self.motion_enabled:
+            self.show_bubble('请先在右键菜单开启动态模式。', 2500)
+            return False
+        if not player.play(name, time.perf_counter()):
+            return False
+        self.show_bubble({'pet': '摸摸头，今天也有你陪着。', 'play': '再陪我玩一会儿吧。', 'sleep': '我闭眼歇一会儿，醒了再陪你。', 'wake': '睡醒啦，我在这里。'}[name], 3000)
+        return True
 
     def animate(self, close: bool = False, mode: str | None = None) -> None:
         if not self.motion_enabled or self.motion_active or self.typing_active:

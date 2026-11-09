@@ -91,6 +91,9 @@ class DesktopMotionTests(unittest.TestCase):
         instance = pet()
         instance.animation_frames = list(range(120))
         instance.animation_meta = {'fps': 60}
+        from pet_animation import PetAnimation
+        instance.pet_animation = PetAnimation({'count': 120, 'fps': 60})
+        instance.pet_animation.started = 0
         instance.animation_frame_index = -1
         images = []
         instance.canvas.itemconfigure = lambda _item, **options: images.append(options['image'])

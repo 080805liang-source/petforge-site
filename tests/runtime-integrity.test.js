@@ -17,7 +17,7 @@ test('runtime relay uses only the pinned release host and refuses upstream redir
   const previous = globalThis.fetch;
   try {
     globalThis.fetch = async (url, options) => {
-      assert.equal(url, 'https://petforge-desktop.pages.dev/assets/PetForge.exe?v=2026.11.09-shortcut-r1');
+      assert.equal(url, 'https://petforge-desktop.pages.dev/assets/PetForge.exe?v=2026.11.09-photo-pets-r1');
       assert.equal(options.redirect, 'manual');
       return new Response('MZ');
     };

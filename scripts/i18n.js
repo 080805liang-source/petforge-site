@@ -1,5 +1,10 @@
 (function () {
   const rows = [
+    ["摸摸头", "Pet its head", "頭をなでる", "Accarezza la testa", "Acariciar la cabeza", "Caresser la tête"],
+    ["逗它玩", "Play together", "一緒に遊ぶ", "Gioca insieme", "Jugar juntos", "Jouer ensemble"],
+    ["闭眼休息", "Rest its eyes", "目を閉じて休む", "Riposa gli occhi", "Descansar los ojos", "Reposer les yeux"],
+    ["叫醒它", "Wake it up", "起こす", "Sveglialo", "Despertarlo", "Le réveiller"],
+    ["写实形象 · 可互动", "Lifelike look · Interactive", "リアルな姿・ふれあい", "Aspetto realistico · Interattivo", "Aspecto realista · Interactivo", "Aspect réaliste · Interactif"],
     ["忘记密码了怎么办？", "How do I reset a forgotten password?", "パスワードを忘れた場合は？", "Come reimposto una password dimenticata?", "¿Cómo restablezco una contraseña olvidada?", "Comment réinitialiser un mot de passe oublié ?"],
     ["打开", "Open ", "開く：", "Apri ", "Abre ", "Ouvrez "],
     ["找回密码", "Password recovery", "パスワード再設定", "Recupero password", "Recuperar contraseña", "Récupération du mot de passe"],

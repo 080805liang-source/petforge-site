@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "width": 256,
+  "height": 320,
+  "count": 120,
+  "columns": 12,
+  "fps": 10,
+  "clips": {
+    "idle": {
+      "start": 0,
+      "count": 30,
+      "fps": 10,
+      "loop": true
+    },
+    "pet": {
+      "start": 30,
+      "count": 30,
+      "fps": 24,
+      "loop": false
+    },
+    "play": {
+      "start": 60,
+      "count": 30,
+      "fps": 24,
+      "loop": false
+    },
+    "sleep": {
+      "start": 90,
+      "count": 30,
+      "fps": 10,
+      "loop": true
+    }
+  },
+  "technique": "Free CC0 still artwork with local 2D deformation and interaction clips; not captured animal motion or a 3D model."
+}

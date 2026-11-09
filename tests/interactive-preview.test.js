@@ -49,7 +49,7 @@ test('local chat matches topics, falls back for unknown questions and keeps repl
   assert.equal(pickReply({},'hello'),'我在这里，安静陪着你。');
 });
 
-function previewFixture({reducedMotion=false} = {}) {
+function previewFixture({reducedMotion=false,petActions=false} = {}) {
   class Element {
     constructor() { this.hidden=false;this.disabled=false;this.style={setProperty(){}};this.dataset={};this.events={};this.children=[];this.attributes={};this.src='blob:pet';this.naturalWidth=200;this.naturalHeight=200;this.clientWidth=480;this.clientHeight=480;this.offsetHeight=40;this.value='';this.classList={toggle(){}}; }
     addEventListener(name, fn) { (this.events[name] ||= []).push(fn); }
@@ -78,12 +78,26 @@ function previewFixture({reducedMotion=false} = {}) {
   const config={name:'测试桌宠',size:100,position:'bottom-right',motionEnabled:true,cursorFollowMode:'none',idleBehavior:'still',clickAnimation:'jump',clickParticles:true,doubleClickEffect:'cuddle',keyboardSync:true,keyboardReaction:'bongo',customShortcuts:[],proactiveFrequency:'quiet'};
   let now=1000,nextFrame;const timeouts=[];
   const document={hidden:false,querySelector:get,querySelectorAll:selector=>selector==='[data-preview-action]'?controls:[setting,cursorSetting],addEventListener(){},createElement:()=>new Element(),createTextNode:text=>({textContent:text})};
+  const actions=[];let rendered=0;
   const context=vm.createContext({document,window:{},performance:{now:()=>now},matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),ResizeObserver:class{observe(){}},setTimeout:fn=>timeouts.push(fn),clearTimeout(){},requestAnimationFrame:fn=>{nextFrame=fn;return 1;},cancelAnimationFrame(){},Math,Event,AbortSignal,fetch:async()=>({ok:true,json:async()=>({topics:{default:{replies:['<script>plain text reply</script>']}}})})});
   vm.runInContext(readFileSync(new URL('../scripts/interactive-preview.js',import.meta.url),'utf8').replaceAll('export ',''),context);
-  context.getConfig=()=>config;context.hasImage=()=>true;context.renderAnimalFrame=()=>{};
-  vm.runInContext('var preview=createInteractivePreview({getConfig,hasImage,renderAnimalFrame})',context);
-  return {get,controls,config,setting,sync:()=>vm.runInContext('preview.sync()',context),frame:()=>{now+=20;nextFrame(now);}};
+  context.getConfig=()=>config;context.hasImage=()=>true;context.renderAnimalFrame=()=>{rendered++;};
+  context.playPetAction=name=>{if(!petActions||!config.motionEnabled)return false;actions.push(name);return true;};context.hasPetActions=()=>petActions;
+  vm.runInContext('var preview=createInteractivePreview({getConfig,hasImage,renderAnimalFrame,playPetAction,hasPetActions})',context);
+  return {get,controls,config,setting,actions,rendered:()=>rendered,sync:()=>vm.runInContext('preview.sync()',context),frame:()=>{now+=20;nextFrame(now);}};
 }
+
+test('photo pet clicks trigger separate actions with reduced motion and pause freezes atlas rendering', async () => {
+  const p=previewFixture({reducedMotion:true,petActions:true});
+  await p.controls.find(b=>b.dataset.previewAction==='click').emit('click');
+  await p.controls.find(b=>b.dataset.previewAction==='double').emit('click');
+  assert.deepEqual(p.actions,['pet','play']);
+  const before=p.rendered();p.frame();assert.ok(p.rendered()>before);
+  p.config.motionEnabled=false;p.sync();const stopped=p.rendered();p.frame();
+  assert.equal(p.rendered(),stopped);
+  await p.controls.find(b=>b.dataset.previewAction==='click').emit('click');
+  assert.equal(p.actions.length,2);
+});
 
 test('controller applies settings to click particles, static mode and keyboard display', async () => {
   const p=previewFixture(),click=p.controls.find(b=>b.dataset.previewAction==='click');
