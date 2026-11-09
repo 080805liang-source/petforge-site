@@ -1,7 +1,7 @@
-export const RUNTIME_SHA256 = '2c1dc8c064344a72f6daf3b6de3382a9b13965b7587db02cc5ccce00e6320087';
+export const RUNTIME_SHA256 = '881fa4f028008f70ffad59a3b4bbf04b9710e3e49ad98283e909c07b18acae6d';
 
 export async function verifyDesktopRuntime(bytes) {
-  if (bytes.byteLength !== 11586504 || bytes[0] !== 0x4d || bytes[1] !== 0x5a) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
+  if (bytes.byteLength !== 11589530 || bytes[0] !== 0x4d || bytes[1] !== 0x5a) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
   const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('');
   if (digest !== RUNTIME_SHA256) throw new Error('桌宠运行核心安全校验失败，已停止生成，请联系管理员。');
   return bytes;
@@ -9,7 +9,7 @@ export async function verifyDesktopRuntime(bytes) {
 
 export async function fetchDesktopRuntime(url, onProgress = () => {}) {
   try {
-    const size = 11586504, chunkSize = 524288, count = Math.ceil(size / chunkSize);
+    const size = 11589530, chunkSize = 524288, count = Math.ceil(size / chunkSize);
     const parts = new Array(count); let next = 0, completed = 0;
     await Promise.all(Array.from({length:3}, async () => {
       while (next < count) {

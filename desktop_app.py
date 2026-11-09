@@ -9,10 +9,12 @@ import sys
 import time
 import webbrowser
 import ctypes
+import threading
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 from response_bank import ResponseBank
+from desktop_shortcut import create_desktop_shortcut
 from ctypes import wintypes
 
 
@@ -152,6 +154,8 @@ class DesktopPet:
         self.place_window()
         self.build_menu()
         self.bind_events()
+        if getattr(sys, 'frozen', False):
+            threading.Thread(target=create_desktop_shortcut, args=(BASE_DIR, self.config.get('name', '我的桌宠')), daemon=True).start()
         self.root.bind("<Destroy>", self.on_destroy, add="+")
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
         self.set_motion_enabled(bool(self.config.get("motionEnabled", True)))
@@ -189,6 +193,7 @@ class DesktopPet:
             command=lambda: self.show_bubble(self.status_text(), 2200),
         )
         self.menu.add_command(label="显示互动说明", command=lambda: self.show_bubble("单击互动 · 双击亲近 · 拖动移动", 2600))
+        self.menu.add_command(label="创建桌面快捷方式", command=self.make_desktop_shortcut)
         shortcuts = self.config.get("customShortcuts", [])
         if shortcuts:
             self.menu.add_separator()
@@ -213,6 +218,10 @@ class DesktopPet:
         self.menu.add_command(label="隐藏 10 秒", command=self.hide_temporarily)
         self.menu.add_command(label="切换始终置顶", command=self.toggle_topmost)
         self.menu.add_command(label="退出桌宠", command=self.root.destroy)
+
+    def make_desktop_shortcut(self) -> None:
+        ok = create_desktop_shortcut(BASE_DIR, self.config.get('name', '我的桌宠'), force=True)
+        self.show_bubble('桌面快捷方式已准备好。' if ok else '未能创建快捷方式，请检查桌面文件夹权限。', 3000)
 
     def save_preferences(self) -> None:
         self.config.update(shadow=self.shadow_enabled, motionEnabled=self.motion_enabled, targetFps=TARGET_FPS)

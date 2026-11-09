@@ -579,8 +579,9 @@ function packageReadme(config) {
 运行方式：
 
 1. 解压整个 zip 到一个不要移动的位置。
-2. 双击 PetForge.exe 启动桌宠。
-3. 请保持 PetForge.exe、config.json 和 assets 文件夹在一起。
+2. 首次双击 PetForge.exe 启动桌宠，程序会在当前用户桌面创建以宠物名字命名的快捷方式。
+3. 以后可以双击桌面快捷方式启动。请保持 PetForge.exe、config.json 和 assets 文件夹在一起。
+4. 移动整个文件夹或删除快捷方式后，启动宠物并在右键菜单选择“创建桌面快捷方式”即可重建。
 
 说明：
 
@@ -592,12 +593,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.09-interactive-r3";
+const PETFORGE_BUILD_VERSION = "2026.11.09-shortcut-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=interactive-20261109-r3');
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=shortcut-20261109-r1');
   return fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`));
 }
 
@@ -869,7 +870,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=interactive-20261109-r3').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=shortcut-20261109-r1').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame});
     updatePreview();
   }).catch(() => {
