@@ -603,12 +603,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.09-recovery-animals-r3";
+const PETFORGE_BUILD_VERSION = "2026.11.09-recovery-animals-r4";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=recovery-20261109-r3');
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=recovery-20261109-r4');
   return fetchDesktopRuntime(appUrl);
 }
 

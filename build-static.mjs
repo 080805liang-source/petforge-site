@@ -1,4 +1,5 @@
 import { cp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
+import { createHash } from 'node:crypto';
 import { contentSecurityPolicy, staticHeaders } from './security-policy.mjs';
 
 await rm("dist", { recursive: true, force: true });
@@ -14,6 +15,15 @@ for (const entry of ["index.html", "creator.html", "admin.html", "workshop.html"
 }
 
 const pages = ['index.html', 'creator.html', 'admin.html', 'workshop.html', 'support.html', 'reset-password.html'];
+const runtime = await readFile('assets/PetForge.exe');
+const runtimeId = createHash('sha256').update(runtime).digest('hex').slice(0,16);
+for (const directory of ['dist', 'dist/client', 'dist-site']) {
+  const parts = `${directory}/assets/runtime/${runtimeId}`;
+  await mkdir(parts, {recursive:true});
+  for (let offset = 0, index = 0; offset < runtime.length; offset += 524288, index++) {
+    await writeFile(`${parts}/${index}.bin`, runtime.subarray(offset, offset + 524288));
+  }
+}
 const html = await Promise.all(pages.map(path => readFile(path, 'utf8')));
 const csp = contentSecurityPolicy(html);
 for (const directory of ['dist', 'dist/client', 'dist-site']) {
