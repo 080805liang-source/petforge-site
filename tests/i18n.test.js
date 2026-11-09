@@ -77,7 +77,7 @@ test("translation rows are complete and static pages have no untranslated Chines
     "桌宠创作台 | PET FORGE",
     "PET FORGE 支持",
   ]);
-  for (const file of ["index.html", "creator.html", "workshop.html", "support.html"]) {
+  for (const file of ["index.html", "creator.html", "workshop.html", "support.html", "reset-password.html"]) {
     const html = await readFile(new URL(`../${file}`, import.meta.url), "utf8");
     const text = html
       .replace(/<!--[\s\S]*?-->/g, "")

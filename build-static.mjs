@@ -7,13 +7,13 @@ await mkdir("dist", { recursive: true });
 await mkdir("dist/client", { recursive: true });
 await mkdir("dist-site", { recursive: true });
 
-for (const entry of ["index.html", "creator.html", "admin.html", "workshop.html", "support.html", "manifest.json", "sw.js", "assets", "scripts", "styles"]) {
+for (const entry of ["index.html", "creator.html", "admin.html", "workshop.html", "support.html", "reset-password.html", "manifest.json", "sw.js", "assets", "scripts", "styles"]) {
   await cp(entry, `dist/${entry}`, { recursive: true });
   await cp(entry, `dist/client/${entry}`, { recursive: true });
   await cp(entry, `dist-site/${entry}`, { recursive: true });
 }
 
-const pages = ['index.html', 'creator.html', 'admin.html', 'workshop.html', 'support.html'];
+const pages = ['index.html', 'creator.html', 'admin.html', 'workshop.html', 'support.html', 'reset-password.html'];
 const html = await Promise.all(pages.map(path => readFile(path, 'utf8')));
 const csp = contentSecurityPolicy(html);
 for (const directory of ['dist', 'dist/client', 'dist-site']) {

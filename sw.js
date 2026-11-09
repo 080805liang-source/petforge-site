@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-pixel-20261109-r3";
+const CACHE_NAME = "petforge-web-recovery-20261109-r3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,18 +6,19 @@ const APP_SHELL = [
   "./admin.html",
   "./workshop.html",
   "./support.html",
-  "./manifest.json",
-  "./styles/main.css?v=stable-20260906",
-  "./styles/membership.css?v=redeem-20261107-r2",
+  "./reset-password.html",
+  "./styles/recovery.css?v=recovery-20261109-r3",
+  "./scripts/recovery.js?v=recovery-20261109-r3",
+  "./styles/main.css?v=recovery-20261109-r3",
+  "./styles/membership.css?v=recovery-20261109-r3",
   "./styles/workshop.css?v=pixel-20261109-r3",
   "./assets/workshop-pixel-room.svg",
-  "./scripts/i18n.js?v=pixel-20261109-r3",
+  "./scripts/i18n.js?v=recovery-20261109-r3",
   "./styles/cat-home.css?v=kitten-ready-20261024-r2",
   "./styles/support.css?v=support-20261024-r1",
   "./styles/creator.css?v=outline-20261107-r1",
   "./styles/admin.css?v=redeem-20261107-r2",
   "./scripts/cat-home.js?v=wand-attached-20261024-r1",
-  "./scripts/i18n.js?v=security-20261108-r2",
   "./scripts/cat-motion.js?v=voxel-20261023-r1",
   "./scripts/kitten-model.js?v=voxel-20261023-r1",
   "./scripts/teaser-cursor.js?v=teaser-20261024-r4",
@@ -31,18 +32,18 @@ const APP_SHELL = [
   "./assets/voxel-kitten-preview.svg",
   "./assets/feature-cat-white-20261027.png",
   "./assets/desktop-pet-scene.webp",
-  "./scripts/main.js?v=security-20261108-r2",
+  "./scripts/main.js?v=recovery-20261109-r3",
   "./scripts/background-removal.js?v=outline-20261107-r1",
   "./scripts/background-worker.js?v=outline-20261107-r1",
   "./scripts/background-matte.js?v=outline-20261107-r1",
-  "./scripts/membership.js?v=security-20261108-r2",
+  "./scripts/membership.js?v=recovery-20261109-r3",
   "./scripts/admin.js?v=security-20261108-r2",
   "./scripts/analytics.js?v=admin-dashboard-20261107-r2",
   "./scripts/workshop.js?v=identity-20261108-r1",
   "./scripts/supabase-config.js?v=security-20261108-r2",
-  "./scripts/session.js?v=security-20261108-r2",
-  "./scripts/desktop-runtime.js?v=security-20261108-r2",
-  "./scripts/pwa.js",
+  "./scripts/session.js?v=recovery-20261109-r3",
+  "./scripts/desktop-runtime.js?v=recovery-20261109-r3",
+  "./scripts/pwa.js?v=recovery-20261109-r3",
   "./assets/creator-studio-3d.png",
   "./assets/pwa-icon-192.png",
   "./assets/pwa-icon-512.png"
@@ -55,7 +56,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("petforge-pwa-") && key !== CACHE_NAME).map((key) => caches.delete(key)))
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => /^(petforge-pwa-|petforge-web-)/.test(key) && key !== CACHE_NAME).map((key) => caches.delete(key)))
   ));
   self.clients.claim();
 });
@@ -65,8 +66,8 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
-    const page = new URL(request.url).pathname.split("/").pop();
-    const fallback = ["creator.html", "workshop.html", "support.html"].includes(page) ? `./${page}` : "./index.html";
+    const page = new URL(request.url).pathname.split("/").pop().replace(/\.html$/, '');
+    const fallback = ["creator", "workshop", "support", "reset-password"].includes(page) ? `./${page}.html` : "./index.html";
     event.respondWith(fetch(request).catch(() => caches.match(fallback)));
     return;
   }

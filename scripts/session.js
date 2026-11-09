@@ -20,7 +20,7 @@
         const data = await response.clone().json();
         token = data.token || '';
       }
-      if (response.status === 401 || path === '/auth/logout') token = '';
+      if (response.status === 401 || path === '/auth/logout' || (path === '/auth/reset-password' && response.ok)) token = '';
       return response;
     }
   };

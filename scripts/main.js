@@ -2,6 +2,7 @@
 
 const body = document.body;
 const previewPet = document.querySelector("#preview-pet");
+const previewAnimal = document.querySelector("#preview-animal");
 const heroUserPet = document.querySelector("#hero-user-pet");
 const heroAssetStatus = document.querySelector("#hero-asset-status");
 const previewBubble = document.querySelector("#preview-bubble");
@@ -70,6 +71,22 @@ let pendingWorkshopDownload = false;
 let sharedImageSize = 0;
 let previewFrameId = 0;
 let previewLastFrame = 0;
+let animalPreview = null;
+
+async function loadAnimalPreview(key) {
+  animalPreview?.bitmap.close(); animalPreview = null;
+  if (!key || !previewAnimal) return;
+  try {
+    const prefix = `assets/workshop/animals/${key}`;
+    const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
+    if (!metadata.ok || !atlas.ok) return;
+    const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
+    if (key !== animationPreset) { bitmap.close(); return; }
+    animalPreview = { meta, bitmap, started: performance.now() };
+    previewAnimal.width = meta.width; previewAnimal.height = meta.height;
+    updatePreview();
+  } catch (_) { /* The still preview and package retry remain available. */ }
+}
 
 const commonShortcutPresets = {
   "浏览器": { label: "打开浏览器", type: "url", target: "https://www.baidu.com/" },
@@ -226,6 +243,14 @@ function updatePreview() {
   previewBubble.hidden = !petImage.files?.[0];
   previewEmpty.hidden = Boolean(petImage.files?.[0]);
   previewPet.hidden = !petImage.files?.[0];
+  const showAnimal = Boolean(animalPreview && animationPreset && petMotion.checked && selectedStyle === 'original' && petImage.files?.[0]);
+  if (previewAnimal) {
+    previewAnimal.hidden = !showAnimal;
+    previewAnimal.style.width = previewPet.style.width;
+    previewAnimal.style.opacity = previewPet.style.opacity;
+    previewAnimal.style.filter = previewPet.style.filter;
+    if (showAnimal) previewPet.hidden = true;
+  }
   if (previewStatus) {
     previewStatus.textContent = petStatus.selectedOptions[0]?.text || '陪伴中';
   }
@@ -235,7 +260,7 @@ function updatePreview() {
   opacityOutput.textContent = `${opacity}%`;
   const motion = petMotion.checked;
   [petAnimation, hoverEffect, leaveEffect, idleBehavior, doubleClickEffect, proactiveFrequency, keyboardReaction, wanderEnabled, clickParticles, keyboardSync].forEach((control) => { control.disabled = !motion; });
-  if (motion && !previewPet.hidden && !document.hidden) {
+  if (motion && petImage.files?.[0] && !document.hidden) {
     if (!previewFrameId) previewFrameId = requestAnimationFrame(animatePreview);
   } else {
     cancelAnimationFrame(previewFrameId);
@@ -246,7 +271,13 @@ function updatePreview() {
 
 function animatePreview(timestamp) {
   if (timestamp - previewLastFrame >= 1000 / 60 - .5) {
-    previewPet.style.transform = `translateY(${Math.sin(timestamp / 600) * 3}px)`;
+    if (animalPreview && !previewAnimal.hidden) {
+      const {meta,bitmap,started} = animalPreview;
+      const i = Math.floor((timestamp - started) * meta.fps / 1000) % meta.count;
+      const context = previewAnimal.getContext('2d');
+      context.clearRect(0,0,meta.width,meta.height);
+      context.drawImage(bitmap,i%meta.columns*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,0,0,meta.width,meta.height);
+    } else if (!animationPreset) previewPet.style.transform = `translateY(${Math.sin(timestamp / 600) * 3}px)`;
     previewLastFrame = timestamp;
   }
   previewFrameId = requestAnimationFrame(animatePreview);
@@ -572,12 +603,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.07-catalog-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.09-recovery-animals-r3";
 
 async function getDesktopAppBytes() {
-  const appUrl = new URL(window.location.hostname === 'petforge-desktop.pages.dev' ? '/runtime' : 'assets/PetForge.exe', document.baseURI);
+  const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=security-20261108-r2');
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=recovery-20261109-r3');
   return fetchDesktopRuntime(appUrl);
 }
 
@@ -639,6 +670,7 @@ petImage?.addEventListener("change", () => {
   currentImageName = file.name;
   workshopTemplateId = "";
   animationPreset = "";
+  loadAnimalPreview('');
   assetAttribution = "";
   pendingWorkshopDownload = false;
   preparePetImage();
@@ -818,6 +850,7 @@ async function loadWorkshopTemplate() {
     cutoutPetBlob = imageBlob;
     styledPetBlob = imageBlob;
     showStyledPet(imageBlob);
+    await loadAnimalPreview(animationPreset);
     workshopTemplateId = templateId;
     sharedImageSize = Number(templateConfig.size);
     cutoutStatus.textContent = "已使用作品原图与配置，不会重复抠图或叠加滤镜。";

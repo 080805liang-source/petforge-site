@@ -51,7 +51,7 @@ export async function onRequest({ request }) {
     const data = await upstream.json();
     const extra = {};
     if (upstream.headers.has('Retry-After')) extra['Retry-After'] = upstream.headers.get('Retry-After');
-    if (logout || upstream.status === 401) extra['Set-Cookie'] = sessionCookie();
+    if (logout || upstream.status === 401 || (upstream.ok && url.pathname === '/api/auth/reset-password')) extra['Set-Cookie'] = sessionCookie();
     if (upstream.ok && migration) { extra['Set-Cookie'] = sessionCookie(token); return json({ signedIn: true }, 200, extra); }
     if (upstream.ok && ['/api/auth/login', '/api/auth/signup'].includes(url.pathname)) {
       if (!/^[a-f0-9]{64}$/.test(data.token || '')) return json({ error: '登录服务返回异常。' }, 502);

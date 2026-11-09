@@ -57,6 +57,8 @@ function updateVerificationFields() {
 }
 function setMode(nextMode) {
   mode = nextMode;
+  const forgot = document.querySelector('.membership-forgot');
+  if (forgot) forgot.hidden = mode !== 'login';
   modeButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.memberMode === mode));
   identityButtons.forEach((button) => { button.hidden = mode === "signup" && button.dataset.identityMode === "phone"; });
   if (mode === "signup") setIdentityMode("email");
@@ -152,3 +154,4 @@ redeemForm?.addEventListener("submit", async (event) => {
 });
 document.querySelector("#membership-signout")?.addEventListener("click", async () => { try { await request("/auth/logout", { method: "POST" }); } catch (_) {} await refreshBalance(); });
 setMode("login"); setIdentityMode("email"); refreshBalance();
+if (window.location?.search && new URLSearchParams(window.location.search).get('login') === '1') openMember();

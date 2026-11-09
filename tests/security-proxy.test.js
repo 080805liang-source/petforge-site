@@ -68,3 +68,12 @@ test('legacy sessions are validated before migration and invalid sessions or log
     assert.match(result.headers.get('Set-Cookie'), /Max-Age=0/);
   });
 });
+
+test('a successful password reset clears the current browser cookie without issuing a new session', async () => {
+  await withFetch(async () => Response.json({ ok: true }), async () => {
+    const result = await onRequest({ request: request('/auth/reset-password') });
+    assert.equal(result.status,200);
+    assert.match(result.headers.get('Set-Cookie'),/Max-Age=0/);
+    assert.deepEqual(await result.json(),{ok:true});
+  });
+});

@@ -424,7 +424,7 @@ class DesktopPet:
         if not getattr(self, 'animation_frames', None) or self.pointer_down:
             return
         count = len(self.animation_frames)
-        fps = max(1, min(30, float(self.animation_meta.get('fps', 12))))
+        fps = max(1, min(60, float(self.animation_meta.get('fps', 12))))
         index = int(now * fps) % count
         if index != self.animation_frame_index:
             self.animation_frame_index = index

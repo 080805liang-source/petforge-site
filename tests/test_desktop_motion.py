@@ -87,6 +87,19 @@ def pet():
 
 
 class DesktopMotionTests(unittest.TestCase):
+    def test_animal_body_uses_sixty_fps_and_pauses_while_held(self):
+        instance = pet()
+        instance.animation_frames = list(range(120))
+        instance.animation_meta = {'fps': 60}
+        instance.animation_frame_index = -1
+        images = []
+        instance.canvas.itemconfigure = lambda _item, **options: images.append(options['image'])
+        instance.update_animation(.75)
+        self.assertEqual(images, [45])
+        instance.pointer_down = True
+        instance.update_animation(1)
+        self.assertEqual(images, [45])
+
     def test_transparency_key_never_erases_a_color_present_in_the_pet(self):
         colors = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (255, 255, 255)]
         photo = SimpleNamespace(width=lambda: len(colors), height=lambda: 1, get=lambda x, _y: colors[x])
