@@ -603,13 +603,13 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.09-recovery-animals-r4";
+const PETFORGE_BUILD_VERSION = "2026.11.09-recovery-animals-r5";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=recovery-20261109-r4');
-  return fetchDesktopRuntime(appUrl);
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=recovery-20261109-r5');
+  return fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`));
 }
 
 async function buildPackageInBrowser() {

@@ -7,10 +7,10 @@ export async function verifyDesktopRuntime(bytes) {
   return bytes;
 }
 
-export async function fetchDesktopRuntime(url) {
+export async function fetchDesktopRuntime(url, onProgress = () => {}) {
   try {
     const size = 11586504, chunkSize = 524288, count = Math.ceil(size / chunkSize);
-    const parts = new Array(count); let next = 0;
+    const parts = new Array(count); let next = 0, completed = 0;
     await Promise.all(Array.from({length:3}, async () => {
       while (next < count) {
         const index = next++, expected = Math.min(chunkSize, size - index * chunkSize);
@@ -21,7 +21,7 @@ export async function fetchDesktopRuntime(url) {
             if (!response.ok) throw new Error('运行核心暂时无法下载，请稍后重试。');
             const bytes = new Uint8Array(await response.arrayBuffer());
             if (bytes.length !== expected) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
-            parts[index] = bytes; break;
+            parts[index] = bytes; onProgress(++completed, count); break;
           } catch (error) { if (attempt === 2) throw error; }
         }
       }
