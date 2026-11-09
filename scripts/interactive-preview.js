@@ -131,7 +131,8 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   }
   function draw(now, delta) {
     if (!position || !bounds) return;
-    if (!drag && now >= hiddenUntil && chat.hidden && !reducedMotion.matches) position = stepPosition(position,pointer,bounds,config,delta);
+    // Cursor response is a selected interaction, rather than ambient animation.
+    if (!drag && now >= hiddenUntil && chat.hidden) position = stepPosition(position,pointer,bounds,config,delta);
     let x = 0, y = 0;
     const moving = config.motionEnabled && !reducedMotion.matches;
     if (moving && !drag) {
@@ -159,7 +160,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
         if (config.hoverBubble) say('换个地方陪你。',1800);
       }
     }
-    if (!config.animationPreset && config.cursorFollowMode === 'look' && pointer && chat.hidden && !reducedMotion.matches && !drag) {
+    if (!config.animationPreset && config.cursorFollowMode === 'look' && pointer && chat.hidden && !drag) {
       x += clamp((pointer.x - position.x - bounds.petWidth / 2) / 38,-8,8);
       y += clamp((pointer.y - position.y - bounds.petHeight / 2) / 55,-4,4);
     }

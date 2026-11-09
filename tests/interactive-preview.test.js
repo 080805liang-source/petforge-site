@@ -49,7 +49,7 @@ test('local chat matches topics, falls back for unknown questions and keeps repl
   assert.equal(pickReply({},'hello'),'我在这里，安静陪着你。');
 });
 
-function previewFixture() {
+function previewFixture({reducedMotion=false} = {}) {
   class Element {
     constructor() { this.hidden=false;this.disabled=false;this.style={setProperty(){}};this.dataset={};this.events={};this.children=[];this.attributes={};this.src='blob:pet';this.naturalWidth=200;this.naturalHeight=200;this.clientWidth=480;this.clientHeight=480;this.offsetHeight=40;this.value='';this.classList={toggle(){}}; }
     addEventListener(name, fn) { (this.events[name] ||= []).push(fn); }
@@ -71,12 +71,14 @@ function previewFixture() {
     set textContent(value) { this.text=value; }
   }
   const elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
+  for(const id of ['#preview-chat','#preview-menu','#preview-window','#preview-animal'])get(id).hidden=true;
   const controls=['click','double','typing','chat','reset','motion'].map(kind=>{const e=new Element();e.dataset.previewAction=kind;return e;});
   const setting=new Element();setting.id='click-particles';
+  const cursorSetting=get('#cursor-follow-mode');cursorSetting.id='cursor-follow-mode';
   const config={name:'测试桌宠',size:100,position:'bottom-right',motionEnabled:true,cursorFollowMode:'none',idleBehavior:'still',clickAnimation:'jump',clickParticles:true,doubleClickEffect:'cuddle',keyboardSync:true,keyboardReaction:'bongo',customShortcuts:[],proactiveFrequency:'quiet'};
   let now=1000,nextFrame;const timeouts=[];
-  const document={hidden:false,querySelector:get,querySelectorAll:selector=>selector==='[data-preview-action]'?controls:[setting],addEventListener(){},createElement:()=>new Element(),createTextNode:text=>({textContent:text})};
-  const context=vm.createContext({document,window:{},performance:{now:()=>now},matchMedia:()=>({matches:false,addEventListener(){}}),ResizeObserver:class{observe(){}},setTimeout:fn=>timeouts.push(fn),clearTimeout(){},requestAnimationFrame:fn=>{nextFrame=fn;return 1;},cancelAnimationFrame(){},Math,Event,AbortSignal,fetch:async()=>({ok:true,json:async()=>({topics:{default:{replies:['<script>plain text reply</script>']}}})})});
+  const document={hidden:false,querySelector:get,querySelectorAll:selector=>selector==='[data-preview-action]'?controls:[setting,cursorSetting],addEventListener(){},createElement:()=>new Element(),createTextNode:text=>({textContent:text})};
+  const context=vm.createContext({document,window:{},performance:{now:()=>now},matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),ResizeObserver:class{observe(){}},setTimeout:fn=>timeouts.push(fn),clearTimeout(){},requestAnimationFrame:fn=>{nextFrame=fn;return 1;},cancelAnimationFrame(){},Math,Event,AbortSignal,fetch:async()=>({ok:true,json:async()=>({topics:{default:{replies:['<script>plain text reply</script>']}}})})});
   vm.runInContext(readFileSync(new URL('../scripts/interactive-preview.js',import.meta.url),'utf8').replaceAll('export ',''),context);
   context.getConfig=()=>config;context.hasImage=()=>true;context.renderAnimalFrame=()=>{};
   vm.runInContext('var preview=createInteractivePreview({getConfig,hasImage,renderAnimalFrame})',context);
@@ -94,6 +96,33 @@ test('controller applies settings to click particles, static mode and keyboard d
   assert.equal(p.controls.find(b=>b.dataset.previewAction==='typing').disabled,true);
   p.config.motionEnabled=true;p.sync();await p.controls.find(b=>b.dataset.previewAction==='typing').emit('click');p.frame();
   assert.equal(p.get('#preview-actor').querySelector().hidden,false);
+});
+
+test('explicit cursor selection works with reduced motion and dynamic mode off; none and animals still stay put', async () => {
+  const p=previewFixture({reducedMotion:true});
+  p.config.motionEnabled=false;p.sync();
+  const actor=p.get('#preview-actor'),shell=p.get('[data-preview-shell]');
+  const origin=actor.style.transform;
+  await shell.emit('pointermove',{clientX:40,clientY:90});
+  for(let i=0;i<30;i++)p.frame();
+  assert.equal(actor.style.transform,origin,'none keeps the preview stationary');
+  p.config.cursorFollowMode='follow';
+  await p.get('#cursor-follow-mode').emit('change');
+  for(let i=0;i<30;i++)p.frame();
+  assert.notEqual(actor.style.transform,origin,'explicitly chosen follow must move the preview');
+  p.sync();
+  const saved=actor.style.transform;
+  await shell.emit('pointermove',{clientX:450,clientY:400});
+  for(let i=0;i<30;i++)p.frame();
+  assert.notEqual(actor.style.transform,saved,'saved follow setting also works after synchronization');
+  p.config.cursorFollowMode='none';await p.get('#cursor-follow-mode').emit('change');
+  const stopped=actor.style.transform;
+  await shell.emit('pointermove',{clientX:450,clientY:400});
+  for(let i=0;i<30;i++)p.frame();assert.equal(actor.style.transform,stopped);
+  p.config.cursorFollowMode='follow';p.config.animationPreset='animal-900000001';p.sync();
+  await shell.emit('pointermove',{clientX:40,clientY:90});
+  const animal=actor.style.transform;
+  for(let i=0;i<30;i++)p.frame();assert.equal(actor.style.transform,animal);
 });
 
 test('controller previews desktop-only and topmost, and keeps chat messages as text nodes', async () => {
