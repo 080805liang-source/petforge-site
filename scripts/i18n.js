@@ -1,5 +1,11 @@
 (function () {
   const rows = [
+    ["欢迎来到桌宠小镇", "Welcome to the pet village", "デスクトップペットの町へようこそ", "Benvenuto nel villaggio dei pet", "Bienvenido al pueblo de mascotas", "Bienvenue au village des compagnons"],
+    ["给桌面，", "For your desktop,", "デスクトップに、", "Per il tuo desktop,", "Para tu escritorio,", "Pour votre bureau,"],
+    ["领一位小伙伴。", "a little companion.", "小さな仲間を。", "un piccolo compagno.", "un pequeño compañero.", "un petit compagnon."],
+    ["发现大家创造的小小陪伴，带上喜欢的形象和互动，一起住进你的桌面。", "Discover companions made by the community and bring your favorite look and interactions to your desktop.", "みんなが作った小さな仲間を見つけて、好きな姿やふれあいをデスクトップに迎えましょう。", "Scopri i compagni della community e porta sul desktop il tuo aspetto e le tue interazioni preferite.", "Descubre compañeros de la comunidad y lleva su aspecto e interacciones a tu escritorio.", "Découvrez les compagnons de la communauté et adoptez leur apparence et leurs interactions sur votre bureau."],
+    ["小小像素，大大陪伴。", "Little pixels, lovely company.", "小さなピクセル、大きなぬくもり。", "Piccoli pixel, grande compagnia.", "Pequeños píxeles, gran compañía.", "Petits pixels, grande compagnie."],
+    ["挑选今天的桌面搭子", "Find today's desktop companion", "今日のデスクトップの仲間を選ぼう", "Scegli il compagno di oggi", "Elige tu compañero de hoy", "Choisissez votre compagnon du jour"],
     ["操作过于频繁，请稍后重试。", "Too many requests. Please try again later.", "操作が多すぎます。後ほどお試しください。", "Troppe richieste. Riprova più tardi.", "Demasiadas solicitudes. Inténtalo más tarde.", "Trop de demandes. Réessayez plus tard."],
     ["公开作品的快捷入口仅支持 HTTPS 网页或内置常用软件。", "Shared creations support HTTPS links and built-in app shortcuts only.", "公開作品にはHTTPSリンクまたは内蔵アプリのショートカットのみ使用できます。", "Le creazioni condivise supportano solo link HTTPS e collegamenti alle app integrate.", "Las creaciones públicas solo admiten enlaces HTTPS y accesos a aplicaciones integradas.", "Les créations partagées acceptent seulement les liens HTTPS et les raccourcis intégrés."],
 

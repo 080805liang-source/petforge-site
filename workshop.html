@@ -6,12 +6,12 @@
     <meta name="description" content="PET FORGE 创意工坊：发现、关注并使用全球创作者的桌面宠物。">
     <title>PET FORGE Workshop</title>
     <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/workshop.css?v=catalog-20261107-r2">
+    <link rel="stylesheet" href="styles/workshop.css?v=pixel-20261109-r2">
     <link rel="stylesheet" href="styles/membership.css?v=redeem-20261107-r2">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#05070b">
+    <meta name="theme-color" content="#edf6f2">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
-    <script src="scripts/i18n.js?v=security-20261108-r2" defer></script>
+    <script src="scripts/i18n.js?v=pixel-20261109-r2" defer></script>
     <script src="scripts/supabase-config.js?v=security-20261108-r2"></script>
     <script src="scripts/session.js?v=security-20261108-r2"></script>
   </head>
@@ -25,21 +25,21 @@
     <main>
       <section class="workshop-hero">
         <div class="hero-copy">
-          <p class="eyebrow"><span></span> PET FORGE / WORKSHOP</p>
-          <h1>把桌面宠物，<br>交给更多人。</h1>
-          <p>发现创作者的桌宠作品，一键下载相同的形象与互动配置。</p>
+          <p class="workshop-intro">欢迎来到桌宠小镇</p>
+          <h1>给桌面，<br>领一位小伙伴。</h1>
+          <p>发现大家创造的小小陪伴，带上喜欢的形象和互动，一起住进你的桌面。</p>
           <div class="hero-actions"><a class="button primary" href="creator.html#studio">制作并分享桌宠 <span aria-hidden="true">→</span></a><a class="button secondary" href="#workshop-feed">浏览作品</a></div>
         </div>
-        <div class="workshop-orbit" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><div class="orbit-core"><span>PF</span><small>CREATOR<br>NETWORK</small></div><div class="orbit-tag tag-one">PIXEL</div><div class="orbit-tag tag-two">TOON</div><div class="orbit-tag tag-three">Y2K</div></div>
+        <div class="workshop-scene" aria-hidden="true"><div class="scene-window-bar"><span></span><span></span><span></span><small>petforge / little companions</small></div><img src="assets/workshop-pixel-room.svg" width="640" height="420" alt=""><div class="scene-caption"><span class="scene-online"></span><span>小小像素，大大陪伴。</span><span>♡</span></div></div>
       </section>
 
       <section id="workshop-feed" class="workshop-feed" aria-labelledby="feed-title">
-        <div class="feed-toolbar"><div><p class="eyebrow"><span></span> DISCOVER / 01</p><h2 id="feed-title">创意工坊</h2></div><div class="feed-controls"><label class="search-control"><span aria-hidden="true">⌕</span><input id="workshop-search" type="search" placeholder="搜索作品或创作者"></label><select id="workshop-sort" aria-label="排序"><option value="latest">最新发布</option><option value="popular">最受欢迎</option></select></div></div>
+        <div class="feed-toolbar"><div><p class="workshop-intro">挑选今天的桌面搭子</p><h2 id="feed-title">创意工坊</h2></div><div class="feed-controls"><label class="search-control"><span aria-hidden="true">⌕</span><input id="workshop-search" type="search" aria-label="搜索作品或创作者" placeholder="搜索作品或创作者"></label><select id="workshop-sort" aria-label="排序"><option value="latest">最新发布</option><option value="popular">最受欢迎</option></select></div></div>
         <div class="workshop-categories"><label for="workshop-category">选择陪伴方式</label><select id="workshop-category"><option value="">全部作品</option><option value="animal">写实动物</option><option value="anime">动漫静态</option><option value="community">社区作品</option></select><span>模板含常用软件入口，支持本地话题互动。</span></div>
         <p id="workshop-status" class="workshop-status" role="status">正在连接创意工坊...</p>
         <div id="workshop-grid" class="workshop-grid" aria-live="polite"></div>
         <button id="workshop-more" class="button secondary" type="button" hidden>加载更多作品</button>
-        <div id="workshop-empty" class="workshop-empty" hidden><span>01</span><h3>等待第一位创作者</h3><p>在创作台完成桌宠后，一键发布你的形象和全部配置。</p><a class="button primary" href="creator.html#studio">去创作台发布 <span aria-hidden="true">→</span></a></div>
+        <div id="workshop-empty" class="workshop-empty" hidden><span aria-hidden="true">♡</span><h3>等待第一位创作者</h3><p>在创作台完成桌宠后，一键发布你的形象和全部配置。</p><a class="button primary" href="creator.html#studio">去创作台发布 <span aria-hidden="true">→</span></a></div>
       </section>
     </main>
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-pwa-security-20261108-r2";
+const CACHE_NAME = "petforge-pwa-pixel-20261109-r2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,7 +9,9 @@ const APP_SHELL = [
   "./manifest.json",
   "./styles/main.css?v=stable-20260906",
   "./styles/membership.css?v=redeem-20261107-r2",
-  "./styles/workshop.css?v=catalog-20261107-r2",
+  "./styles/workshop.css?v=pixel-20261109-r2",
+  "./assets/workshop-pixel-room.svg",
+  "./scripts/i18n.js?v=pixel-20261109-r2",
   "./styles/cat-home.css?v=kitten-ready-20261024-r2",
   "./styles/support.css?v=support-20261024-r1",
   "./styles/creator.css?v=outline-20261107-r1",
