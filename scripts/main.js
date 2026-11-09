@@ -69,8 +69,7 @@ let animationPreset = "";
 let assetAttribution = "";
 let pendingWorkshopDownload = false;
 let sharedImageSize = 0;
-let previewFrameId = 0;
-let previewLastFrame = 0;
+let interactivePreview;
 let animalPreview = null;
 
 async function loadAnimalPreview(key) {
@@ -237,19 +236,16 @@ function updatePreview() {
   if (animationPreset) cursorFollowMode.value = 'none';
   const size = Number(petSize.value);
   const opacity = Number(petOpacity.value);
-  previewPet.style.width = `${Math.round(210 * size / 100)}px`;
   previewPet.style.opacity = String(opacity / 100);
   previewPet.style.filter = petShadow.checked
     ? "drop-shadow(0 26px 28px rgba(23, 32, 31, 0.2))"
     : "none";
-  previewBubble.textContent = petLine.value.trim() || "Ready.";
-  previewBubble.hidden = !petImage.files?.[0];
+  if (!interactivePreview) previewBubble.hidden = true;
   previewEmpty.hidden = Boolean(petImage.files?.[0]);
   previewPet.hidden = !petImage.files?.[0];
   const showAnimal = Boolean(animalPreview && animationPreset && petMotion.checked && selectedStyle === 'original' && petImage.files?.[0]);
   if (previewAnimal) {
     previewAnimal.hidden = !showAnimal;
-    previewAnimal.style.width = previewPet.style.width;
     previewAnimal.style.opacity = previewPet.style.opacity;
     previewAnimal.style.filter = previewPet.style.filter;
     if (showAnimal) previewPet.hidden = true;
@@ -263,27 +259,17 @@ function updatePreview() {
   opacityOutput.textContent = `${opacity}%`;
   const motion = petMotion.checked;
   [petAnimation, hoverEffect, leaveEffect, idleBehavior, doubleClickEffect, proactiveFrequency, keyboardReaction, wanderEnabled, clickParticles, keyboardSync].forEach((control) => { control.disabled = !motion; });
-  if (motion && petImage.files?.[0] && !document.hidden) {
-    if (!previewFrameId) previewFrameId = requestAnimationFrame(animatePreview);
-  } else {
-    cancelAnimationFrame(previewFrameId);
-    previewFrameId = 0;
-    previewPet.style.transform = "none";
-  }
+  interactivePreview?.sync();
 }
 
-function animatePreview(timestamp) {
-  if (timestamp - previewLastFrame >= 1000 / 60 - .5) {
-    if (animalPreview && !previewAnimal.hidden) {
-      const {meta,bitmap,started} = animalPreview;
-      const i = Math.floor((timestamp - started) * meta.fps / 1000) % meta.count;
-      const context = previewAnimal.getContext('2d');
-      context.clearRect(0,0,meta.width,meta.height);
-      context.drawImage(bitmap,i%meta.columns*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,0,0,meta.width,meta.height);
-    } else if (!animationPreset) previewPet.style.transform = `translateY(${Math.sin(timestamp / 600) * 3}px)`;
-    previewLastFrame = timestamp;
+function renderAnimalFrame(timestamp) {
+  if (animalPreview && !previewAnimal.hidden) {
+    const {meta,bitmap,started} = animalPreview;
+    const i = Math.floor((timestamp - started) * meta.fps / 1000) % meta.count;
+    const context = previewAnimal.getContext('2d');
+    context.clearRect(0,0,meta.width,meta.height);
+    context.drawImage(bitmap,i%meta.columns*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,0,0,meta.width,meta.height);
   }
-  previewFrameId = requestAnimationFrame(animatePreview);
 }
 document.addEventListener("visibilitychange", updatePreview);
 
@@ -606,12 +592,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.09-recovery-animals-r6";
+const PETFORGE_BUILD_VERSION = "2026.11.09-interactive-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=recovery-20261109-r6');
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=interactive-20261109-r1');
   return fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`));
 }
 
@@ -693,7 +679,9 @@ stylePresets.forEach((preset) => {
   });
 });
 
-[petLine, petSize, petOpacity, petStatus, bubbleStyle, petShadow, petMotion].forEach((control) => {
+[petName, petLine, petSize, petOpacity, petStatus, petAnimation, petPosition, bubbleStyle, petShadow, petMotion, alwaysOnTop, desktopOnly,
+ hoverEffect, leaveEffect, idleBehavior, doubleClickEffect, cursorFollowMode, proactiveFrequency,
+ keyboardReaction, wanderEnabled, hoverBubble, clickParticles, soundHint, keyboardSync].forEach((control) => {
   control?.addEventListener("input", updatePreview);
   control?.addEventListener("change", updatePreview);
 });
@@ -879,3 +867,12 @@ window.addEventListener("petforge:membership-change", (event) => {
   }
 });
 loadWorkshopTemplate();
+
+if (document.querySelector('#preview-actor')) {
+  import('./interactive-preview.js?v=interactive-20261109-r1').then(({createInteractivePreview}) => {
+    interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame});
+    updatePreview();
+  }).catch(() => {
+    document.querySelector('#preview-feedback').textContent = '互动预览未能加载，请刷新后重试。';
+  });
+}

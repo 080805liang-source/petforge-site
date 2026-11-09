@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="上传自己的图片，定制交互与快捷菜单，生成专属 Windows 桌宠。">
     <title>桌宠创作台 | PET FORGE</title>
-    <link rel="stylesheet" href="styles/main.css?v=recovery-20261109-r6">
-    <link rel="stylesheet" href="styles/membership.css?v=recovery-20261109-r6">
-    <link rel="stylesheet" href="styles/creator.css?v=outline-20261107-r1">
+    <link rel="stylesheet" href="styles/main.css?v=interactive-20261109-r1">
+    <link rel="stylesheet" href="styles/membership.css?v=interactive-20261109-r1">
+    <link rel="stylesheet" href="styles/creator.css?v=interactive-20261109-r1">
     <meta name="theme-color" content="#07101a">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
   </head>
@@ -114,22 +114,46 @@
           </section>
 
           <section class="preview-panel" aria-label="桌宠实时预览">
-            <div class="preview-label"><span>LIVE ENVIRONMENT</span><span id="preview-status">陪伴中</span></div>
+            <div class="preview-label"><span>互动试用桌面</span><span id="preview-status">陪伴中</span></div>
             <div class="preview-desktop" data-preview-shell>
               <div class="desktop-grid"></div>
               <div class="desktop-surface" aria-hidden="true"></div>
-              <div class="desktop-topbar"><span></span><span>PET FORGE / PREVIEW</span><span>WIN</span></div>
+              <div class="desktop-topbar"><span></span><span>PET FORGE / PREVIEW</span><button id="preview-window-toggle" type="button" aria-pressed="false">试用窗口</button></div>
+              <div id="preview-window" class="preview-window" hidden><strong>模拟应用窗口</strong><p>切换“始终置顶”和“仅在桌面显示”，看看桌宠如何回应。</p><button id="preview-window-close" type="button">回到桌面</button></div>
               <div id="preview-empty" class="preview-empty">
                 <span>＋</span>
                 <strong>把你的图片放进这里</strong>
-                <small>上传后即可预览大小、透明度与气泡</small>
+                <small>上传后，在这里试试鼠标、粒子和对话</small>
               </div>
-              <img id="preview-pet" alt="你上传的桌宠预览" hidden>
-              <canvas id="preview-animal" aria-label="桌宠动作预览" hidden></canvas>
+              <button id="preview-actor" class="preview-actor" type="button" aria-label="和预览桌宠互动" hidden>
+                <img id="preview-pet" alt="你上传的桌宠预览" draggable="false" hidden>
+                <canvas id="preview-animal" aria-label="桌宠动作预览" hidden></canvas>
+                <span class="preview-keyboard" aria-hidden="true" hidden>⌨ · · · ·</span>
+              </button>
               <div id="preview-bubble" class="preview-bubble" hidden>你好，我在这里。</div>
-              <div class="desktop-coordinate"><span>X 1432</span><span>Y 786</span></div>
+              <div id="preview-particles" class="preview-particles" aria-hidden="true"></div>
+              <div id="preview-menu" class="preview-menu" aria-label="桌宠互动菜单" hidden></div>
+              <div class="preview-live-note" id="preview-live-note">上传图片后开始互动</div>
+              <section id="preview-chat" class="preview-chat" aria-label="和桌宠聊聊" hidden>
+                <div class="preview-chat-heading"><strong>和桌宠聊聊</strong><button id="preview-chat-close" type="button" aria-label="关闭对话">×</button></div>
+                <p class="preview-chat-mode">本地回复体验 · AI 服务尚未接入</p>
+                <div id="preview-chat-log" class="preview-chat-log" role="log" aria-live="polite" aria-relevant="additions" data-user-content></div>
+                <form id="preview-chat-form">
+                  <label class="preview-chat-label" for="preview-chat-input">给桌宠留言</label>
+                  <div class="preview-chat-compose"><input id="preview-chat-input" type="text" maxlength="280" autocomplete="off" placeholder="聊聊学习、工作或今天的心情" required><button type="submit">发送</button></div>
+                </form>
+              </section>
             </div>
-            <p class="preview-hint">上传后可以继续在左侧调整外观。生成后的桌宠支持拖动、点击和右键菜单。</p>
+            <div class="preview-controls" aria-label="试用桌宠互动">
+              <button type="button" data-preview-action="motion" aria-pressed="false" disabled>开启动态试用</button>
+              <button type="button" data-preview-action="click" disabled>试试单击</button>
+              <button type="button" data-preview-action="double" disabled>试试双击</button>
+              <button type="button" data-preview-action="typing" disabled>试试打字</button>
+              <button type="button" data-preview-action="chat" aria-expanded="false" aria-controls="preview-chat" disabled>和它聊聊</button>
+              <button type="button" data-preview-action="reset" disabled>复位</button>
+            </div>
+            <p id="preview-feedback" class="preview-feedback" role="status">修改设置后直接试用，也可以拖动桌宠。</p>
+            <p class="preview-hint">鼠标在框内移动，点击或双击桌宠；右键可打开互动菜单。聊天内容只留在当前页面。</p>
           </section>
 
           <section class="function-panel" aria-label="桌宠功能设置">
@@ -329,11 +353,11 @@
     </dialog>
     <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/supabase-config.js?v=security-20261108-r2"></script>
-    <script src="scripts/session.js?v=recovery-20261109-r6"></script>
-    <script src="scripts/i18n.js?v=recovery-20261109-r6" defer></script>
-    <script src="scripts/pwa.js?v=recovery-20261109-r6" defer></script>
-    <script src="scripts/membership.js?v=recovery-20261109-r6" defer></script>
-    <script src="scripts/main.js?v=recovery-20261109-r6" defer></script>
+    <script src="scripts/session.js?v=interactive-20261109-r1"></script>
+    <script src="scripts/i18n.js?v=interactive-20261109-r1" defer></script>
+    <script src="scripts/pwa.js?v=interactive-20261109-r1" defer></script>
+    <script src="scripts/membership.js?v=interactive-20261109-r1" defer></script>
+    <script src="scripts/main.js?v=interactive-20261109-r1" defer></script>
     <script src="scripts/analytics.js?v=admin-dashboard-20261107-r2" defer></script>
   </body>
 </html>
