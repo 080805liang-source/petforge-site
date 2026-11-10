@@ -8,6 +8,16 @@ const png = `data:image/png;base64,${readFileSync(new URL('../assets/pwa-icon-19
 const config = { name: '像素小猫', size: 100, opacity: 100, clickLine: '你好', motionEnabled: false, shadow: false, visualStyle: 'chrome', keyboardSync: false, alwaysOnTop: true, customShortcuts: [{ label: '微信', type: 'app', target: 'weixin://', appPaths: ['%ProgramFiles%\\WeChat\\WeChat.exe'] }], safeRendering: true };
 const payload = () => ({ config: structuredClone(config), image: png, preview: png, description: '测试配置' });
 
+test('public chat templates retain appearance and discard private keys, endpoints and provider settings',async()=>{
+ const api=createAdminTestApi();const data=payload();
+ data.config.chat={mode:'byok',apiKey:'PRIVATE-TEST-KEY',endpoint:'https://private-agent.example/v1',model:'private-model',appearance:{theme:'pixel-3',width:440,fontSize:16,title:'小猫聊天室',accent:'#337755'}};
+ const created=await api.call('POST','/workshop',data,'owner-session');assert.equal(created.status,201);
+ const result=await api.call('GET','/workshop/'+created.body.id);const chat=result.body.post.config.chat;
+ assert.equal(chat.mode,'basic');assert.equal(chat.appearance.theme,'pixel-3');assert.equal(chat.appearance.width,440);
+ assert.equal(JSON.stringify(result.body).includes('PRIVATE-TEST-KEY'),false);assert.equal(chat.endpoint,undefined);assert.equal(chat.model,undefined);
+ const stored=api.rows.pf_workshop[0];assert.equal(stored.config.chat.apiKey,undefined);
+});
+
 test('the public Pages site can use membership and workshop without allowing unrelated sites', async () => {
   const api=createAdminTestApi();
   for(const origin of ['https://petforge-desktop.pages.dev','https://080805liang-source.github.io']) {

@@ -16,6 +16,7 @@ from tkinter import messagebox, simpledialog
 from response_bank import ResponseBank
 from desktop_shortcut import create_desktop_shortcut
 from pet_animation import PetAnimation
+from chat_window import ChatWindow
 from ctypes import wintypes
 
 
@@ -187,7 +188,7 @@ class DesktopPet:
     def build_menu(self) -> None:
         self.menu = tk.Menu(self.root, tearoff=False)
         self.menu.add_command(label="和我互动", command=self.interact)
-        self.menu.add_command(label="和我聊聊（本地回复）", command=self.chat)
+        self.menu.add_command(label="展开聊天", command=self.chat)
         if self.pet_animation and self.pet_animation.has_actions:
             for key, label in [('pet', '摸摸头'), ('play', '逗它玩'), ('sleep', '闭眼休息'), ('wake', '叫醒它')]:
                 self.menu.add_command(label=label, command=lambda action=key: self.pet_action(action))
@@ -411,9 +412,12 @@ class DesktopPet:
         return self.responses.reply(topic=topic)
 
     def chat(self) -> None:
-        text = simpledialog.askstring('和桌宠聊聊', '想聊什么？支持学习、工作、心情和日常。\n使用本地回复库，不发送聊天内容。', parent=self.root)
-        if text and text.strip():
-            self.show_bubble(self.responses.reply(text), 6500)
+        current = getattr(self, 'chat_panel', None)
+        if current and current.window.winfo_exists():
+            current.window.deiconify()
+            current.window.lift()
+            return
+        self.chat_panel = ChatWindow(self.root, BASE_DIR, self.config, self.responses)
 
     def load_animation(self) -> None:
         if not self.config.get('animationPreset'):

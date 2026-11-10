@@ -49,7 +49,7 @@ test('local chat matches topics, falls back for unknown questions and keeps repl
   assert.equal(pickReply({},'hello'),'我在这里，安静陪着你。');
 });
 
-function previewFixture({reducedMotion=false,petActions=false} = {}) {
+function previewFixture({reducedMotion=false,petActions=false,replyWithModel,chatGeneration=()=>0} = {}) {
   class Element {
     constructor() { this.hidden=false;this.disabled=false;this.style={setProperty(){}};this.dataset={};this.events={};this.children=[];this.attributes={};this.src='blob:pet';this.naturalWidth=200;this.naturalHeight=200;this.clientWidth=480;this.clientHeight=480;this.offsetHeight=40;this.value='';this.classList={toggle(){}}; }
     addEventListener(name, fn) { (this.events[name] ||= []).push(fn); }
@@ -79,11 +79,12 @@ function previewFixture({reducedMotion=false,petActions=false} = {}) {
   let now=1000,nextFrame;const timeouts=[];
   const document={hidden:false,querySelector:get,querySelectorAll:selector=>selector==='[data-preview-action]'?controls:[setting,cursorSetting],addEventListener(){},createElement:()=>new Element(),createTextNode:text=>({textContent:text})};
   const actions=[];let rendered=0;
-  const context=vm.createContext({document,window:{},performance:{now:()=>now},matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),ResizeObserver:class{observe(){}},setTimeout:fn=>timeouts.push(fn),clearTimeout(){},requestAnimationFrame:fn=>{nextFrame=fn;return 1;},cancelAnimationFrame(){},Math,Event,AbortSignal,fetch:async()=>({ok:true,json:async()=>({topics:{default:{replies:['<script>plain text reply</script>']}}})})});
+  const context=vm.createContext({document,window:{},performance:{now:()=>now},matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),ResizeObserver:class{observe(){}},setTimeout:fn=>timeouts.push(fn),clearTimeout(){},requestAnimationFrame:fn=>{nextFrame=fn;return 1;},cancelAnimationFrame(){},Math,Event,AbortController,AbortSignal,fetch:async()=>({ok:true,json:async()=>({topics:{default:{replies:['<script>plain text reply</script>']}}})})});
   vm.runInContext(readFileSync(new URL('../scripts/interactive-preview.js',import.meta.url),'utf8').replaceAll('export ',''),context);
   context.getConfig=()=>config;context.hasImage=()=>true;context.renderAnimalFrame=()=>{rendered++;};
   context.playPetAction=name=>{if(!petActions||!config.motionEnabled)return false;actions.push(name);return true;};context.hasPetActions=()=>petActions;
-  vm.runInContext('var preview=createInteractivePreview({getConfig,hasImage,renderAnimalFrame,playPetAction,hasPetActions})',context);
+  context.replyWithModel=replyWithModel;context.chatGeneration=chatGeneration;
+  vm.runInContext('var preview=createInteractivePreview({getConfig,hasImage,renderAnimalFrame,playPetAction,hasPetActions,replyWithModel,chatGeneration})',context);
   return {get,controls,config,setting,actions,rendered:()=>rendered,sync:()=>vm.runInContext('preview.sync()',context),frame:()=>{now+=20;nextFrame(now);}};
 }
 
@@ -137,6 +138,24 @@ test('explicit cursor selection works with reduced motion and dynamic mode off; 
   await shell.emit('pointermove',{clientX:40,clientY:90});
   const animal=actor.style.transform;
   for(let i=0;i<30;i++)p.frame();assert.equal(actor.style.transform,animal);
+});
+
+test('model chat carries bounded history and drops an old reply after configuration changes', async () => {
+  let generation=0,resolve,capturedSignal;const histories=[];
+  const p=previewFixture({chatGeneration:()=>generation,replyWithModel:(history,signal)=>{histories.push(history);capturedSignal=signal;return new Promise(done=>{resolve=done;});}});
+  p.config.chat={mode:'byok'};generation++;p.sync();
+  await p.controls.find(b=>b.dataset.previewAction==='chat').emit('click');
+  p.get('#preview-chat-input').value='hello';
+  const first=p.get('#preview-chat-form').emit('submit');
+  assert.equal(histories[0][0].content,'hello');
+  resolve('<b>model reply</b>');await first;
+  assert.equal(p.get('#preview-chat-log').children[1].children[1].textContent,'<b>model reply</b>');
+  p.get('#preview-chat-input').value='next';const second=p.get('#preview-chat-form').emit('submit');
+  assert.equal(histories[1].length,3);
+  generation++;p.sync();assert.equal(capturedSignal.aborted,true);
+  resolve('stale private reply');await second;
+  assert.equal(p.get('#preview-chat-log').children.length,0);
+  assert.match(p.get('#preview-feedback').textContent,/自带 Key/);
 });
 
 test('controller previews desktop-only and topmost, and keeps chat messages as text nodes', async () => {

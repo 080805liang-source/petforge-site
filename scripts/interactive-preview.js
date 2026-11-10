@@ -33,7 +33,7 @@ export function pickReply(topics, text, topic = 'default', random = Math.random)
   return replies[Math.min(replies.length - 1, Math.floor(random() * replies.length))];
 }
 
-export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame, playPetAction = () => false, hasPetActions = () => false}) {
+export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame, playPetAction = () => false, hasPetActions = () => false, replyWithModel, chatGeneration = () => 0}) {
   const shell = document.querySelector('[data-preview-shell]'), actor = document.querySelector('#preview-actor');
   const image = document.querySelector('#preview-pet'), canvas = document.querySelector('#preview-animal');
   const bubble = document.querySelector('#preview-bubble'), particles = document.querySelector('#preview-particles');
@@ -47,6 +47,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   let frame = 0, lastFrame = 0, hiddenUntil = 0, typingUntil = 0, bubbleTimer, clickTimer, repliesPromise;
   let hovered = false, lastHover = 0, lastGreeting = 0, nextWander = 0, clickCount = 0, lastPositionSetting;
   let lastPreset, lastImage, cancelledClick = false, chatBusy = false, windowOpen = false;
+  let chatHistory=[], requestController, lastChatGeneration;
 
   function say(text, duration = 3500) {
     clearTimeout(bubbleTimer);
@@ -182,6 +183,8 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   }
   function sync() {
     config = getConfig();
+    const generation=chatGeneration();
+    if(generation!==lastChatGeneration){requestController?.abort();chatHistory=[];chatLog.replaceChildren();lastChatGeneration=generation;if(!chat.hidden)announce(config.chat?.mode==='byok'?'自带 Key 模式 · 使用你填写的模型服务':'基础陪伴 · 本地回复，不联网');}
     const ready = hasImage(); actor.hidden = !ready || (windowOpen && config.desktopOnly);
     actor.classList.toggle('is-topmost',config.alwaysOnTop);
     buttons.forEach(button => { button.disabled = !ready || (button.dataset.previewAction === 'typing' && (!config.motionEnabled || !config.keyboardSync)); });
@@ -202,7 +205,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     else position = constrainPosition(position,bounds);
     lastImage = image.src; lastPreset = config.animationPreset; lastPositionSetting = config.position;
     if (!config.motionEnabled) { action = null; typingUntil = 0; hiddenUntil = 0; particles.replaceChildren(); }
-    if (changedImage) { clickCount = 0; chatLog.replaceChildren(); say(config.clickLine); }
+    if (changedImage) { clickCount = 0; requestController?.abort(); chatHistory=[]; chatLog.replaceChildren(); say(config.clickLine); }
     if (windowOpen && config.desktopOnly) { bubble.hidden = true; closeChat(false); menu.hidden = true; }
     draw(performance.now(),0);
     if (!frame) { lastFrame = performance.now(); frame = requestAnimationFrame(tick); }
@@ -221,7 +224,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
       position = constrainPosition({x:(bounds.width-bounds.petWidth)/2,y:52},bounds);
       chatInput.focus({preventScroll:true});
       shell.scrollIntoView({block:'start',behavior:reducedMotion.matches ? 'instant' : 'smooth'});
-      announce('本地回复体验 · AI 服务尚未接入');
+      announce(config.chat?.mode==='byok'?'自带 Key 模式 · 使用你填写的模型服务':'基础陪伴 · 本地回复，不联网');
     }
   }
   function addMessage(text, user = false) {
@@ -233,18 +236,27 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     measure(); position = constrainPosition(position,bounds);
   }
   chatForm.addEventListener('submit',async event => {
-    event.preventDefault(); const text = chatInput.value.trim().slice(0,280);
+    event.preventDefault(); const text = chatInput.value.trim().slice(0,4000);
     if (!text || chatBusy || !hasImage()) return;
     chatBusy = true; chatForm.querySelector('button').disabled = true; addMessage(text,true); chatInput.value = '';
     const source = image.src;
+    const generation=chatGeneration();
+    requestController=new AbortController();
     try {
+      let reply;
+      if(config.chat?.mode==='byok') {
+        reply=await replyWithModel([...chatHistory,{role:'user',content:text}],requestController.signal);
+      } else {
       repliesPromise ||= fetch('assets/responses.json',{signal:AbortSignal.timeout(15000)}).then(response => { if (!response.ok) throw new Error('replies-unavailable'); return response.json(); });
       const bank = await repliesPromise;
-      if (image.src !== source || !hasImage()) return;
-      const reply = pickReply(bank.topics,text); addMessage(reply); say(reply,6500);
-    } catch (_) {
+      reply=pickReply(bank.topics,text);
+      }
+      if (image.src !== source || !hasImage() || generation!==chatGeneration()) return;
+      chatHistory=[...chatHistory,{role:'user',content:text},{role:'assistant',content:reply}].slice(-12);
+      addMessage(reply); say(reply,6500);
+    } catch (error) {
       repliesPromise = null;
-      if (image.src === source && hasImage()) addMessage('回复库暂时未能加载，请稍后再试。');
+      if (image.src === source && hasImage() && generation===chatGeneration()) addMessage(config.chat?.mode==='byok'?error.message:'回复库暂时未能加载，请稍后再试。');
     } finally { chatBusy = false; chatForm.querySelector('button').disabled = false; }
   });
   document.querySelector('#preview-chat-close').addEventListener('click',() => closeChat());
