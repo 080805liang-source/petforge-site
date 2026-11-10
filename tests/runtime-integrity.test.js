@@ -17,7 +17,7 @@ test('runtime relay uses only the pinned release host and refuses upstream redir
   const previous = globalThis.fetch;
   try {
     globalThis.fetch = async (url, options) => {
-      assert.equal(url, 'https://petforge-desktop.pages.dev/assets/PetForge.exe?v=2026.11.10-chat-diy-r1');
+      assert.equal(url, 'https://petforge-desktop.pages.dev/assets/PetForge.exe?v=2026.11.10-chat-wardrobe-r1');
       assert.equal(options.redirect, 'manual');
       return new Response('MZ');
     };
@@ -49,8 +49,8 @@ test('segmented runtime download retries a failed part and rejects corrupted byt
     };
     const progress = [];
     assert.deepEqual(await fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge.exe'), (done, total) => progress.push([done,total])),bytes);
-    assert.deepEqual(progress, Array.from({length:24},(_,index)=>[index+1,24]));
-    assert.equal(calls.get(3),2);assert.equal(calls.size,24);
+    assert.deepEqual(progress, Array.from({length:36},(_,index)=>[index+1,36]));
+    assert.equal(calls.get(3),2);assert.equal(calls.size,36);
     corrupt = true;
     await assert.rejects(fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge.exe')),/安全校验失败/);
   } finally { globalThis.fetch = original; }

@@ -1,4 +1,5 @@
 import {PROVIDERS,sendChat} from './chat-client.js';
+import {personalChatFile} from './chat-package.js';
 
 const color = value => /^#[0-9a-f]{6}$/i.test(value || '') ? value : '';
 export function appearanceConfig(value={}, themes=[]) {
@@ -9,6 +10,7 @@ export function appearanceConfig(value={}, themes=[]) {
 export function applyChatTheme(element,theme,appearance) {
   if(!theme||!element)return;
   element.dataset.chatKind=theme.kind;
+  element.style.setProperty('--chat-art',theme.art?`url("${new URL(theme.art,document.baseURI).href}")`:'none');
   const accent=appearance.accent||theme.accent;
   const brightness=[1,3,5].map(i=>parseInt(accent.slice(i,i+2),16)/255).reduce((sum,n,i)=>sum+n*[.2126,.7152,.0722][i],0);
   element.style.setProperty('--chat-on-accent',brightness>.58?'#152b27':'#ffffff');
@@ -35,10 +37,14 @@ export async function createChatStudio({onChange}) {
   }
   function render(){
     grid.replaceChildren();
-    themes.filter(item=>!filter.value||item.group===filter.value).forEach(theme=>{
+    const query=$('chat-theme-search').value.trim().toLowerCase();
+    const visible=themes.filter(item=>(!filter.value||item.group===filter.value)&&(!query||(item.name+item.group).toLowerCase().includes(query)));
+    $('chat-theme-count').textContent=visible.length+' 款';
+    visible.sort((a,b)=>Number(Boolean(b.art))-Number(Boolean(a.art))).forEach(theme=>{
       const button=document.createElement('button');button.type='button';button.className='chat-theme-option';button.setAttribute('aria-pressed',String(appearance.theme===theme.id));button.setAttribute('aria-label',theme.name);button.dataset.userContent='true';
       applyChatTheme(button,theme,{width:380,fontSize:14});
       const sample=document.createElement('span');sample.className='chat-theme-sample';sample.textContent='你好，今天也陪着你。';
+      if(theme.art){const art=document.createElement('img');art.src=theme.art;art.alt='';art.loading='lazy';sample.prepend(art);}
       const title=document.createElement('strong');title.textContent=theme.name;const label=document.createElement('small');label.textContent=theme.group;button.append(sample,title,label);
       button.addEventListener('click',()=>{appearance={...appearance,theme:theme.id,accent:'',background:''};fields.accent.value=theme.accent;fields.background.value=theme.bg;paint();render();});grid.append(button);
     });
@@ -52,6 +58,7 @@ export async function createChatStudio({onChange}) {
   $('chat-forget-key').addEventListener('click',()=>{privateKey='';key.value='';generation++;paint();status.textContent='当前页面的 Key 已清除。';});
   $('chat-theme-open').addEventListener('click',()=>{render();dialog.showModal();});
   $('chat-theme-close').addEventListener('click',()=>dialog.close());filter.addEventListener('change',render);
+  $('chat-theme-search').addEventListener('input',render);
   $('chat-theme-reset').addEventListener('click',()=>{appearance={...appearance,accent:'',background:''};fields.accent.value=currentTheme().accent;fields.background.value=currentTheme().bg;paint();});
   function getConfig(){return {mode:mode.value==='byok'?'byok':'basic',appearance:{...appearance},provider:provider.value,endpoint:endpoint.value.trim(),model:model.value.trim(),prompt:prompt.value.trim().slice(0,1200)};}
   async function reply(history,signal){const g=generation;const result=await sendChat(getConfig(),privateKey,history,{signal});if(g!==generation)throw new Error('聊天配置已改变，请重新发送。');return result;}
@@ -65,5 +72,5 @@ export async function createChatStudio({onChange}) {
     paint();
   }
   load();
-  return {getConfig,load,reply,clearHistoryToken:()=>generation};
+  return {getConfig,load,reply,personalFile:()=>personalChatFile(getConfig(),privateKey),clearHistoryToken:()=>generation};
 }

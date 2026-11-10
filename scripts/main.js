@@ -1,7 +1,7 @@
 "use strict";
 
 let chatStudio;
-const chatStudioReady = import('./chat-studio.js?v=chat-diy-20261110-r1').then(async ({createChatStudio}) => {
+const chatStudioReady = import('./chat-studio.js?v=chat-wardrobe-20261110-r1').then(async ({createChatStudio}) => {
   chatStudio = await createChatStudio({onChange:() => updatePreview()});
   updatePreview();
   return chatStudio;
@@ -86,7 +86,7 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=chat-diy-20261110-r1');
+    const {createPetAnimation} = await import('./pet-animation.js?v=chat-wardrobe-20261110-r1');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -603,21 +603,21 @@ function packageReadme(config) {
 - PetForge.exe 已包含运行环境，不需要安装 Python。
 - 右键桌宠可以打开快捷菜单。
   - 右键选择“展开聊天”，可切换“基础陪伴”和“自己的模型 / Agent”。基础陪伴免费离线，使用内置回复库。
-  - 自带模型需在聊天窗口“设置”中填写 HTTPS 接口、模型名称或 Agent ID、自己的 API Key；支持 Chat Completions 文本协议。服务费用由自己的模型账户承担。
-  - 网页填写的 Key 不导出、不公开。桌面端默认仅在当前聊天窗口使用；可选择由 Windows 当前用户加密记住，也可随时清除。
-  - 创作台可从 50 款聊天框中选配色、边框，调整标题、宽度和字号。桌面版保留配色、边框和排版；玻璃背景模糊仅网页支持。
+  - 网页填好 HTTPS 接口、模型名称和 API Key 再下载，桌宠可直接使用该模型。右键“展开聊天”即可对话；也可在“设置”修改或清除。支持 Chat Completions 文本协议，费用由自己的模型账户承担。
+  - 个人 ZIP 会包含你填写的 Key，请勿转发。桌宠首次启动将其导入 Windows 当前用户的加密文件，并移除解压目录中的明文配置。原始 ZIP 仍含 Key，请自行妥善保管或删除；工坊分享不会包含 Key。
+  - 创作台有 200 款聊天装扮，可调整标题、宽度、字号和配色，带插画的消息气泡会随桌宠导出。
 - 左键拖拽可以移动桌宠。
 - 默认静态、无阴影。可在右键菜单随时切换“显示柔和阴影”和“动态模式”。
 - 动态模式以 120 帧/秒为目标；开启后，点击、鼠标互动和键盘同步会使用你选择的效果。
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.10-chat-diy-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.10-chat-wardrobe-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge.exe', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=chat-diy-20261110-r1');
+  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=chat-wardrobe-20261110-r1');
   return fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`));
 }
 
@@ -625,15 +625,24 @@ async function buildPackageInBrowser() {
   await chatStudioReady;
   const config = getConfig();
   const name = safeName(config.name);
+  const personalFile=chatStudio?.personalFile();
   const pngBytes = await getPetPngBytes(config);
   config.packageVersion = "zip-portable-v2";
   const appBytes = await getDesktopAppBytes();
   const replyResponse = await fetch(new URL('assets/responses.json', document.baseURI));
   if (!replyResponse.ok) throw new Error('互动回复库下载失败，请重试。');
   const extraFiles = [{name:'assets/responses.json',data:new Uint8Array(await replyResponse.arrayBuffer())}];
+  if(personalFile)extraFiles.push(personalFile);
   const themeResponse=await fetch(new URL('assets/chat-themes.json',document.baseURI));
   if(!themeResponse.ok)throw new Error('聊天样式下载失败，请重试。');
   extraFiles.push({name:'assets/chat-themes.json',data:new Uint8Array(await themeResponse.arrayBuffer())});
+  const themeCatalog=JSON.parse(new TextDecoder().decode(extraFiles.at(-1).data));
+  const selectedTheme=themeCatalog.find(theme=>theme.id===config.chat?.appearance?.theme);
+  if(selectedTheme?.art){
+    const artResponse=await fetch(new URL(selectedTheme.art,document.baseURI));
+    if(!artResponse.ok)throw new Error('聊天装扮下载失败，请重试。');
+    extraFiles.push({name:selectedTheme.art,data:new Uint8Array(await artResponse.arrayBuffer())});
+  }
   if (config.animationPreset) {
     if (!/^animal-\d{1,12}$/.test(config.animationPreset)) throw new Error('动物动作配置无效。');
     const prefix = `assets/workshop/animals/${config.animationPreset}`;
@@ -910,7 +919,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=chat-diy-20261110-r1').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=chat-wardrobe-20261110-r1').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {

@@ -3,7 +3,10 @@ import queue
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
-from ai_chat import PrivateChatStore, request_reply, endpoint_url
+from ai_chat import PrivateChatStore, request_reply, endpoint_url, import_personal_chat
+from PIL import Image,ImageTk
+from chat_art import frame_image
+from tkinter import font as tkfont
 
 
 def text_color(hex_color):
@@ -16,11 +19,15 @@ class ChatWindow:
         self.responses=responses
         self.store=PrivateChatStore(bundle)
         self.settings=dict(config.get('chat') or {})
-        saved=self.store.load()
+        self.import_error=''
+        try:saved=import_personal_chat(bundle,self.store) or self.store.load()
+        except (ValueError,OSError):
+            saved=self.store.load();self.import_error='个人模型配置未能导入，请在设置中检查。'
         self.settings.update(saved.get('settings') or {})
         self.key=saved.get('key','')
         self.remember=bool(self.key)
         self.history=[]
+        self.messages=[];self.message_widgets=[];self.art=None
         self.busy=False
         self.results=queue.Queue()
         self.generation=0
@@ -35,6 +42,10 @@ class ChatWindow:
         except (OSError,ValueError):
             themes=[dict(id='glass-1',name='薄荷玻璃',bg='#e6f6f2',fg='#193f39',accent='#387d70',borderWidth=1,kind='glass')]
         self.theme=next((t for t in themes if t['id']==appearance.get('theme')),themes[0])
+        art_path=self.theme.get('art','')
+        if art_path.startswith('assets/chat-frames/') and '..' not in art_path:
+            try:self.art=Image.open(bundle/art_path).convert('RGBA')
+            except OSError:pass
         def color(value,fallback):
             return value if isinstance(value,str) and len(value)==7 and value[0]=='#' and all(c in '0123456789abcdefABCDEF' for c in value[1:]) else fallback
         self.bg=color(appearance.get('background'),self.theme['bg'])
@@ -42,6 +53,7 @@ class ChatWindow:
         self.accent=color(appearance.get('accent'),self.theme['accent'])
         font=max(12,min(20,int(appearance.get('fontSize') or 14)))
         family='Consolas' if self.theme.get('font')=='mono' else 'Microsoft YaHei UI'
+        self.message_font=tkfont.Font(family=family,size=font)
         self.window.configure(bg=self.accent)
         stroke=self.theme.get('borderWidth',1)
         self.surface=tk.Frame(self.window,bg=self.bg,bd=stroke,relief='groove' if self.theme.get('kind') in ('frame','retro') else 'flat')
@@ -58,6 +70,8 @@ class ChatWindow:
         self.log=tk.Text(self.surface,wrap='word',state='disabled',bg=self.bg,fg=self.fg,relief='flat',padx=14,pady=10,font=(family,font),insertbackground=self.fg)
         self.log.tag_configure('who',foreground=self.accent,font=(family,10,'bold'))
         self.log.pack(fill='both',expand=True)
+        self.log.bind('<Configure>',self.resize_messages)
+        self.resize_id=None
         compose=tk.Frame(self.surface,bg=self.bg,padx=12,pady=12);compose.pack(fill='x')
         self.input=tk.Entry(compose,font=(family,11),bg=self.bg,fg=self.fg,insertbackground=self.fg,relief='solid',bd=1)
         self.input.pack(side='left',fill='x',expand=True,ipady=8);self.input.bind('<Return>',lambda _:self.send())
@@ -65,6 +79,7 @@ class ChatWindow:
         self.send_button.pack(side='right',padx=(7,0))
         self.refresh_note()
         self.append('桌宠','我在这里。想聊点什么？')
+        if self.import_error:self.append('连接提示',self.import_error)
         self.poll_id=self.window.after(100,self.poll)
         self.window.protocol('WM_DELETE_WINDOW',self.close)
         self.input.focus_set()
@@ -77,10 +92,31 @@ class ChatWindow:
         self.generation+=1;self.history=[];self.refresh_note()
 
     def append(self,who,text):
+        self.messages=(self.messages+[(who,str(text))])[-20:]
+        self.render_messages()
+
+    def resize_messages(self,event=None):
+        if self.resize_id:self.window.after_cancel(self.resize_id)
+        self.resize_id=self.window.after(100,self.render_messages)
+
+    def render_messages(self):
+        self.resize_id=None
         self.log.configure(state='normal')
-        self.log.insert('end',who+'\n','who');self.log.insert('end',str(text)+'\n\n')
-        if int(self.log.index('end-1c').split('.')[0])>400:
-            self.log.delete('1.0','100.0')
+        for widget in self.message_widgets:widget.destroy()
+        self.message_widgets=[];self.log.delete('1.0','end')
+        for who,text in self.messages:
+            if self.art:
+                width=max(220,self.log.winfo_width()-34);wrap=width-132
+                canvas=tk.Canvas(self.log,width=width,height=110,bg=self.bg,highlightthickness=0,bd=0)
+                content=canvas.create_text(74,40,text=who+'\n'+text,anchor='nw',width=wrap,fill=self.fg,font=self.message_font)
+                bounds=canvas.bbox(content);height=max(110,bounds[3]+38)
+                canvas.configure(height=height)
+                photo=ImageTk.PhotoImage(frame_image(self.art,width,height,self.bg))
+                canvas.photo=photo;canvas.create_image(0,0,image=photo,anchor='nw');canvas.tag_raise(content)
+                self.log.window_create('end',window=canvas,padx=0,pady=4)
+                self.log.insert('end','\n');self.message_widgets.append(canvas)
+            else:
+                self.log.insert('end',who+'\n','who');self.log.insert('end',text+'\n\n')
         self.log.configure(state='disabled');self.log.see('end')
 
     def send(self):
@@ -122,7 +158,7 @@ class ChatWindow:
             ttk.Entry(form,textvariable=var,show='•' if name=='key' else '').pack(fill='x',ipady=5)
         remember=tk.BooleanVar(value=self.remember)
         ttk.Checkbutton(form,text='仅在本机加密记住（Windows 账户保护）',variable=remember).pack(anchor='w',pady=12)
-        ttk.Label(form,text='兼容 Chat Completions。Key 不写入 ZIP 或公开作品。\n仅保存到当前 Windows 用户的加密文件；不勾选则退出后清除。',wraplength=410,justify='left').pack(anchor='w')
+        ttk.Label(form,text='兼容 Chat Completions。个人下载包可能包含 Key，公开作品不会包含。\n可在本机加密记住；不勾选则退出后清除。',wraplength=410,justify='left').pack(anchor='w')
         def save():
             settings={**self.settings,'mode':'byok','endpoint':values['endpoint'].get().strip(),'model':values['model'].get().strip(),'prompt':values['prompt'].get().strip()[:1200]}
             secret=values['key'].get().strip()
@@ -142,4 +178,6 @@ class ChatWindow:
 
     def close(self):
         self.generation+=1;self.key='';self.history=[]
-        self.window.after_cancel(self.poll_id);self.window.destroy()
+        self.window.after_cancel(self.poll_id)
+        if self.resize_id:self.window.after_cancel(self.resize_id)
+        self.window.destroy()

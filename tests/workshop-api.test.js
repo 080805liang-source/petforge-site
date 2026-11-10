@@ -10,10 +10,10 @@ const payload = () => ({ config: structuredClone(config), image: png, preview: p
 
 test('public chat templates retain appearance and discard private keys, endpoints and provider settings',async()=>{
  const api=createAdminTestApi();const data=payload();
- data.config.chat={mode:'byok',apiKey:'PRIVATE-TEST-KEY',endpoint:'https://private-agent.example/v1',model:'private-model',appearance:{theme:'pixel-3',width:440,fontSize:16,title:'小猫聊天室',accent:'#337755'}};
+  data.config.chat={mode:'byok',apiKey:'PRIVATE-TEST-KEY',endpoint:'https://private-agent.example/v1',model:'private-model',appearance:{theme:'dress-01-02',width:440,fontSize:16,title:'小猫聊天室',accent:'#337755'}};
  const created=await api.call('POST','/workshop',data,'owner-session');assert.equal(created.status,201);
  const result=await api.call('GET','/workshop/'+created.body.id);const chat=result.body.post.config.chat;
- assert.equal(chat.mode,'basic');assert.equal(chat.appearance.theme,'pixel-3');assert.equal(chat.appearance.width,440);
+  assert.equal(chat.mode,'basic');assert.equal(chat.appearance.theme,'dress-01-02');assert.equal(chat.appearance.width,440);
  assert.equal(JSON.stringify(result.body).includes('PRIVATE-TEST-KEY'),false);assert.equal(chat.endpoint,undefined);assert.equal(chat.model,undefined);
  const stored=api.rows.pf_workshop[0];assert.equal(stored.config.chat.apiKey,undefined);
 });

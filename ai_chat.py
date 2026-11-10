@@ -109,3 +109,20 @@ class PrivateChatStore:
 
     def forget(self):
         self.path.unlink(missing_ok=True)
+
+
+def import_personal_chat(bundle, store):
+    """Import the owner's explicit portable setup, then remove the plaintext copy."""
+    path=Path(bundle)/'assets/private-chat.json'
+    if not path.is_file():return {}
+    if path.stat().st_size>16000:raise ValueError('个人模型配置过大，请重新下载。')
+    packet=json.loads(path.read_text(encoding='utf8'))
+    settings=packet.get('settings') or {};key=packet.get('key','')
+    endpoint=endpoint_url(settings.get('endpoint',''))
+    model=str(settings.get('model','')).strip()
+    if not isinstance(key,str) or not key.strip() or len(key)>4096 or '\r' in key or '\n' in key or not model or len(model)>160:
+        raise ValueError('个人模型配置无效，请重新下载。')
+    data={'settings':{'mode':'byok','endpoint':endpoint,'model':model,'prompt':str(settings.get('prompt',''))[:1200]},'key':key.strip()}
+    store.save(data)
+    path.unlink()
+    return data

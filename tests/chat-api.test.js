@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {personalChatFile} from '../scripts/chat-package.js';
 import {readFileSync} from 'node:fs';
 import {normalizeEndpoint,chatRequest,sendChat} from '../scripts/chat-client.js';
 import {appearanceConfig} from '../scripts/chat-studio.js';
@@ -7,12 +8,24 @@ import {onRequest,publicAddress,publicEndpoint} from '../functions/chat.js';
 
 const request = (body,origin='https://petforge-desktop.pages.dev') => ({request:new Request('https://petforge-desktop.pages.dev/chat',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)})});
 const body=()=>({endpoint:'https://api.deepseek.com/chat/completions',apiKey:'test-key-not-real',model:'example-model',messages:[{role:'user',content:'你好'}]});
-test('50 chat themes have unique IDs, ten groups, valid colors and bounded appearance',()=>{
+test('200 chat themes have unique IDs, 25 groups and 150 distinct illustrated frames',()=>{
  const themes=JSON.parse(readFileSync(new URL('../assets/chat-themes.json',import.meta.url)));
- assert.equal(themes.length,50);assert.equal(new Set(themes.map(t=>t.id)).size,50);assert.equal(new Set(themes.map(t=>t.group)).size,10);
+ assert.equal(themes.length,200);assert.equal(new Set(themes.map(t=>t.id)).size,200);assert.equal(new Set(themes.map(t=>t.group)).size,25);
+ const illustrated=themes.filter(t=>t.art);assert.equal(illustrated.length,150);
+ assert.equal(new Set(illustrated.map(t=>readFileSync(new URL('../'+t.art,import.meta.url)).toString('base64'))).size,150);
  for(const t of themes)for(const k of ['bg','fg','accent','border'])assert.match(t[k],/^#[a-f0-9]{6}$/i);
  const a=appearanceConfig({width:9000,fontSize:2,accent:'url(evil)',title:'猫'.repeat(70),theme:'invalid'},themes);
  assert.equal(a.width,560);assert.equal(a.fontSize,12);assert.equal(a.accent,'');assert.equal(a.title.length,32);assert.equal(a.theme,'glass-1');
+});
+
+test('personal downloads include caller credentials only through a separate private file',()=>{
+ const settings={mode:'byok',endpoint:'https://api.deepseek.com',model:'test',prompt:'pet'};
+ const file=personalChatFile(settings,'owner-key-not-real');
+ assert.equal(file.name,'assets/private-chat.json');assert.equal(JSON.parse(file.data).key,'owner-key-not-real');
+ assert.equal(JSON.parse(file.data).settings.endpoint,'https://api.deepseek.com/chat/completions');
+ assert.equal(personalChatFile({...settings,mode:'basic'},'owner-key-not-real'),null);
+ assert.throws(()=>personalChatFile(settings,''),/API Key/);
+ assert.equal(JSON.stringify(settings).includes('owner-key-not-real'),false);
 });
 test('compatible chat protocol accepts a base URL and bounds history without exporting a key',()=>{
  assert.equal(normalizeEndpoint('https://api.deepseek.com/v1/'),'https://api.deepseek.com/v1/chat/completions');
