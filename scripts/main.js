@@ -1,7 +1,9 @@
 "use strict";
+const DESKTOP_DOWNLOAD_AVAILABLE=false;
+const DESKTOP_DOWNLOAD_NOTICE='桌面下载暂时停用：新版程序被 Windows 安全检测拦截，正在排查。可继续在中间预览框使用免费 AI；不会扣除下载次数。';
 
 let chatStudio;
-const chatStudioReady = import('./chat-studio.js?v=chat-wardrobe-20261110-r1').then(async ({createChatStudio}) => {
+const chatStudioReady = import('./chat-studio.js?v=free-ai-20261110-r4').then(async ({createChatStudio}) => {
   chatStudio = await createChatStudio({onChange:() => updatePreview()});
   updatePreview();
   return chatStudio;
@@ -86,7 +88,7 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=chat-wardrobe-20261110-r1');
+    const {createPetAnimation} = await import('./pet-animation.js?v=free-ai-20261110-r4');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -536,7 +538,8 @@ async function applySelectedStyle() {
 
 function setImageBusy(busy) {
   imageBusy = busy;
-  buildButton.disabled = busy || !styledPetBlob;
+  buildButton.disabled = !DESKTOP_DOWNLOAD_AVAILABLE || busy || !styledPetBlob;
+  if(!DESKTOP_DOWNLOAD_AVAILABLE){buildButton.title=DESKTOP_DOWNLOAD_NOTICE;setStatus(DESKTOP_DOWNLOAD_NOTICE);}
   publishButton.disabled = busy || publishing || !styledPetBlob;
   stylePresets.forEach((preset) => { preset.disabled = busy; });
   cutoutStatus.setAttribute("aria-busy", String(busy));
@@ -595,14 +598,15 @@ function packageReadme(config) {
 
 1. 解压整个 zip 到一个不要移动的位置。
 2. 首次双击 PetForge.exe 启动桌宠，程序会在当前用户桌面创建以宠物名字命名的快捷方式。
-3. 以后可以双击桌面快捷方式启动。请保持 PetForge.exe、config.json 和 assets 文件夹在一起。
+3. 以后可以双击桌面快捷方式启动。请保持 PetForge.exe、_internal、config.json 和 assets 文件夹在一起。
 4. 移动整个文件夹或删除快捷方式后，启动宠物并在右键菜单选择“创建桌面快捷方式”即可重建。
 
 说明：
 
 - PetForge.exe 已包含运行环境，不需要安装 Python。
 - 右键桌宠可以打开快捷菜单。
-  - 右键选择“展开聊天”，可切换“基础陪伴”和“自己的模型 / Agent”。基础陪伴免费离线，使用内置回复库。
+  - 右键选择“展开聊天”，可切换“免费 AI”“基础陪伴”和“自己的模型 / Agent”。免费 AI 每账号每天20次、每分钟3次，北京时间00:00重置，工作室赠额用完即停。基础陪伴免费离线，使用内置回复库。
+  - 免费 AI 下载包包含个人聊天绑定，请勿转发；首次启动会加密保存。绑定30天过期后可在桌宠内登录网站账号续绑。
   - 网页填好 HTTPS 接口、模型名称和 API Key 再下载，桌宠可直接使用该模型。右键“展开聊天”即可对话；也可在“设置”修改或清除。支持 Chat Completions 文本协议，费用由自己的模型账户承担。
   - 个人 ZIP 会包含你填写的 Key，请勿转发。桌宠首次启动将其导入 Windows 当前用户的加密文件，并移除解压目录中的明文配置。原始 ZIP 仍含 Key，请自行妥善保管或删除；工坊分享不会包含 Key。
   - 创作台有 200 款聊天装扮，可调整标题、宽度、字号和配色，带插画的消息气泡会随桌宠导出。
@@ -612,23 +616,24 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.10-chat-wardrobe-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.10-free-ai-r4";
 
 async function getDesktopAppBytes() {
-  const appUrl = new URL('assets/PetForge.exe', document.baseURI);
+  const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime } = await import('./desktop-runtime.js?v=chat-wardrobe-20261110-r1');
-  return fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`));
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=free-ai-20261110-r4');
+  return desktopRuntimeFiles(await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`)));
 }
 
 async function buildPackageInBrowser() {
+  if(!DESKTOP_DOWNLOAD_AVAILABLE)throw new Error(DESKTOP_DOWNLOAD_NOTICE);
   await chatStudioReady;
   const config = getConfig();
   const name = safeName(config.name);
-  const personalFile=chatStudio?.personalFile();
+  const personalFile=await chatStudio?.personalFile();
   const pngBytes = await getPetPngBytes(config);
   config.packageVersion = "zip-portable-v2";
-  const appBytes = await getDesktopAppBytes();
+  const appFiles = await getDesktopAppBytes();
   const replyResponse = await fetch(new URL('assets/responses.json', document.baseURI));
   if (!replyResponse.ok) throw new Error('互动回复库下载失败，请重试。');
   const extraFiles = [{name:'assets/responses.json',data:new Uint8Array(await replyResponse.arrayBuffer())}];
@@ -679,7 +684,7 @@ async function buildPackageInBrowser() {
   if(config.assetAttribution) extraFiles.push({name:'素材来源与授权.txt',data:config.assetAttribution});
   return { name, blob: createZip([
     { name: "README.md", data: packageReadme(config) },
-    { name: "PetForge.exe", data: appBytes },
+    ...appFiles,
     { name: "config.json", data: JSON.stringify(config, null, 2) },
     { name: "assets/pet.png", data: pngBytes }, ...extraFiles
   ]) };
@@ -793,6 +798,7 @@ publishButton?.addEventListener("click", async () => {
 });
 
 buildButton?.addEventListener("click", async () => {
+  if(!DESKTOP_DOWNLOAD_AVAILABLE){setStatus(DESKTOP_DOWNLOAD_NOTICE,'error');return;}
   buildButton.disabled = true;
   document.querySelector('#workshop-download-notice').hidden=false;
   document.querySelector('#workshop-download-title').textContent='正在为你准备桌宠';
@@ -813,7 +819,7 @@ buildButton?.addEventListener("click", async () => {
     document.querySelector('#workshop-download-title').textContent='这次没有完成下载';
     document.querySelector('#workshop-download-progress').textContent=message+' 可以稍后点击生成按钮重试。';
   } finally {
-    buildButton.disabled = false;
+    buildButton.disabled = !DESKTOP_DOWNLOAD_AVAILABLE;
   }
 });
 
@@ -892,8 +898,9 @@ async function loadWorkshopTemplate() {
     setImageBusy(false);
     renderShortcuts();
     updatePreview();
-    setStatus("工坊作品已完整载入，可直接生成相同的桌宠。", "success");
+    setStatus(DESKTOP_DOWNLOAD_AVAILABLE?"工坊作品已完整载入，可直接生成相同的桌宠。":DESKTOP_DOWNLOAD_NOTICE, "success");
     if (new URLSearchParams(location.search).get("download") === "1") {
+      if(!DESKTOP_DOWNLOAD_AVAILABLE){document.querySelector('#workshop-download-title').textContent='桌面下载暂时停用';document.querySelector('#workshop-download-progress').textContent=DESKTOP_DOWNLOAD_NOTICE;return;}
       await window.PetForgeMembership?.refresh();
       pendingWorkshopDownload = true;
       if (window.PetForgeMembership?.isActive()) { pendingWorkshopDownload = false; buildButton.click(); }
@@ -919,7 +926,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=chat-wardrobe-20261110-r1').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=free-ai-20261110-r4').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {

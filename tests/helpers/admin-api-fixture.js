@@ -59,7 +59,7 @@ export function createAdminTestApi(seed = {}, options = {}) {
     return operation;
   } };
   const exports = {};
-  runInNewContext(source, { exports, require: (name) => name === '@cloudbase/node-sdk' ? { init: () => ({ database: () => db }) } : name === 'https' && options.https ? options.https : require(name), process: { env: {} }, console, Buffer, URL, Intl, Date, Set });
+  runInNewContext(source, { exports, require: (name) => name === '@cloudbase/node-sdk' ? { init: () => ({ database: () => db }) } : name === 'https' && options.https ? options.https : require(name), process: { env: options.env || {} }, console, Buffer, URL, Intl, Date, Set });
   return {
     rows,
     main: exports.main,

@@ -18,6 +18,7 @@ from desktop_shortcut import create_desktop_shortcut
 from pet_animation import PetAnimation
 from chat_window import ChatWindow
 from ai_chat import PrivateChatStore, import_personal_chat
+from free_ai import SharedChatStore, import_shared_chat
 from ctypes import wintypes
 
 
@@ -30,6 +31,7 @@ def app_dir() -> Path:
 BASE_DIR = app_dir()
 try:
     import_personal_chat(BASE_DIR, PrivateChatStore(BASE_DIR))
+    import_shared_chat(BASE_DIR, SharedChatStore(BASE_DIR))
 except (OSError, ValueError):
     pass  # Chat settings will report the problem and allow the user to retry.
 CONFIG_PATH = BASE_DIR / "config.json"

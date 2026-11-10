@@ -4,6 +4,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 from ai_chat import PrivateChatStore, request_reply, endpoint_url, import_personal_chat
+from free_ai import SharedChatStore, import_shared_chat, shared_reply, login_shared, valid_credential, shared_quota
 from PIL import Image,ImageTk
 from chat_art import frame_image
 from tkinter import font as tkfont
@@ -25,6 +26,11 @@ class ChatWindow:
             saved=self.store.load();self.import_error='个人模型配置未能导入，请在设置中检查。'
         self.settings.update(saved.get('settings') or {})
         self.key=saved.get('key','')
+        self.shared_store=SharedChatStore(bundle)
+        try:self.shared=import_shared_chat(bundle,self.shared_store)
+        except (ValueError,OSError):self.shared={}
+        self.auth_results=queue.Queue()
+        self.quota_results=queue.Queue();self.free_remaining=None
         self.remember=bool(self.key)
         self.history=[]
         self.messages=[];self.message_widgets=[];self.art=None
@@ -62,9 +68,11 @@ class ChatWindow:
         header.pack(fill='x')
         tk.Label(header,text=self.window.title(),bg=self.accent,fg=text_color(self.accent),font=(family,12,'bold')).pack(side='left')
         tk.Button(header,text='设置',command=self.configure_chat,bg=self.accent,fg=text_color(self.accent),relief='flat').pack(side='right')
-        self.mode=tk.StringVar(value='自己的模型 / Agent' if self.settings.get('mode')=='byok' else '基础陪伴（本地）')
-        chooser=ttk.Combobox(self.surface,textvariable=self.mode,values=['基础陪伴（本地）','自己的模型 / Agent'],state='readonly')
+        self.mode=tk.StringVar(value={'byok':'自己的模型 / Agent','free':'免费 AI（工作室额度）'}.get(self.settings.get('mode'),'基础陪伴（本地）'))
+        chooser=ttk.Combobox(self.surface,textvariable=self.mode,values=['免费 AI（工作室额度）','基础陪伴（本地）','自己的模型 / Agent'],state='readonly')
         chooser.pack(fill='x',padx=12,pady=(12,4));chooser.bind('<<ComboboxSelected>>',self.change_mode)
+        self.free_login=ttk.Button(self.surface,text='登录免费 AI',command=self.configure_free)
+        self.free_login.pack(fill='x',padx=12,pady=3)
         self.note=tk.Label(self.surface,bg=self.bg,fg=self.fg,justify='left',wraplength=width-35,font=(family,9))
         self.note.pack(fill='x',padx=12,pady=4)
         self.log=tk.Text(self.surface,wrap='word',state='disabled',bg=self.bg,fg=self.fg,relief='flat',padx=14,pady=10,font=(family,font),insertbackground=self.fg)
@@ -83,13 +91,23 @@ class ChatWindow:
         self.poll_id=self.window.after(100,self.poll)
         self.window.protocol('WM_DELETE_WINDOW',self.close)
         self.input.focus_set()
+        self.refresh_free_quota()
 
     def refresh_note(self):
-        self.note.configure(text=('自带 Key：消息直接发往 '+str(self.settings.get('endpoint','未配置'))+'；费用由你的模型账户承担。') if self.settings.get('mode')=='byok' else '基础陪伴：使用内置回复库，不联网、不调用模型。')
+        self.note.configure(text=('免费 AI：消息经工作室转交豆包。每账号每天20次、每分钟3次，北京时间00:00重置。'+(f' 今日剩余 {self.free_remaining}/20 次。' if self.free_remaining is not None else '')+(' 已绑定；全站赠额用完即停。' if valid_credential(self.shared) else ' 请先登录绑定。')) if self.settings.get('mode')=='free' else ('自带 Key：消息直接发往 '+str(self.settings.get('endpoint','未配置'))+'；费用由你的模型账户承担。') if self.settings.get('mode')=='byok' else '基础陪伴：使用内置回复库，不联网、不调用模型。')
 
     def change_mode(self,_event=None):
-        self.settings['mode']='byok' if self.mode.get()=='自己的模型 / Agent' else 'basic'
+        self.settings['mode']={'自己的模型 / Agent':'byok','免费 AI（工作室额度）':'free'}.get(self.mode.get(),'basic')
         self.generation+=1;self.history=[];self.refresh_note()
+        self.refresh_free_quota()
+
+    def refresh_free_quota(self):
+        if self.settings.get('mode')!='free' or not valid_credential(self.shared):return
+        credential=dict(self.shared)
+        def worker():
+            try:self.quota_results.put(shared_quota(credential))
+            except ValueError:pass
+        threading.Thread(target=worker,daemon=True).start()
 
     def append(self,who,text):
         self.messages=(self.messages+[(who,str(text))])[-20:]
@@ -122,29 +140,66 @@ class ChatWindow:
     def send(self):
         text=self.input.get().strip()[:4000]
         if not text or self.busy:return
+        if self.settings.get('mode')=='free' and len(text)>1000:
+            self.append('提示','免费 AI 每条提问最多1000字，请缩短后重试。');return
         if self.settings.get('mode')=='byok' and not self.key:
             self.configure_chat();return
+        if self.settings.get('mode')=='free' and not valid_credential(self.shared):
+            self.configure_free();return
         self.input.delete(0,'end');self.append('你',text)
-        if self.settings.get('mode')!='byok':
+        if self.settings.get('mode') not in ('byok','free'):
             self.append('桌宠',self.responses.reply(text));return
         self.busy=True;self.send_button.configure(state='disabled');self.note.configure(text='正在等模型回复… 可以继续移动或操作桌宠。')
-        generation=self.generation;settings=dict(self.settings);key=self.key;history=self.history+[dict(role='user',content=text)]
+        generation=self.generation;settings=dict(self.settings);key=self.key;credential=dict(self.shared);history=self.history+[dict(role='user',content=text)]
         def worker():
-            try:self.results.put((generation,text,request_reply(settings,key,history),None))
+            try:self.results.put((generation,text,shared_reply(credential,history,on_quota=self.quota_results.put) if settings.get('mode')=='free' else request_reply(settings,key,history),None))
             except Exception as error:self.results.put((generation,text,None,str(error) if isinstance(error,ValueError) else '模型连接失败，请检查设置后重试。'))
         threading.Thread(target=worker,daemon=True).start()
 
     def poll(self):
         try:
+            quota=self.quota_results.get_nowait();self.free_remaining=quota.get('remaining');self.refresh_note()
+        except queue.Empty:pass
+        try:
+            credential,error=self.auth_results.get_nowait()
+            self.auth_busy=False
+            if error:self.append('登录提示',error)
+            else:
+                try:self.shared_store.save(credential);self.shared=credential
+                except OSError:self.append('登录提示','Windows 无法加密保存绑定，请稍后重试。')
+                else:
+                    self.free_remaining=credential.get('quota',{}).get('remaining');self.settings['mode']='free';self.mode.set('免费 AI（工作室额度）');self.generation+=1;self.history=[];self.refresh_note();self.append('桌宠','免费 AI 已绑定，可以开始聊啦。')
+        except queue.Empty:pass
+        try:
             generation,text,answer,error=self.results.get_nowait()
             self.busy=False;self.send_button.configure(state='normal');self.refresh_note()
             if generation==self.generation:
-                if error:self.append('连接提示',error)
+                if error:self.append('连接提示',error);self.refresh_free_quota()
                 else:
                     self.history=(self.history+[dict(role='user',content=text),dict(role='assistant',content=answer)])[-12:]
                     self.append('桌宠',answer)
         except queue.Empty:pass
         self.poll_id=self.window.after(100,self.poll)
+
+    def configure_free(self):
+        if getattr(self,'auth_busy',False):return
+        current=getattr(self,'free_panel',None)
+        if current and current.winfo_exists():current.lift();return
+        panel=tk.Toplevel(self.window);self.free_panel=panel;panel.title('登录免费 AI');panel.geometry('410x330')
+        form=ttk.Frame(panel,padding=20);form.pack(fill='both',expand=True)
+        ttk.Label(form,text='使用 PET FORGE 网站账号登录，免费 AI 每人每天20次。\n消息将经工作室发送给豆包；赠额用完即停止。',wraplength=360).pack(anchor='w',pady=8)
+        email=tk.StringVar();password=tk.StringVar()
+        for label,value,mask in [('注册邮箱',email,''),('网站密码',password,'•')]:
+            ttk.Label(form,text=label).pack(anchor='w',pady=(10,4));ttk.Entry(form,textvariable=value,show=mask).pack(fill='x',ipady=5)
+        def start():
+            address=email.get();secret=password.get()
+            if not address or not secret:return
+            password.set('');panel.destroy();self.auth_busy=True;self.append('连接提示','正在绑定免费 AI…')
+            def worker():
+                try:self.auth_results.put((login_shared(address,secret),None))
+                except Exception as error:self.auth_results.put((None,str(error) if isinstance(error,ValueError) else '登录失败，请稍后重试。'))
+            threading.Thread(target=worker,daemon=True).start()
+        ttk.Button(form,text='登录并绑定',command=start).pack(fill='x',pady=20)
 
     def configure_chat(self):
         current=getattr(self,'settings_window',None)

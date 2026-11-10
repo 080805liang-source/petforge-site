@@ -1,39 +1,36 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 import { test } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { verifyDesktopRuntime, fetchDesktopRuntime, RUNTIME_SHA256 } from '../scripts/desktop-runtime.js';
+import { verifyDesktopRuntime, fetchDesktopRuntime, desktopRuntimeFiles, DESKTOP_DOWNLOAD_AVAILABLE, RUNTIME_SHA256 } from '../scripts/desktop-runtime.js';
 import { onRequest } from '../functions/runtime.js';
 
-test('the released executable is accepted; truncation and a single changed byte stop package generation', async () => {
-  const bytes = new Uint8Array(readFileSync(new URL('../assets/PetForge.exe', import.meta.url)));
-  assert.equal(await verifyDesktopRuntime(bytes), bytes);
-  await assert.rejects(verifyDesktopRuntime(bytes.slice(0, -1)), /不完整/);
-  const changed = bytes.slice();
-  changed[changed.length - 1] ^= 1;
-  await assert.rejects(verifyDesktopRuntime(changed), /安全校验失败/);
+test('blocked desktop builds stay unavailable and malformed runtimes are rejected', async () => {
+  assert.equal(DESKTOP_DOWNLOAD_AVAILABLE,false);
+  const main=readFileSync(new URL('../scripts/main.js',import.meta.url),'utf8');
+  assert.doesNotThrow(()=>new vm.Script(main));
+  assert.match(main,/const DESKTOP_DOWNLOAD_AVAILABLE=false/);
+  const bytes=new Uint8Array(44738453);bytes[0]=0x50;bytes[1]=0x4b;
+  await assert.rejects(verifyDesktopRuntime(bytes), /安全校验失败/);
+  await assert.rejects(verifyDesktopRuntime(bytes.slice(0,-1)), /不完整/);
+  const archive=(names)=>{
+    const records=names.map(name=>{const nameBytes=new TextEncoder().encode(name),row=new Uint8Array(30+nameBytes.length+2),v=new DataView(row.buffer);v.setUint32(0,0x04034b50,true);v.setUint32(18,2,true);v.setUint16(26,nameBytes.length,true);row.set(nameBytes,30);return row;});
+    const out=new Uint8Array(records.reduce((sum,r)=>sum+r.length,4));let offset=0;for(const row of records){out.set(row,offset);offset+=row.length;}new DataView(out.buffer).setUint32(offset,0x02014b50,true);return out;
+  };
+  assert.equal(desktopRuntimeFiles(archive(['PetForge.exe','_internal/python.dll'])).length,2);
+  assert.throws(()=>desktopRuntimeFiles(archive(['../PetForge.exe'])),/路径无效/);
+  assert.throws(()=>desktopRuntimeFiles(archive(['PetForge.exe','PetForge.exe'])),/路径无效/);
 });
 
-test('runtime relay uses only the pinned release host and refuses upstream redirects', async () => {
-  const previous = globalThis.fetch;
-  try {
-    globalThis.fetch = async (url, options) => {
-      assert.equal(url, 'https://petforge-desktop.pages.dev/assets/PetForge.exe?v=2026.11.10-chat-wardrobe-r1');
-      assert.equal(options.redirect, 'manual');
-      return new Response('MZ');
-    };
-    const result = await onRequest({ request: new Request('https://petforge-desktop.pages.dev/runtime?url=https://evil.example/') });
-    assert.equal(result.status, 200);
-    assert.equal(result.headers.get('X-Content-Type-Options'), 'nosniff');
-    assert.equal(await result.text(), 'MZ');
-    globalThis.fetch = async () => new Response(null, { status: 302, headers: { Location: 'https://evil.example/' } });
-    assert.equal((await onRequest({ request: new Request('https://petforge-desktop.pages.dev/runtime') })).status, 502);
-    assert.equal((await onRequest({ request: new Request('https://petforge-desktop.pages.dev/runtime', { method: 'POST' }) })).status, 405);
-  } finally { globalThis.fetch = previous; }
+test('retired single executable endpoint never serves the quarantined build', async () => {
+  const result=await onRequest({request:new Request('https://petforge-desktop.pages.dev/runtime')});
+  assert.equal(result.status,410);
+  assert.equal(result.headers.get('Cache-Control'),'no-store');
 });
 
 test('segmented runtime download retries a failed part and rejects corrupted bytes after assembly', async () => {
   const original = globalThis.fetch;
-  const bytes = new Uint8Array(readFileSync(new URL('../assets/PetForge.exe', import.meta.url)));
+  const bytes = new Uint8Array(44738453);
   const calls = new Map(); let corrupt = false;
   try {
     globalThis.fetch = async (url, options) => {
@@ -48,10 +45,11 @@ test('segmented runtime download retries a failed part and rejects corrupted byt
       return new Response(part);
     };
     const progress = [];
-    assert.deepEqual(await fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge.exe'), (done, total) => progress.push([done,total])),bytes);
-    assert.deepEqual(progress, Array.from({length:36},(_,index)=>[index+1,36]));
-    assert.equal(calls.get(3),2);assert.equal(calls.size,36);
+    await assert.rejects(fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge.exe'), (done, total) => progress.push([done,total])), /不完整/);
+    const count=Math.ceil(bytes.length/524288);
+    assert.deepEqual(progress, Array.from({length:count},(_,index)=>[index+1,count]));
+    assert.equal(calls.get(3),2);assert.equal(calls.size,count);
     corrupt = true;
-    await assert.rejects(fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge.exe')),/安全校验失败/);
+    await assert.rejects(fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge.exe')),/不完整/);
   } finally { globalThis.fetch = original; }
 });

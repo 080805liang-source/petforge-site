@@ -184,7 +184,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   function sync() {
     config = getConfig();
     const generation=chatGeneration();
-    if(generation!==lastChatGeneration){requestController?.abort();chatHistory=[];chatLog.replaceChildren();lastChatGeneration=generation;if(!chat.hidden)announce(config.chat?.mode==='byok'?'自带 Key 模式 · 使用你填写的模型服务':'基础陪伴 · 本地回复，不联网');}
+    if(generation!==lastChatGeneration){requestController?.abort();chatHistory=[];chatLog.replaceChildren();lastChatGeneration=generation;if(!chat.hidden)announce(config.chat?.mode==='free'?'免费 AI · 豆包 · 每人每天20次':config.chat?.mode==='byok'?'自带 Key 模式 · 使用你填写的模型服务':'基础陪伴 · 本地回复，不联网');}
     const ready = hasImage(); actor.hidden = !ready || (windowOpen && config.desktopOnly);
     actor.classList.toggle('is-topmost',config.alwaysOnTop);
     buttons.forEach(button => { button.disabled = !ready || (button.dataset.previewAction === 'typing' && (!config.motionEnabled || !config.keyboardSync)); });
@@ -224,7 +224,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
       position = constrainPosition({x:(bounds.width-bounds.petWidth)/2,y:52},bounds);
       chatInput.focus({preventScroll:true});
       shell.scrollIntoView({block:'start',behavior:reducedMotion.matches ? 'instant' : 'smooth'});
-      announce(config.chat?.mode==='byok'?'自带 Key 模式 · 使用你填写的模型服务':'基础陪伴 · 本地回复，不联网');
+      announce(config.chat?.mode==='free'?'免费 AI · 豆包 · 每人每天20次':config.chat?.mode==='byok'?'自带 Key 模式 · 使用你填写的模型服务':'基础陪伴 · 本地回复，不联网');
     }
   }
   function addMessage(text, user = false) {
@@ -244,7 +244,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     requestController=new AbortController();
     try {
       let reply;
-      if(config.chat?.mode==='byok') {
+      if(['byok','free'].includes(config.chat?.mode)) {
         reply=await replyWithModel([...chatHistory,{role:'user',content:text}],requestController.signal);
       } else {
       repliesPromise ||= fetch('assets/responses.json',{signal:AbortSignal.timeout(15000)}).then(response => { if (!response.ok) throw new Error('replies-unavailable'); return response.json(); });
@@ -256,7 +256,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
       addMessage(reply); say(reply,6500);
     } catch (error) {
       repliesPromise = null;
-      if (image.src === source && hasImage() && generation===chatGeneration()) addMessage(config.chat?.mode==='byok'?error.message:'回复库暂时未能加载，请稍后再试。');
+      if (image.src === source && hasImage() && generation===chatGeneration()) addMessage(['byok','free'].includes(config.chat?.mode)?error.message:'回复库暂时未能加载，请稍后再试。');
     } finally { chatBusy = false; chatForm.querySelector('button').disabled = false; }
   });
   document.querySelector('#preview-chat-close').addEventListener('click',() => closeChat());

@@ -1,5 +1,6 @@
 import {PROVIDERS,sendChat} from './chat-client.js';
 import {personalChatFile} from './chat-package.js';
+import {freeChat,freeChatFile} from './free-chat.js';
 
 const color = value => /^#[0-9a-f]{6}$/i.test(value || '') ? value : '';
 export function appearanceConfig(value={}, themes=[]) {
@@ -30,8 +31,9 @@ export async function createChatStudio({onChange}) {
     applyChatTheme(preview,currentTheme(),appearance);
     $('chat-theme-current').textContent=currentTheme().name;
     $('preview-chat-title').textContent=appearance.title;
-    $('preview-chat-mode').textContent=mode.value==='byok'?'自带 Key · 消息会发送至你填写的模型服务':'基础陪伴 · 本地回复，不联网';
+    $('preview-chat-mode').textContent=mode.value==='free'?'免费 AI · 消息经工作室发往豆包 · 每人每天20次':mode.value==='byok'?'自带 Key · 消息会发送至你填写的模型服务':'基础陪伴 · 本地回复，不联网';
     $('chat-private-fields').hidden=mode.value!=='byok';
+    $('chat-free-fields').hidden=mode.value!=='free';
     $('chat-width-output').textContent=appearance.width+' px';$('chat-font-output').textContent=appearance.fontSize+' px';
     onChange?.();
   }
@@ -60,17 +62,24 @@ export async function createChatStudio({onChange}) {
   $('chat-theme-close').addEventListener('click',()=>dialog.close());filter.addEventListener('change',render);
   $('chat-theme-search').addEventListener('input',render);
   $('chat-theme-reset').addEventListener('click',()=>{appearance={...appearance,accent:'',background:''};fields.accent.value=currentTheme().accent;fields.background.value=currentTheme().bg;paint();});
-  function getConfig(){return {mode:mode.value==='byok'?'byok':'basic',appearance:{...appearance},provider:provider.value,endpoint:endpoint.value.trim(),model:model.value.trim(),prompt:prompt.value.trim().slice(0,1200)};}
-  async function reply(history,signal){const g=generation;const result=await sendChat(getConfig(),privateKey,history,{signal});if(g!==generation)throw new Error('聊天配置已改变，请重新发送。');return result;}
+  function getConfig(){return {mode:['byok','free'].includes(mode.value)?mode.value:'basic',appearance:{...appearance},provider:provider.value,endpoint:endpoint.value.trim(),model:model.value.trim(),prompt:prompt.value.trim().slice(0,1200)};}
+  async function reply(history,signal){const g=generation;try{const result=await (mode.value==='free'?freeChat(history,{signal}):sendChat(getConfig(),privateKey,history,{signal}));if(g!==generation)throw new Error('聊天配置已改变，请重新发送。');return result;}finally{if(mode.value==='free')refreshQuota();}}
+  $('chat-free-login').addEventListener('click',()=>globalThis.PetForgeMembership?.open());
+  $('chat-free-revoke').addEventListener('click',async()=>{const target=$('chat-free-status');try{const response=await globalThis.PetForgeSession.fetch('/ai/revoke',{method:'POST',body:'{}'});const result=await response.json();if(!response.ok)throw new Error(result.error);target.textContent='所有已下载桌宠的免费 AI 绑定已取消，可重新登录绑定。';}catch(error){target.textContent=error.message || '请先登录。';}});
+  function showQuota(quota){const label=quota?.remaining===null?'登录后查看今日剩余次数':`本账号今日剩余 ${quota?.remaining ?? 20} / 20 次`; $('chat-free-quota').textContent=label+' · 北京时间每天00:00重置';$('preview-chat-quota').textContent=mode.value==='free'?label:'';}
+  async function refreshQuota(){try{const response=await globalThis.PetForgeSession.fetch('/ai/status');const info=await response.json();$('chat-free-status').textContent=info.enabled?'豆包已就绪 · 每人每天20次，全站每天200次；共享赠额用完即停。':'工作室免费 AI 正在配置，暂未启用；离线陪伴和自己的模型可继续使用。';showQuota(info.quota);}catch{$('chat-free-status').textContent='暂时无法查询免费 AI 状态。';}}
+  globalThis.addEventListener?.('petforge:ai-quota',event=>showQuota(event.detail));
+  globalThis.addEventListener?.('petforge:membership-change',refreshQuota);
+  mode.addEventListener('change',refreshQuota);refreshQuota();
   $('chat-test').addEventListener('click',async()=>{if(testing)return;testing=true;$('chat-test').disabled=true;status.textContent='正在发送测试消息…';try{const answer=await reply([{role:'user',content:'请只回复：连接成功'}]);status.textContent='接口已返回：'+answer.slice(0,160);}catch(error){status.textContent=error.message;}finally{testing=false;$('chat-test').disabled=false;}});
   function load(value={}){
     privateKey='';key.value='';
     generation++;appearance=appearanceConfig(value.appearance,themes);
     for(const [name,input]of Object.entries(fields))input.value=appearance[name]||currentTheme()[name==='background'?'bg':'accent'];
-    mode.value=value.mode==='byok'?'byok':'basic';provider.value=PROVIDERS[value.provider]?value.provider:'deepseek';endpoint.value=String(value.endpoint||PROVIDERS[provider.value].endpoint).slice(0,500);model.value=String(value.model||PROVIDERS[provider.value].model).slice(0,160);prompt.value=String(value.prompt||'').slice(0,1200);
+    mode.value=['byok','free'].includes(value.mode)?value.mode:'free';provider.value=PROVIDERS[value.provider]?value.provider:'deepseek';endpoint.value=String(value.endpoint||PROVIDERS[provider.value].endpoint).slice(0,500);model.value=String(value.model||PROVIDERS[provider.value].model).slice(0,160);prompt.value=String(value.prompt||'').slice(0,1200);
     // A shared template never supplies or changes a private key.
     paint();
   }
   load();
-  return {getConfig,load,reply,personalFile:()=>personalChatFile(getConfig(),privateKey),clearHistoryToken:()=>generation};
+  return {getConfig,load,reply,personalFile:()=>mode.value==='free'?freeChatFile():personalChatFile(getConfig(),privateKey),clearHistoryToken:()=>generation};
 }
