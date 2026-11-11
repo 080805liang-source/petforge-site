@@ -22,7 +22,7 @@ export async function createChatStudio({onChange}) {
   const response=await fetch('assets/chat-themes.json');if(!response.ok)throw new Error('聊天样式未能加载');
   const themes=await response.json(), $=id=>document.querySelector('#'+id);
   const preview=$('preview-chat'),dialog=$('chat-theme-dialog'),grid=$('chat-theme-grid'),filter=$('chat-theme-filter');
-  let appearance=appearanceConfig({},themes),privateKey='',generation=0,testing=false;
+  let appearance=appearanceConfig({},themes),privateKey='',generation=0,testing=false,themeBefore=null,themeConfirmed=false;
   const fields={title:$('chat-title'),width:$('chat-width'),fontSize:$('chat-font-size'),accent:$('chat-accent'),background:$('chat-background')};
   const mode=$('chat-mode'),provider=$('chat-provider'),endpoint=$('chat-endpoint'),model=$('chat-model'),key=$('chat-api-key'),prompt=$('chat-prompt');
   const status=$('chat-connection-status');
@@ -50,6 +50,7 @@ export async function createChatStudio({onChange}) {
       const title=document.createElement('strong');title.textContent=theme.name;const label=document.createElement('small');label.textContent=theme.group;button.append(sample,title,label);
       button.addEventListener('click',()=>{appearance={...appearance,theme:theme.id,accent:'',background:''};fields.accent.value=theme.accent;fields.background.value=theme.bg;paint();render();});grid.append(button);
     });
+    $('chat-theme-selection').textContent='已选择：'+currentTheme().name;
   }
   for(const group of new Set(themes.map(theme=>theme.group))){const option=document.createElement('option');option.value=group;option.textContent=group;option.dataset.userContent='true';filter.append(option);}
   for(const [name,input] of Object.entries(fields)) input.addEventListener('input',()=>{appearance=appearanceConfig({...appearance,[name]:input.value},themes);paint();});
@@ -58,8 +59,11 @@ export async function createChatStudio({onChange}) {
   provider.addEventListener('change',()=>{const preset=PROVIDERS[provider.value];endpoint.value=preset.endpoint;model.value=preset.model;changed();});
   key.addEventListener('input',()=>{privateKey=key.value.trim();changed();});
   $('chat-forget-key').addEventListener('click',()=>{privateKey='';key.value='';generation++;paint();status.textContent='当前页面的 Key 已清除。';});
-  $('chat-theme-open').addEventListener('click',()=>{render();dialog.showModal();});
+  $('chat-theme-open').addEventListener('click',()=>{themeBefore={...appearance};themeConfirmed=false;render();dialog.showModal();});
   $('chat-theme-close').addEventListener('click',()=>dialog.close());filter.addEventListener('change',render);
+  $('chat-theme-cancel').addEventListener('click',()=>dialog.close());
+  $('chat-theme-confirm').addEventListener('click',()=>{themeConfirmed=true;dialog.close();});
+  dialog.addEventListener('close',()=>{if(!themeConfirmed&&themeBefore){appearance=themeBefore;fields.accent.value=appearance.accent||currentTheme().accent;fields.background.value=appearance.background||currentTheme().bg;paint();}themeBefore=null;});
   $('chat-theme-search').addEventListener('input',render);
   $('chat-theme-reset').addEventListener('click',()=>{appearance={...appearance,accent:'',background:''};fields.accent.value=currentTheme().accent;fields.background.value=currentTheme().bg;paint();});
   function getConfig(){return {mode:['byok','free'].includes(mode.value)?mode.value:'basic',appearance:{...appearance},provider:provider.value,endpoint:endpoint.value.trim(),model:model.value.trim(),prompt:prompt.value.trim().slice(0,1200)};}

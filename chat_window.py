@@ -1,6 +1,8 @@
 import json
 import queue
 import threading
+import ctypes
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 from ai_chat import PrivateChatStore, request_reply, endpoint_url, import_personal_chat
@@ -15,9 +17,21 @@ def text_color(hex_color):
     return '#152b27' if sum(a*b for a,b in zip(rgb,(.2126,.7152,.0722)))>.58 else '#ffffff'
 
 
+def bubble_position(pet, width, height, area):
+    left,top,right,bottom=area
+    px,py,pw,ph=pet
+    x=max(left,min(right-width,px+pw//2-width//2))
+    above=py-height-8>=top
+    y=py-height-8 if above else py+ph+8
+    y=max(top,min(bottom-height,y))
+    tip=max(28,min(width-28,px+pw//2-x))
+    return x,y,above,tip
+
+
 class ChatWindow:
     def __init__(self, parent, bundle, config, responses):
         self.responses=responses
+        self.parent=parent;self.visible=True;self.anchor_id=None;self.last_anchor=None
         self.store=PrivateChatStore(bundle)
         self.settings=dict(config.get('chat') or {})
         self.import_error=''
@@ -38,11 +52,16 @@ class ChatWindow:
         self.results=queue.Queue()
         self.generation=0
         self.window=tk.Toplevel(parent)
+        self.window.withdraw()
+        self.window.overrideredirect(True)
+        self.transparent='#010203'
+        self.window.configure(bg=self.transparent)
+        if sys.platform.startswith('win'):self.window.attributes('-transparentcolor',self.transparent)
         appearance=self.settings.get('appearance') or {}
         self.window.title(str(appearance.get('title') or '和桌宠聊聊')[:32])
         width=max(300,min(560,int(appearance.get('width') or 380)))
-        self.window.geometry(f'{width}x500')
-        self.window.minsize(300,350)
+        self.bubble_width=width;self.bubble_height=320
+        self.window.geometry(f'{width}x{self.bubble_height}')
         try:
             themes=json.loads((bundle/'assets/chat-themes.json').read_text(encoding='utf8'))
         except (OSError,ValueError):
@@ -60,41 +79,104 @@ class ChatWindow:
         font=max(12,min(20,int(appearance.get('fontSize') or 14)))
         family='Consolas' if self.theme.get('font')=='mono' else 'Microsoft YaHei UI'
         self.message_font=tkfont.Font(family=family,size=font)
-        self.window.configure(bg=self.accent)
-        stroke=self.theme.get('borderWidth',1)
-        self.surface=tk.Frame(self.window,bg=self.bg,bd=stroke,relief='groove' if self.theme.get('kind') in ('frame','retro') else 'flat')
-        self.surface.pack(fill='both',expand=True,padx=stroke,pady=stroke)
-        header=tk.Frame(self.surface,bg=self.accent,padx=12,pady=10)
+        self.outline=tk.Canvas(self.window,bg=self.transparent,highlightthickness=0,bd=0)
+        self.outline.pack(fill='both',expand=True)
+        self.surface=tk.Frame(self.window,bg=self.bg)
+        header=tk.Frame(self.surface,bg=self.bg,padx=4,pady=4)
         header.pack(fill='x')
-        tk.Label(header,text=self.window.title(),bg=self.accent,fg=text_color(self.accent),font=(family,12,'bold')).pack(side='left')
-        tk.Button(header,text='设置',command=self.configure_chat,bg=self.accent,fg=text_color(self.accent),relief='flat').pack(side='right')
+        tk.Label(header,text=self.window.title(),bg=self.bg,fg=self.fg,font=(family,11,'bold')).pack(side='left')
+        tk.Button(header,text='×',command=self.hide,bg=self.bg,fg=self.fg,relief='flat',font=(family,14),padx=7).pack(side='right')
+        tk.Button(header,text='设置',command=self.configure_options,bg=self.bg,fg=self.fg,relief='flat').pack(side='right')
         self.mode=tk.StringVar(value={'byok':'自己的模型 / Agent','free':'免费 AI（工作室额度）'}.get(self.settings.get('mode'),'基础陪伴（本地）'))
-        chooser=ttk.Combobox(self.surface,textvariable=self.mode,values=['免费 AI（工作室额度）','基础陪伴（本地）','自己的模型 / Agent'],state='readonly')
-        chooser.pack(fill='x',padx=12,pady=(12,4));chooser.bind('<<ComboboxSelected>>',self.change_mode)
         self.free_login=ttk.Button(self.surface,text='登录免费 AI',command=self.configure_free)
-        self.free_login.pack(fill='x',padx=12,pady=3)
         self.note=tk.Label(self.surface,bg=self.bg,fg=self.fg,justify='left',wraplength=width-35,font=(family,9))
-        self.note.pack(fill='x',padx=12,pady=4)
-        self.log=tk.Text(self.surface,wrap='word',state='disabled',bg=self.bg,fg=self.fg,relief='flat',padx=14,pady=10,font=(family,font),insertbackground=self.fg)
+        self.note.pack(fill='x',padx=4,pady=(0,4))
+        self.log=tk.Text(self.surface,wrap='word',height=4,state='disabled',bg=self.bg,fg=self.fg,relief='flat',padx=5,pady=5,font=(family,font),insertbackground=self.fg)
         self.log.tag_configure('who',foreground=self.accent,font=(family,10,'bold'))
-        self.log.pack(fill='both',expand=True)
         self.log.bind('<Configure>',self.resize_messages)
         self.resize_id=None
-        compose=tk.Frame(self.surface,bg=self.bg,padx=12,pady=12);compose.pack(fill='x')
+        compose=tk.Frame(self.surface,bg=self.bg,padx=4,pady=6);compose.pack(side='bottom',fill='x')
         self.input=tk.Entry(compose,font=(family,11),bg=self.bg,fg=self.fg,insertbackground=self.fg,relief='solid',bd=1)
         self.input.pack(side='left',fill='x',expand=True,ipady=8);self.input.bind('<Return>',lambda _:self.send())
         self.send_button=tk.Button(compose,text='发送',command=self.send,bg=self.accent,fg=text_color(self.accent),relief='flat',padx=12,pady=7)
         self.send_button.pack(side='right',padx=(7,0))
+        self.log.pack(fill='both',expand=True)
         self.refresh_note()
         self.append('桌宠','我在这里。想聊点什么？')
         if self.import_error:self.append('连接提示',self.import_error)
         self.poll_id=self.window.after(100,self.poll)
-        self.window.protocol('WM_DELETE_WINDOW',self.close)
+        self.window.protocol('WM_DELETE_WINDOW',self.hide)
+        self.window.bind('<Escape>',lambda event:(self.hide(),'break')[1])
+        self.show()
         self.input.focus_set()
         self.refresh_free_quota()
 
     def refresh_note(self):
-        self.note.configure(text=('免费 AI：消息经工作室转交豆包。每账号每天20次、每分钟3次，北京时间00:00重置。'+(f' 今日剩余 {self.free_remaining}/20 次。' if self.free_remaining is not None else '')+(' 已绑定；全站赠额用完即停。' if valid_credential(self.shared) else ' 请先登录绑定。')) if self.settings.get('mode')=='free' else ('自带 Key：消息直接发往 '+str(self.settings.get('endpoint','未配置'))+'；费用由你的模型账户承担。') if self.settings.get('mode')=='byok' else '基础陪伴：使用内置回复库，不联网、不调用模型。')
+        mode=self.settings.get('mode')
+        self.note.configure(text=('网站免费 AI · '+(f'今日剩余 {self.free_remaining}/20 次' if self.free_remaining is not None else '每天最多20次')) if mode=='free' else '自己的模型 / Agent' if mode=='byok' else '基础陪伴 · 离线回复')
+        self.free_login.pack_forget()
+        if mode=='free' and not valid_credential(self.shared):self.free_login.pack(before=self.log,fill='x',padx=4,pady=3)
+
+    def show(self):
+        self.visible=True;self.last_anchor=None
+        self.window.deiconify();self.window.lift();self.input.focus_set()
+        if self.anchor_id:self.window.after_cancel(self.anchor_id)
+        self.anchor()
+
+    def hide(self):
+        self.visible=False;self.window.withdraw()
+
+    def anchor(self):
+        if not self.window.winfo_exists():return
+        if self.visible:
+            if self.parent.state() in ('withdrawn','iconic'):
+                self.window.withdraw()
+            else:
+                self.window.deiconify()
+                area=(0,0,self.parent.winfo_screenwidth(),self.parent.winfo_screenheight())
+                if sys.platform.startswith('win'):
+                    from ctypes import wintypes
+                    class MonitorInfo(ctypes.Structure):
+                        _fields_=[('size',wintypes.DWORD),('monitor',wintypes.RECT),('work',wintypes.RECT),('flags',wintypes.DWORD)]
+                    user=ctypes.windll.user32;user.MonitorFromWindow.restype=wintypes.HANDLE
+                    monitor=user.MonitorFromWindow(self.parent.winfo_id(),2)
+                    info=MonitorInfo();info.size=ctypes.sizeof(info)
+                    user.GetMonitorInfoW.argtypes=[wintypes.HANDLE,ctypes.POINTER(MonitorInfo)]
+                    if user.GetMonitorInfoW(monitor,ctypes.byref(info)):area=(info.work.left,info.work.top,info.work.right,info.work.bottom)
+                width=min(self.bubble_width,area[2]-area[0]);height=min(self.bubble_height,area[3]-area[1])
+                pet=(self.parent.winfo_rootx(),self.parent.winfo_rooty(),self.parent.winfo_width(),self.parent.winfo_height())
+                x,y,above,tip=bubble_position(pet,width,height,area)
+                layout=(x,y,width,height,above,tip)
+                if layout!=self.last_anchor:
+                    self.last_anchor=layout
+                    self.window.geometry(f'{width}x{height}{x:+d}{y:+d}')
+                    if sys.platform.startswith('win'):
+                        handle=ctypes.windll.user32.GetParent(self.window.winfo_id()) or self.window.winfo_id()
+                        ctypes.windll.user32.SetWindowPos(handle,0,x,y,0,0,0x0015)
+                    self.draw_outline(width,height,above,tip)
+                self.window.attributes('-topmost',bool(self.parent.attributes('-topmost')))
+        self.anchor_id=self.window.after(80,self.anchor)
+
+    def draw_outline(self,width,height,above,tip):
+        self.outline.delete('all')
+        top=2 if above else 16;bottom=height-16 if above else height-2;r=18
+        self.outline.create_polygon(2+r,top,width-r-2,top,width-2,top,width-2,top+r,width-2,bottom-r,width-2,bottom,width-r-2,bottom,2+r,bottom,2,bottom,2,bottom-r,2,top+r,2,top,fill=self.bg,outline=self.accent,width=2,smooth=True)
+        edge=bottom if above else top;point=height-2 if above else 2
+        self.outline.create_polygon(tip-11,edge,tip,point,tip+11,edge,fill=self.bg,outline=self.accent,width=2)
+        self.outline.create_line(tip-10,edge,tip+10,edge,fill=self.bg,width=3)
+        self.surface.place(x=14,y=top+10,width=width-28,height=bottom-top-20)
+
+    def configure_options(self):
+        current=getattr(self,'options_panel',None)
+        if current and current.winfo_exists():current.lift();return
+        panel=tk.Toplevel(self.window);self.options_panel=panel;panel.title('聊天设置');panel.geometry('350x220')
+        form=ttk.Frame(panel,padding=18);form.pack(fill='both',expand=True)
+        ttk.Label(form,text='聊天模式').pack(anchor='w')
+        chooser=ttk.Combobox(form,textvariable=self.mode,values=['免费 AI（工作室额度）','基础陪伴（本地）','自己的模型 / Agent'],state='readonly')
+        chooser.pack(fill='x',pady=8);chooser.bind('<<ComboboxSelected>>',self.change_mode)
+        ttk.Button(form,text='免费 AI 登录 / 续绑',command=self.configure_free).pack(fill='x',pady=3)
+        ttk.Button(form,text='自己的模型设置',command=self.configure_chat).pack(fill='x',pady=3)
+        ttk.Button(form,text='完成',command=panel.destroy).pack(anchor='e',pady=6)
 
     def change_mode(self,_event=None):
         self.settings['mode']={'自己的模型 / Agent':'byok','免费 AI（工作室额度）':'free'}.get(self.mode.get(),'basic')
@@ -235,4 +317,5 @@ class ChatWindow:
         self.generation+=1;self.key='';self.history=[]
         self.window.after_cancel(self.poll_id)
         if self.resize_id:self.window.after_cancel(self.resize_id)
+        if self.anchor_id:self.window.after_cancel(self.anchor_id)
         self.window.destroy()

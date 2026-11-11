@@ -421,8 +421,7 @@ class DesktopPet:
     def chat(self) -> None:
         current = getattr(self, 'chat_panel', None)
         if current and current.window.winfo_exists():
-            current.window.deiconify()
-            current.window.lift()
+            current.show()
             return
         self.chat_panel = ChatWindow(self.root, BASE_DIR, self.config, self.responses)
 
