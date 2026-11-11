@@ -1,4 +1,4 @@
-import manifest from './runtime-manifest.js';
+import manifest from './runtime-manifest.js?v=37abcc410668e4a7';
 export const RUNTIME_SHA256 = 'bf503f930cf2437bc767f33671fcf840f3a2b8d614b503d4b1786229cd26c7cf';
 export const DESKTOP_DOWNLOAD_AVAILABLE = true;
 export const DESKTOP_DOWNLOAD_NOTICE = '';

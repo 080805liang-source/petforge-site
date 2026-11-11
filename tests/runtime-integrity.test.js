@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {gunzipSync} from 'node:zlib';
+import {gunzipSync,gzipSync} from 'node:zlib';
 import { test } from 'node:test';
 import { verifyDesktopRuntime, fetchDesktopRuntime, desktopRuntimeFiles, DESKTOP_DOWNLOAD_AVAILABLE, RUNTIME_SHA256 } from '../scripts/desktop-runtime.js';
 import { onRequest } from '../functions/runtime.js';
@@ -75,4 +75,29 @@ test('domestic compressed parts retry corruption, resume cached parts and retain
   assert.equal([...calls.values()].reduce((a,b)=>a+b,0),before);
   const key=saved.keys().next().value;saved.set(key,new Uint8Array(7));
   await assert.rejects(fetchDesktopRuntime(url,()=>{},{cacheStorage,fetcher}),/继续下载/);
+});
+
+test('a cached manifest from the previous release cannot change the archive used by the current downloader', async () => {
+  const {default:manifest}=await import('../scripts/runtime-manifest.js');
+  const compressed=readFileSync(new URL('../assets/PetForge-runtime.gz',import.meta.url));
+  const stale=gzipSync(Buffer.from('previous runtime release'));
+  const staleManifest={id:'0123456789abcdef',size:stale.length,parts:[{size:stale.length,sha256:Buffer.from(await crypto.subtle.digest('SHA-256',stale)).toString('hex')}]};
+  // Model an existing offline cache. A new URL misses the old entry and reads the published module.
+  const scriptCache=new Map([['./runtime-manifest.js',`export default ${JSON.stringify(staleManifest)}`]]);
+  const source=readFileSync(new URL('../scripts/desktop-runtime.js',import.meta.url),'utf8');
+  const specifier=source.match(/^import manifest from '([^']+)'/)[1];
+  const moduleText=scriptCache.get(specifier)??readFileSync(new URL(specifier,new URL('../scripts/desktop-runtime.js',import.meta.url)),'utf8');
+  const dataUrl=text=>'data:text/javascript;base64,'+Buffer.from(text).toString('base64');
+  const downloader=await import(dataUrl(source.replace(specifier,dataUrl(moduleText))));
+  const requested=[];
+  const fetcher=async endpoint=>{
+    const path=new URL(endpoint).pathname;requested.push(path);
+    const index=Number(path.split('/').pop().replace('.bin',''));
+    const release=path.includes(staleManifest.id)?stale:compressed;
+    const bytes=release.subarray(index*524288,(index+1)*524288);
+    return path.includes('/downloads/')?Response.json({data:bytes.toString('base64')}):new Response(bytes);
+  };
+  const bytes=await downloader.fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge-runtime.zip'),()=>{},{cacheStorage:null,fetcher});
+  assert.deepEqual(Buffer.from(bytes),gunzipSync(compressed));
+  assert.ok(requested.length>0&&requested.every(path=>path.includes(manifest.id)));
 });

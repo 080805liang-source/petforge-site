@@ -2,7 +2,7 @@ import { cp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { createHash } from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import { contentSecurityPolicy, staticHeaders } from './security-policy.mjs';
-import {DESKTOP_DOWNLOAD_AVAILABLE} from './scripts/desktop-runtime.js';
+import {DESKTOP_DOWNLOAD_AVAILABLE,verifyDesktopRuntime} from './scripts/desktop-runtime.js';
 import runtimeManifest from './scripts/runtime-manifest.js';
 
 await rm("dist", { recursive: true, force: true });
@@ -24,6 +24,9 @@ const runtime = gunzipSync(await readFile('assets/PetForge-runtime.gz'));
 const runtimeId = createHash('sha256').update(runtime).digest('hex').slice(0,16);
 const compressed = await readFile('assets/PetForge-runtime.gz');
 const compressedId = createHash('sha256').update(compressed).digest('hex').slice(0,16);
+await verifyDesktopRuntime(runtime);
+const manifestImport = `./runtime-manifest.js?v=${compressedId}`;
+if (!(await readFile('scripts/desktop-runtime.js','utf8')).includes(`'${manifestImport}'`) || !(await readFile('sw.js','utf8')).includes(`"./scripts/${manifestImport.slice(2)}"`)) throw new Error('Pin the runtime manifest import and offline cache to the current compressed release ID before publishing.');
 if (runtimeManifest.id !== compressedId || runtimeManifest.size !== compressed.length || runtimeManifest.parts.some((part,index)=>part.sha256 !== createHash('sha256').update(compressed.subarray(index*524288,(index+1)*524288)).digest('hex'))) throw new Error('Runtime manifest does not match the release archive. Regenerate scripts/runtime-manifest.js before publishing.');
 for (const directory of ['dist', 'dist/client', 'dist-site']) {
   const compressedParts = `${directory}/assets/runtime-compressed/${compressedId}`;
