@@ -17,7 +17,8 @@ const redeemNote = document.querySelector("#membership-redeem-note");
 const redeemSubmit = document.querySelector("#membership-redeem-submit");
 const sendEmailCodeButton = document.querySelector("#membership-send-email-code");
 const authTriggers = [...document.querySelectorAll("[data-member-open]")];
-const adminDashboardLink = document.querySelector("[data-admin-dashboard]");
+const adminDashboardTemplate = document.querySelector("[data-admin-dashboard-template]");
+let adminDashboardLink = null;
 const modeButtons = [...document.querySelectorAll("[data-member-mode]")];
 const identityButtons = [...document.querySelectorAll("[data-identity-mode]")];
 const emailField = document.querySelector("#membership-email-field");
@@ -75,7 +76,13 @@ function openMember() { if (document.querySelector('#chat-mode') && freeSelected
 
 const isUnlimited = () => Boolean(member?.isAdmin || (member?.vipExpiresAt && new Date(member.vipExpiresAt) > new Date()));
 const isActive = () => isUnlimited() || credits > 0;
-function setHeaderState(signedIn) { authTriggers.forEach((button) => { button.textContent = signedIn ? (member?.isAdmin ? "管理员 · 无限使用" : freeSelected() ? '我的账号 · 免费 AI' : isUnlimited() ? "会员已激活 · 我的账户" : credits > 0 ? `${credits} 次可用 · 兑换` : "激活会员") : document.querySelector('#chat-mode') ? '注册 / 登录' : "登录 / 兑换会员码"; }); if (adminDashboardLink) adminDashboardLink.hidden = !Boolean(signedIn && member?.isAdmin); document.body.dataset.memberActive = String(Boolean(signedIn && isActive())); }
+function setHeaderState(signedIn) {
+  authTriggers.forEach((button) => { button.textContent = signedIn ? (member?.isAdmin ? "管理员 · 无限使用" : freeSelected() ? '我的账号 · 免费 AI' : isUnlimited() ? "会员已激活 · 我的账户" : credits > 0 ? `${credits} 次可用 · 兑换` : "激活会员") : document.querySelector('#chat-mode') ? '注册 / 登录' : "登录 / 兑换会员码"; });
+  if (signedIn && member?.isAdmin === true && adminDashboardTemplate) {
+    if (!adminDashboardLink) { adminDashboardLink = adminDashboardTemplate.content.firstElementChild.cloneNode(true); adminDashboardTemplate.after(adminDashboardLink); }
+  } else { adminDashboardLink?.remove(); adminDashboardLink = null; }
+  document.body.dataset.memberActive = String(Boolean(signedIn && isActive()));
+}
 function renderBalance() {
   renderVerification();
   balanceTitle.textContent = isUnlimited() ? "无限次可用" : credits > 0 ? `${credits} 次可用` : "会员未激活";
@@ -220,7 +227,7 @@ redeemForm?.addEventListener("submit", async (event) => {
   } catch (error) { redeemNote.textContent = error.message; }
   finally { redeemSubmit.disabled = false; }
 });
-document.querySelector("#membership-signout")?.addEventListener("click", async () => { try { await request("/auth/logout", { method: "POST" }); } catch (_) {} await refreshBalance(); window.dispatchEvent(new CustomEvent('petforge:membership-change', {detail:{active:false}})); });
+document.querySelector("#membership-signout")?.addEventListener("click", async () => { setHeaderState(false); try { await request("/auth/logout", { method: "POST" }); } catch (_) {} await refreshBalance(); window.dispatchEvent(new CustomEvent('petforge:membership-change', {detail:{active:false}})); });
 setMode("login"); setIdentityMode("email"); refreshBalance();
 document.querySelector('#chat-mode')?.addEventListener('change', () => { if (member) renderBalance(); });
 if (window.location?.search && new URLSearchParams(window.location.search).get('login') === '1') openMember();
