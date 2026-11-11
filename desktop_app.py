@@ -425,6 +425,10 @@ class DesktopPet:
             return
         self.chat_panel = ChatWindow(self.root, BASE_DIR, self.config, self.responses)
 
+    def is_chat_open(self) -> bool:
+        panel = getattr(self, 'chat_panel', None)
+        return bool(panel and panel.visible and panel.window.winfo_exists())
+
     def load_animation(self) -> None:
         if not self.config.get('animationPreset'):
             return
@@ -546,6 +550,9 @@ class DesktopPet:
         return None
 
     def track_cursor(self, delta: float) -> None:
+        if self.is_chat_open():
+            self.cursor_offset = (0, 0)
+            return
         cursor = self.cursor_position()
         mode = self.config.get("cursorFollowMode", "look")
         if cursor and not self.dragged:
@@ -701,7 +708,7 @@ class DesktopPet:
         if self.aura_id is not None:
             self.canvas.delete(self.aura_id)
             self.aura_id = None
-        if not self.motion_enabled:
+        if not self.motion_enabled or self.is_chat_open():
             return
         effect = self.config.get("leaveEffect", "stay")
         if effect == "goodbye":
@@ -722,7 +729,7 @@ class DesktopPet:
         self.wander_timer = None
         if not self.motion_enabled:
             return
-        if self.config.get("wanderEnabled", False) and not self.dragged and not self.desktop_hidden:
+        if self.config.get("wanderEnabled", False) and not self.dragged and not self.desktop_hidden and not self.is_chat_open():
             screen_w = self.root.winfo_screenwidth()
             screen_h = self.root.winfo_screenheight()
             x = random.randint(24, max(24, screen_w - self.width - 24))

@@ -89,6 +89,7 @@ def pet():
 class DesktopMotionTests(unittest.TestCase):
     def test_animal_body_uses_sixty_fps_and_pauses_while_held(self):
         instance = pet()
+        instance.chat_panel = SimpleNamespace(visible=True, window=SimpleNamespace(winfo_exists=lambda: True))
         instance.animation_frames = list(range(120))
         instance.animation_meta = {'fps': 60}
         from pet_animation import PetAnimation
@@ -238,6 +239,49 @@ class DesktopMotionTests(unittest.TestCase):
             instance.root.now = .1
             instance.static_tick()
         self.assertFalse(ticks)
+
+    def test_chat_pauses_follow_and_avoidance_until_hidden_without_changing_preferences(self):
+        for mode in ('follow', 'playful'):
+            instance = pet()
+            del instance.track_cursor
+            instance.config = {'cursorFollowMode': mode, 'proactiveFrequency': 'quiet'}
+            instance.root.winfo_screenwidth = lambda: 2560
+            instance.root.winfo_screenheight = lambda: 1440
+            instance.cursor_position = lambda: (1800, 600) if mode == 'follow' else (200, 160)
+            instance.last_cursor_near = False
+            instance.last_proactive_at = 0
+            instance.chat_panel = SimpleNamespace(visible=True, window=SimpleNamespace(winfo_exists=lambda: True))
+            instance.cursor_offset = (6, 2)
+            instance.track_cursor(.1)
+            self.assertEqual(instance.root.position, (0, 0))
+            self.assertEqual(instance.cursor_offset, (0, 0))
+            instance.chat_panel.visible = False
+            instance.track_cursor(.1)
+            self.assertNotEqual(instance.root.position, (0, 0))
+            self.assertEqual(instance.config['cursorFollowMode'], mode)
+
+    def test_chat_pauses_wandering_but_keeps_the_next_check_scheduled(self):
+        instance = pet()
+        instance.motion_enabled = True
+        instance.config = {'wanderEnabled': True, 'hoverBubble': False}
+        instance.desktop_hidden = False
+        instance.root.winfo_screenwidth = lambda: 2560
+        instance.root.winfo_screenheight = lambda: 1440
+        instance.chat_panel = SimpleNamespace(visible=True, window=SimpleNamespace(winfo_exists=lambda: True))
+        instance.wander()
+        self.assertEqual(instance.root.position, (0, 0))
+        self.assertIn(instance.wander_timer, instance.root.tasks)
+        instance.chat_panel.visible = False
+        instance.wander()
+        self.assertNotEqual(instance.root.position, (0, 0))
+
+    def test_entering_chat_does_not_trigger_hide_on_mouse_leave(self):
+        instance = pet()
+        instance.motion_enabled = True
+        instance.config = {'leaveEffect': 'hide'}
+        instance.root.withdraw = lambda: self.fail('Entering the chat must not hide the pet')
+        instance.chat_panel = SimpleNamespace(visible=True, window=SimpleNamespace(winfo_exists=lambda: True))
+        instance.on_leave(None)
 
 
 if __name__ == '__main__':
