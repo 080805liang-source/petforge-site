@@ -17,7 +17,7 @@ function fixture(seed={},overrides={}){
   const response=new EventEmitter();response.statusCode=200;response.destroy=()=>{};callback(response);
   queueMicrotask(()=>{response.emit('data',JSON.stringify({choices:[{message:{content:'喵！你好'}}]}));response.emit('end');});
  };return req;}};
- return {api:createAdminTestApi({cp_users:[verified],...seed},{https,env:{...env,...overrides}}),calls};
+ return {api:createAdminTestApi({cp_users:[{...verified}],...seed},{https,env:{...env,...overrides}}),calls};
 }
 test('free AI is closed unless explicitly configured for free-only; anonymous requests never call provider',async()=>{
  const {api,calls}=fixture({}, {PETFORGE_AI_FREE_ONLY:'false'});
@@ -71,4 +71,21 @@ test('browser uses account session and exports only a chat credential, not the p
  assert.equal(await freeChat(messages,{session}),'hello');
  const file=await freeChatFile({session});assert.equal(file.name,'assets/shared-chat.json');assert.equal(JSON.parse(file.data).token.length,64);
  assert.deepEqual(paths,['/ai/chat','/ai/device-token']);
+});
+
+test('verified nonmembers download free AI pets without buying a code or spending credits',async()=>{
+ const {api,calls}=fixture();
+ const status=await api.call('GET','/ai/status',{},'user-session');
+ assert.equal(status.body.signedIn,true);assert.equal(status.body.verificationRequired,false);
+ const binding=await api.call('POST','/ai/device-token',{},'user-session');assert.equal(binding.status,201);
+ const generated=await api.call('POST','/consume',{amount:1,chatMode:'free'},'user-session');
+ assert.equal(generated.status,200);assert.equal(generated.body.freeAi,true);assert.equal(generated.body.credits,0);
+ assert.equal(api.rows.cp_users[0].credits,0);assert.equal(api.rows.cp_users[0].usageCount,1);
+ assert.equal((await api.call('POST','/ai/chat',{messages},binding.body.token)).status,200);assert.equal(calls.length,1);
+ assert.equal((await api.call('POST','/consume',{amount:1,chatMode:'byok'},'user-session')).status,403);
+ assert.equal((await api.call('POST','/consume',{amount:1,chatMode:'free'})).status,401);
+ const legacy=fixture({cp_users:[{...verified,emailVerifiedAt:null}]});
+ assert.equal((await legacy.api.call('GET','/ai/status',{},'user-session')).body.verificationRequired,true);
+ assert.equal((await legacy.api.call('POST','/consume',{amount:1,chatMode:'free'},'user-session')).status,403);
+ assert.equal((await legacy.api.call('POST','/ai/chat',{messages},'user-session')).body.code,'EMAIL_VERIFICATION_REQUIRED');
 });

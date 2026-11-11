@@ -6,7 +6,7 @@ import { runInNewContext } from 'node:vm';
 function setup(sendFailure = false) {
   const elements = new Map();
   const make = (key, dataset = {}) => {
-    const element = { dataset, value: '', hidden: false, disabled: false, classList: { toggle() {} }, listeners: {}, addEventListener(type, listener) { this.listeners[type] = listener; }, click() { return this.listeners.click?.(); } };
+    const element = { dataset, value: '', hidden: false, disabled: false, firstChild:{textContent:''}, before() {}, append() {}, prepend() {}, querySelector: key => elements.get(key) || make(key), classList: { toggle() {} }, listeners: {}, addEventListener(type, listener) { this.listeners[type] = listener; }, click() { return this.listeners.click?.(); } };
     elements.set(key, element);
     return element;
   };
@@ -18,6 +18,7 @@ function setup(sendFailure = false) {
     querySelector: key => elements.get(key) || make(key),
     querySelectorAll: key => key === '[data-member-mode]' ? modes : key === '[data-identity-mode]' ? identities : [],
     addEventListener() {}
+    ,createElement: tag => make(tag)
   };
   const mockedFetch = async (url, options = {}) => {
       requests.push({ url, body: options.body ? JSON.parse(options.body) : undefined });

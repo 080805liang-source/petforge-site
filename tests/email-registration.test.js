@@ -48,6 +48,9 @@ test('native mail verification creates a verified local account, preserves membe
   assert.equal(created.body.user.membershipActive, false);
   assert.ok(created.body.token);
   assert.ok(api.rows.cp_users.at(-1).emailVerifiedAt);
+  assert.equal(created.body.user.identityVerified, true);
+  assert.equal((await api.call('POST', '/ai/device-token', {}, created.body.token)).status, 201);
+  assert.equal((await api.call('POST', '/consume', { amount: 1, chatMode: 'free' }, created.body.token)).status, 200);
   assert.equal(JSON.stringify(api.rows.cp_users.slice(0, 2)), previous);
   assert.ok(api.rows.cp_email_codes[0].usedAt);
   const login = await api.call('POST', '/auth/login', { email, password: 'test-password' });
@@ -55,6 +58,36 @@ test('native mail verification creates a verified local account, preserves membe
   assert.equal(login.body.user.id, created.body.user.id);
   assert.equal((await api.call('POST', '/auth/signup', signup(sent.body.challengeId))).status, 409);
   assert.equal((await api.call('POST', '/auth/send-email-code', { email })).status, 409);
+});
+
+test('legacy account verifies in place, keeps password/session/credits and immediately downloads free AI', async () => {
+  const api = setup(), before = {...api.rows.cp_users[1]};
+  assert.equal((await api.call('POST', '/auth/send-verification-code', { email })).status, 401);
+  const sent = await api.call('POST', '/auth/send-verification-code', { email: 'cannot-change@example.com' }, 'user-session');
+  assert.equal(sent.status, 200);
+  assert.equal(api.calls[0].body.email, before.email);
+  const body = { email: before.email, challengeId: sent.body.challengeId, emailCode: '123456' };
+  assert.equal((await api.call('POST', '/auth/signup', {...signup(body.challengeId), email: before.email})).status, 409);
+  assert.equal((await api.call('POST', '/auth/verify-email', {...body,emailCode:'000000'}, 'user-session')).status, 400);
+  assert.equal((await api.call('POST', '/auth/verify-email', body, 'owner-session')).status, 400);
+  const verified = await api.call('POST', '/auth/verify-email', body, 'user-session');
+  assert.equal(verified.status, 200);assert.equal(verified.body.user.identityVerified, true);
+  for (const [key,value] of Object.entries(before)) assert.equal(api.rows.cp_users[1][key], value);
+  assert.equal((await api.call('GET', '/me', {}, 'user-session')).status, 200);
+  assert.equal((await api.call('POST', '/ai/device-token', {}, 'user-session')).status, 201);
+  assert.equal((await api.call('POST', '/consume', {amount:1,chatMode:'free'}, 'user-session')).body.credits, before.credits);
+  assert.ok(api.rows.cp_email_codes[0].usedAt);
+});
+
+test('legacy phone accounts can verify a new email but cannot take another account mailbox or reuse reset codes', async () => {
+  const api = setup();api.rows.cp_users[1].email = null;api.rows.cp_users[1].phone = '13900000000';
+  assert.equal((await api.call('POST', '/auth/send-verification-code', {email:'3903345807@qq.com'}, 'user-session')).status,409);
+  const sent = await api.call('POST', '/auth/send-verification-code', {email}, 'user-session');
+  const body = {email,challengeId:sent.body.challengeId,emailCode:'123456'};
+  assert.equal((await api.call('POST', '/auth/verify-email', {...body,email:'other@example.com'}, 'user-session')).status,400);
+  assert.equal((await api.call('POST', '/auth/reset-password', {...body,password:'new-password',confirmPassword:'new-password'})).status,400);
+  assert.equal((await api.call('POST', '/auth/verify-email', body, 'user-session')).status,200);
+  assert.equal(api.rows.cp_users[1].email,email);assert.equal(api.rows.cp_users[1].phone,'13900000000');
 });
 
 test('challenges are bound to their mailbox; missing, foreign and expired challenges never reach the provider', async () => {

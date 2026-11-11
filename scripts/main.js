@@ -3,7 +3,7 @@ const DESKTOP_DOWNLOAD_AVAILABLE=true;
 const DESKTOP_DOWNLOAD_NOTICE='';
 
 let chatStudio;
-const chatStudioReady = import('./chat-studio.js?v=download-20261111-r2').then(async ({createChatStudio}) => {
+const chatStudioReady = import('./chat-studio.js?v=free-onboarding-20261111-r1').then(async ({createChatStudio}) => {
   chatStudio = await createChatStudio({onChange:() => updatePreview()});
   updatePreview();
   return chatStudio;
@@ -77,6 +77,7 @@ let workshopTemplateId = "";
 let animationPreset = "";
 let assetAttribution = "";
 let pendingWorkshopDownload = false;
+let building = false;
 let sharedImageSize = 0;
 let interactivePreview;
 let animalPreview = null;
@@ -88,7 +89,7 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=download-20261111-r2');
+    const {createPetAnimation} = await import('./pet-animation.js?v=free-onboarding-20261111-r1');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -538,7 +539,7 @@ async function applySelectedStyle() {
 
 function setImageBusy(busy) {
   imageBusy = busy;
-  buildButton.disabled = !DESKTOP_DOWNLOAD_AVAILABLE || busy || !styledPetBlob;
+  buildButton.disabled = !DESKTOP_DOWNLOAD_AVAILABLE || building || busy || !styledPetBlob;
   if(!DESKTOP_DOWNLOAD_AVAILABLE){buildButton.title=DESKTOP_DOWNLOAD_NOTICE;setStatus(DESKTOP_DOWNLOAD_NOTICE);}
   publishButton.disabled = busy || publishing || !styledPetBlob;
   stylePresets.forEach((preset) => { preset.disabled = busy; });
@@ -616,12 +617,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.11-download-r2";
+const PETFORGE_BUILD_VERSION = "2026.11.11-free-onboarding-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=download-20261111-r2');
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=free-onboarding-20261111-r1');
   return desktopRuntimeFiles(await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`)));
 }
 
@@ -630,14 +631,12 @@ async function buildPackageInBrowser() {
   await chatStudioReady;
   const config = getConfig();
   const name = safeName(config.name);
-  const personalFile=await chatStudio?.personalFile();
   const pngBytes = await getPetPngBytes(config);
   config.packageVersion = "zip-portable-v2";
   const appFiles = await getDesktopAppBytes();
   const replyResponse = await fetch(new URL('assets/responses.json', document.baseURI));
   if (!replyResponse.ok) throw new Error('互动回复库下载失败，请重试。');
   const extraFiles = [{name:'assets/responses.json',data:new Uint8Array(await replyResponse.arrayBuffer())}];
-  if(personalFile)extraFiles.push(personalFile);
   const themeResponse=await fetch(new URL('assets/chat-themes.json',document.baseURI));
   if(!themeResponse.ok)throw new Error('聊天样式下载失败，请重试。');
   extraFiles.push({name:'assets/chat-themes.json',data:new Uint8Array(await themeResponse.arrayBuffer())});
@@ -682,7 +681,9 @@ async function buildPackageInBrowser() {
     extraFiles.push({name:'assets/animation.json',data:JSON.stringify(meta)},{name:'assets/pet-atlas.png',data:new Uint8Array(await atlas.arrayBuffer())});
   }
   if(config.assetAttribution) extraFiles.push({name:'素材来源与授权.txt',data:config.assetAttribution});
-  return { name, blob: createZip([
+  const personalFile = await chatStudio.personalFile();
+  if (personalFile) extraFiles.push(personalFile);
+  return { name, chatMode: config.chat.mode, blob: createZip([
     { name: "README.md", data: packageReadme(config) },
     ...appFiles,
     { name: "config.json", data: JSON.stringify(config, null, 2) },
@@ -799,6 +800,21 @@ publishButton?.addEventListener("click", async () => {
 
 buildButton?.addEventListener("click", async () => {
   if(!DESKTOP_DOWNLOAD_AVAILABLE){setStatus(DESKTOP_DOWNLOAD_NOTICE,'error');return;}
+  if (building || imageBusy || !styledPetBlob) return;
+  await chatStudioReady;
+  if (!chatStudio) { setStatus('聊天设置未能加载，请刷新后重试。', 'error'); return; }
+  const membership = window.PetForgeMembership;
+  if (!membership?.canDownload()) {
+    pendingWorkshopDownload = true;
+    if (membership?.current() && chatStudio.getConfig().mode === 'free') membership.openVerification();
+    else membership?.open();
+    setStatus(chatStudio.getConfig().mode === 'free' ? '注册或登录后即可继续；旧账号仅需补验证一次邮箱。' : '请先登录并激活会员，完成后自动继续。');
+    return;
+  }
+  pendingWorkshopDownload = false;
+  membership.close();
+  building = true;
+  document.querySelector('.studio-shell').inert = true;
   buildButton.disabled = true;
   document.querySelector('#workshop-download-notice').hidden=false;
   document.querySelector('#workshop-download-title').textContent='正在为你准备桌宠';
@@ -807,11 +823,11 @@ buildButton?.addEventListener("click", async () => {
 
   try {
     const result = await buildPackageInBrowser();
-    if (window.PetForgeMembership?.consumeUse) await window.PetForgeMembership.consumeUse(workshopTemplateId);
+    const usage = await membership.consumeUse(workshopTemplateId, result.chatMode);
     downloadBlob(result.blob, `PETFORGE-${result.name}.zip`);
     document.querySelector('#workshop-download-title').textContent='桌宠已经准备好';
-    document.querySelector('#workshop-download-progress').textContent='已请求浏览器保存 ZIP。若未出现文件，请检查浏览器下载列表或下载权限。';
-    const usageMessage = window.PetForgeMembership?.isUnlimited?.() ? "本次为无限使用权益，未扣次数。桌宠 ZIP 已下载；解压全部文件后即可启动。" : "本次使用已扣除 1 次。桌宠 ZIP 已下载；解压全部文件后即可启动。";
+    document.querySelector('#workshop-download-progress').textContent='已请求浏览器保存 ZIP。下一步：解压全部文件 → 双击 PetForge.exe → 右键桌宠「展开聊天」。'+(usage.freeAi ? '免费 AI 已自动绑定，无需再登录或填写 Key。' : '聊天设置已随桌宠保存。');
+    const usageMessage = usage.freeAi ? '网站免费 AI 桌宠已准备好，未扣生成次数。解压全部文件后，双击 PetForge.exe 即可启动。' : usage.unlimited ? "本次为无限使用权益，未扣次数。桌宠 ZIP 已下载；解压全部文件后即可启动。" : "本次使用已扣除 1 次。桌宠 ZIP 已下载；解压全部文件后即可启动。";
     setStatus(usageMessage, "success");
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : "生成过程异常，请刷新后重试。";
@@ -819,7 +835,9 @@ buildButton?.addEventListener("click", async () => {
     document.querySelector('#workshop-download-title').textContent='这次没有完成下载';
     document.querySelector('#workshop-download-progress').textContent=message+' 可以稍后点击生成按钮重试。';
   } finally {
-    buildButton.disabled = !DESKTOP_DOWNLOAD_AVAILABLE;
+    building = false;
+    document.querySelector('.studio-shell').inert = false;
+    setImageBusy(imageBusy);
   }
 });
 
@@ -839,7 +857,7 @@ async function loadWorkshopTemplate() {
     const template = result.post;
     const templateConfig = template.config || {};
     await chatStudioReady;
-    chatStudio?.load(templateConfig.chat || {});
+    chatStudio?.load({...templateConfig.chat, mode:'free'});
     animationPreset = /^animal-\d{1,12}$/.test(templateConfig.animationPreset || '') ? templateConfig.animationPreset : '';
     assetAttribution = String(templateConfig.assetAttribution || '').slice(0,8000);
     petName.value = templateConfig.name || template.title;
@@ -903,11 +921,12 @@ async function loadWorkshopTemplate() {
       if(!DESKTOP_DOWNLOAD_AVAILABLE){document.querySelector('#workshop-download-title').textContent='桌面下载暂时停用';document.querySelector('#workshop-download-progress').textContent=DESKTOP_DOWNLOAD_NOTICE;return;}
       await window.PetForgeMembership?.refresh();
       pendingWorkshopDownload = true;
-      if (window.PetForgeMembership?.isActive()) { pendingWorkshopDownload = false; buildButton.click(); }
+    if (window.PetForgeMembership?.canDownload()) { pendingWorkshopDownload = false; buildButton.click(); }
       else {
         document.querySelector('#workshop-download-title').textContent='登录后继续准备桌宠';
-        document.querySelector('#workshop-download-progress').textContent='请先登录并确认可用次数，完成后会自动继续生成。';
-        window.PetForgeMembership?.open();
+        document.querySelector('#workshop-download-progress').textContent='网站免费 AI 仅需注册或登录；旧账号如需补验证，完成后自动继续生成。';
+        if (window.PetForgeMembership?.current() && chatStudio?.getConfig().mode === 'free') window.PetForgeMembership.openVerification();
+        else window.PetForgeMembership?.open();
       }
     }
   } catch (error) {
@@ -918,7 +937,7 @@ async function loadWorkshopTemplate() {
   }
 }
 window.addEventListener("petforge:membership-change", (event) => {
-  if (pendingWorkshopDownload && event.detail.active && !imageBusy && styledPetBlob) {
+  if (pendingWorkshopDownload && window.PetForgeMembership?.canDownload() && !building && !imageBusy && styledPetBlob) {
     pendingWorkshopDownload = false;
     buildButton.click();
   }
@@ -926,7 +945,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=download-20261111-r2').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=free-onboarding-20261111-r1').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {

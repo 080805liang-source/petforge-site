@@ -37,16 +37,55 @@ let member = null;
 
 let pendingFeedback = false;
 let emailChallenge = null;
+let verificationChallenge = null;
+let verificationCountdown;
+const verificationPanel = document.createElement('section');
+verificationPanel.hidden = true;
+verificationPanel.innerHTML = `<h3>验证邮箱，继续使用免费 AI</h3><p class="membership-intro">旧账号只需补验证一次；新注册账号已自动完成。验证后自动继续下载，无需填写模型 Key。</p><form id="account-verification-form"><label>验证邮箱<input id="account-verification-email" type="email" autocomplete="email" required></label><div class="sms-field"><label>邮箱验证码<input id="account-verification-code" pattern="[0-9]{6}" maxlength="6" inputmode="numeric" autocomplete="one-time-code" required></label><button id="account-verification-send" class="button secondary" type="button">发送验证码</button></div><button id="account-verification-submit" class="button primary wide" type="submit">验证并继续</button></form><p id="account-verification-note" class="membership-note" role="status"></p>`;
+balancePanel?.prepend(verificationPanel);
+const verificationEmail = verificationPanel.querySelector('#account-verification-email');
+const verificationCode = verificationPanel.querySelector('#account-verification-code');
+const verificationNote = verificationPanel.querySelector('#account-verification-note');
+const verificationSend = verificationPanel.querySelector('#account-verification-send');
+const membershipOptions = document.createElement('details');
+const membershipSummary = document.createElement('summary');
+membershipSummary.textContent = '会员码（其他模式可选）';
+const redeemIntro = redeemForm?.nextElementSibling;
+redeemForm?.before(membershipOptions);
+membershipOptions.append(membershipSummary);
+if (redeemForm) membershipOptions.append(redeemForm);
+if (redeemIntro) membershipOptions.append(redeemIntro);
+if (redeemNote) membershipOptions.append(redeemNote);
+function renderVerification() {
+  verificationPanel.hidden = !member || member.identityVerified;
+  const email = member?.email || '';
+  if (verificationEmail.dataset.account !== member?.id) {
+    verificationEmail.value = email; verificationEmail.dataset.account = member?.id || '';
+    verificationChallenge = null; verificationCode.value = ''; verificationNote.textContent = '';
+    clearInterval(verificationCountdown); verificationSend.disabled = false; verificationSend.textContent = '发送验证码';
+  }
+  verificationEmail.readOnly = Boolean(email);
+}
+function openVerification() { renderVerification(); openMember(); if (member && !member.identityVerified) verificationEmail.focus(); }
+const freeSelected = () => document.querySelector('#chat-mode')?.value === 'free';
+const canDownload = () => freeSelected() ? Boolean(member?.identityVerified) : isActive();
+const canUpload = () => isActive() || Boolean(freeSelected() && member);
 
-function openMember() { if (dialog && !dialog.open) dialog.showModal(); }
+function openMember() { if (document.querySelector('#chat-mode') && freeSelected()) document.querySelector('#membership-title').textContent = '登录后，使用网站免费 AI'; if (dialog && !dialog.open) dialog.showModal(); }
 
 const isUnlimited = () => Boolean(member?.isAdmin || (member?.vipExpiresAt && new Date(member.vipExpiresAt) > new Date()));
 const isActive = () => isUnlimited() || credits > 0;
-function setHeaderState(signedIn) { authTriggers.forEach((button) => { button.textContent = signedIn ? (member?.isAdmin ? "管理员 · 无限使用" : isUnlimited() ? "会员已激活 · 我的账户" : credits > 0 ? `${credits} 次可用 · 兑换` : "激活会员") : "登录 / 兑换会员码"; }); if (adminDashboardLink) adminDashboardLink.hidden = !Boolean(signedIn && member?.isAdmin); document.body.dataset.memberActive = String(Boolean(signedIn && isActive())); }
+function setHeaderState(signedIn) { authTriggers.forEach((button) => { button.textContent = signedIn ? (member?.isAdmin ? "管理员 · 无限使用" : freeSelected() ? '我的账号 · 免费 AI' : isUnlimited() ? "会员已激活 · 我的账户" : credits > 0 ? `${credits} 次可用 · 兑换` : "激活会员") : document.querySelector('#chat-mode') ? '注册 / 登录' : "登录 / 兑换会员码"; }); if (adminDashboardLink) adminDashboardLink.hidden = !Boolean(signedIn && member?.isAdmin); document.body.dataset.memberActive = String(Boolean(signedIn && isActive())); }
 function renderBalance() {
+  renderVerification();
   balanceTitle.textContent = isUnlimited() ? "无限次可用" : credits > 0 ? `${credits} 次可用` : "会员未激活";
   balanceStatus.textContent = member?.isAdmin ? "管理员账号已恢复，可无限生成桌宠并查看运营后台。" : isUnlimited() ? `会员有效至 ${new Intl.DateTimeFormat(document.documentElement.lang || "zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(member.vipExpiresAt))}` : "兑换后激活会员，有效期内不限生成次数。";
   setHeaderState(true);
+  if (freeSelected() && !isActive()) { balanceTitle.textContent = member.identityVerified ? '账号已就绪' : '完成验证即可使用'; balanceStatus.textContent = '选择网站免费 AI，可直接生成桌宠，无需会员码或自己的 Key。'; }
+  const codeLabel = redeemForm?.querySelector('label');
+  if (codeLabel) codeLabel.firstChild.textContent = freeSelected() ? '会员码（可选，免费 AI 无需兑换）' : '会员码';
+  membershipOptions.open = !freeSelected();
+  membershipSummary.hidden = !freeSelected();
   window.dispatchEvent(new CustomEvent("petforge:membership-change", { detail: { active: isActive(), credits, isAdmin: Boolean(member?.isAdmin) } }));
 }
 function updateVerificationFields() {
@@ -88,13 +127,13 @@ async function request(path, options = {}) {
 }
 async function refreshBalance() {
   try { const data = await request("/me"); member = data.user; credits = Number(member.credits || 0); }
-  catch (error) { member = null; credits = 0; authPanel.hidden = false; balancePanel.hidden = true; if (error.status !== 401) authNote.textContent = error.message; setHeaderState(false); return false; }
+  catch (error) { member = null; credits = 0; renderVerification(); authPanel.hidden = false; balancePanel.hidden = true; if (error.status !== 401) authNote.textContent = error.message; setHeaderState(false); return false; }
   authPanel.hidden = true; balancePanel.hidden = false; renderBalance(); return true;
 }
 async function requireActive() { await refreshBalance(); if (!member) { openMember(); return false; } if (!isActive()) { openMember(); redeemNote.textContent = "请先兑换会员码，再继续使用。"; return false; } return true; }
-async function consumeUse(workshopId = "") { const data = await request("/consume", { method: "POST", body: JSON.stringify({ amount: 1, ...(workshopId ? { workshopId } : {}) }) }); credits = Number(data.credits || 0); renderBalance(); return true; }
+async function consumeUse(workshopId = "", chatMode = "") { const data = await request("/consume", { method: "POST", body: JSON.stringify({ amount: 1, chatMode, ...(workshopId ? { workshopId } : {}) }) }); credits = Number(data.credits || 0); renderBalance(); return data; }
 
-window.PetForgeMembership = { requireActive, consumeUse, isActive, isUnlimited, isAdmin: () => Boolean(member?.isAdmin), current: () => member, request, open: openMember, refresh: refreshBalance };
+window.PetForgeMembership = { requireActive, consumeUse, isActive, isUnlimited, canDownload, isAdmin: () => Boolean(member?.isAdmin), current: () => member, request, open: openMember, openVerification, close: () => dialog?.close(), refresh: refreshBalance };
 authTriggers.forEach((button) => button.addEventListener("click", openMember));
 document.querySelector("[data-member-close]")?.addEventListener("click", () => dialog.close());
 dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
@@ -119,9 +158,38 @@ feedbackForm?.addEventListener("submit", async (event) => {
 });
 modeButtons.forEach((button) => button.addEventListener("click", () => setMode(button.dataset.memberMode)));
 identityButtons.forEach((button) => button.addEventListener("click", () => setIdentityMode(button.dataset.identityMode)));
-document.addEventListener("click", (event) => { const locked = event.target.closest("[data-membership-required]"); if (!locked || isActive()) return; event.preventDefault(); event.stopImmediatePropagation(); openMember(); }, true);
-document.addEventListener("change", (event) => { if (event.target?.id !== "pet-image" || isActive()) return; event.target.value = ""; openMember(); }, true);
+document.addEventListener("click", (event) => { const locked = event.target.closest("[data-membership-required]"); if (!locked || canUpload()) return; event.preventDefault(); event.stopImmediatePropagation(); openMember(); }, true);
+document.addEventListener("change", (event) => { if (event.target?.id !== "pet-image" || canUpload()) return; event.target.value = ""; openMember(); }, true);
 emailInput?.addEventListener("input", () => { emailChallenge = null; emailCodeInput.value = ""; });
+verificationEmail.addEventListener('input', () => { verificationChallenge = null; verificationCode.value = ''; });
+verificationSend.addEventListener('click', async () => {
+  if (!verificationEmail.reportValidity()) return;
+  const email = verificationEmail.value.trim().toLowerCase(), accountId = member?.id;
+  verificationChallenge = null; verificationSend.disabled = true; verificationNote.textContent = '正在发送邮箱验证码…';
+  try {
+    const data = await request('/auth/send-verification-code', { method: 'POST', body: JSON.stringify({ email }) });
+    if (member?.id !== accountId || verificationEmail.value.trim().toLowerCase() !== email) { verificationSend.disabled = false; return; }
+    verificationChallenge = { id: data.challengeId, email, accountId };
+    verificationNote.textContent = '验证码已发送，请检查邮箱（包括垃圾邮件）。';
+    const availableAt = Date.now() + data.retryAfter * 1000;
+    clearInterval(verificationCountdown);
+    const tick = () => { const seconds = Math.max(0, Math.ceil((availableAt - Date.now()) / 1000)); verificationSend.textContent = seconds ? `${seconds}s` : '发送验证码'; if (!seconds) { clearInterval(verificationCountdown); verificationSend.disabled = false; } };
+    tick(); verificationCountdown = setInterval(tick, 1000);
+  } catch (error) { verificationNote.textContent = error.message; verificationSend.disabled = false; }
+});
+verificationPanel.querySelector('form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const email = verificationEmail.value.trim().toLowerCase();
+  if (!verificationChallenge || verificationChallenge.email !== email || verificationChallenge.accountId !== member?.id) { verificationNote.textContent = '请先获取当前邮箱的验证码。'; return; }
+  const submit = verificationPanel.querySelector('#account-verification-submit'); submit.disabled = true;
+  verificationNote.textContent = '正在验证…';
+  try {
+    await request('/auth/verify-email', { method: 'POST', body: JSON.stringify({ email, emailCode: verificationCode.value.trim(), challengeId: verificationChallenge.id }) });
+    await refreshBalance();
+    if (member?.identityVerified) { verificationChallenge = null; verificationCode.value = ''; dialog?.close(); }
+  } catch (error) { verificationNote.textContent = error.message; }
+  finally { submit.disabled = false; }
+});
 sendEmailCodeButton?.addEventListener("click", async () => {
   const email = emailInput.value.trim().toLowerCase();
   if (!/^[.0-9a-z_-]{1,40}@[.0-9a-z_-]{1,40}\.[a-z]{1,10}$/i.test(email)) { authNote.textContent = "请输入有效邮箱后再发送验证码。"; return; }
@@ -142,7 +210,7 @@ sendEmailCodeButton?.addEventListener("click", async () => {
   } catch (error) { authNote.textContent = error.message; sendEmailCodeButton.disabled = false; }
 });
 
-authForm?.addEventListener("submit", async (event) => { event.preventDefault(); if (mode === "signup" && passwordInput.value !== confirmPasswordInput.value) { authNote.textContent = "两次输入的密码不一致。"; return; } if (mode === "signup" && (!emailChallenge || emailChallenge.email !== emailInput.value.trim().toLowerCase())) { authNote.textContent = "请先获取当前邮箱的验证码。"; return; } authSubmit.disabled = true; authNote.textContent = mode === "login" ? "正在登录…" : "正在注册…"; const body = { identity: identityMode, email: emailInput.value.trim().toLowerCase(), phone: phoneInput.value.trim(), password: passwordInput.value, confirmPassword: confirmPasswordInput.value, challengeId: emailChallenge?.id, emailCode: emailCodeInput.value.trim() }; try { const data = await request(mode === "login" ? "/auth/login" : "/auth/signup", { method: "POST", body: JSON.stringify(body) }); authNote.textContent = "操作成功。"; await refreshBalance(); if (pendingFeedback && member) { pendingFeedback = false; dialog?.close(); feedbackDialog?.showModal(); } } catch (error) { authNote.textContent = error.message; } finally { authSubmit.disabled = false; } });
+authForm?.addEventListener("submit", async (event) => { event.preventDefault(); if (mode === "signup" && passwordInput.value !== confirmPasswordInput.value) { authNote.textContent = "两次输入的密码不一致。"; return; } if (mode === "signup" && (!emailChallenge || emailChallenge.email !== emailInput.value.trim().toLowerCase())) { authNote.textContent = "请先获取当前邮箱的验证码。"; return; } authSubmit.disabled = true; authNote.textContent = mode === "login" ? "正在登录…" : "正在注册…"; const body = { identity: identityMode, email: emailInput.value.trim().toLowerCase(), phone: phoneInput.value.trim(), password: passwordInput.value, confirmPassword: confirmPasswordInput.value, challengeId: emailChallenge?.id, emailCode: emailCodeInput.value.trim() }; try { await request(mode === "login" ? "/auth/login" : "/auth/signup", { method: "POST", body: JSON.stringify(body) }); passwordInput.value = ''; confirmPasswordInput.value = ''; emailCodeInput.value = ''; emailChallenge = null; authNote.textContent = "操作成功。"; await refreshBalance(); if (pendingFeedback && member) { pendingFeedback = false; dialog?.close(); feedbackDialog?.showModal(); } else if (freeSelected() && member?.identityVerified) dialog?.close(); } catch (error) { authNote.textContent = error.message; } finally { authSubmit.disabled = false; } });
 redeemForm?.addEventListener("submit", async (event) => {
   event.preventDefault(); redeemSubmit.disabled = true; redeemNote.textContent = "正在验证会员码…";
   try {
@@ -152,6 +220,7 @@ redeemForm?.addEventListener("submit", async (event) => {
   } catch (error) { redeemNote.textContent = error.message; }
   finally { redeemSubmit.disabled = false; }
 });
-document.querySelector("#membership-signout")?.addEventListener("click", async () => { try { await request("/auth/logout", { method: "POST" }); } catch (_) {} await refreshBalance(); });
+document.querySelector("#membership-signout")?.addEventListener("click", async () => { try { await request("/auth/logout", { method: "POST" }); } catch (_) {} await refreshBalance(); window.dispatchEvent(new CustomEvent('petforge:membership-change', {detail:{active:false}})); });
 setMode("login"); setIdentityMode("email"); refreshBalance();
+document.querySelector('#chat-mode')?.addEventListener('change', () => { if (member) renderBalance(); });
 if (window.location?.search && new URLSearchParams(window.location.search).get('login') === '1') openMember();

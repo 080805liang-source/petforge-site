@@ -5,7 +5,7 @@ export async function freeChat(history, {signal, session=globalThis.PetForgeSess
   const messages=history.slice(-6).map(item=>({role:item.role,content:item.content.slice(0,1000)}));
   const response=await session.fetch('/ai/chat',{method:'POST',signal,body:JSON.stringify({messages})});
   const result=await response.json();
-  if(!response.ok){if(response.status===401)globalThis.PetForgeMembership?.open();throw new Error(result.error || '免费 AI 暂不可用，请稍后重试。');}
+  if(!response.ok){if(response.status===401)globalThis.PetForgeMembership?.open();if(result.code==='EMAIL_VERIFICATION_REQUIRED')globalThis.PetForgeMembership?.openVerification();throw new Error(result.error || '免费 AI 暂不可用，请稍后重试。');}
   if(result.quota)globalThis.dispatchEvent?.(new CustomEvent('petforge:ai-quota',{detail:result.quota}));
   const text=result.choices?.[0]?.message?.content;
   if(typeof text!=='string'||!text.trim())throw new Error('免费 AI 未返回文字。');
