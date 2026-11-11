@@ -5,6 +5,11 @@ import {gunzipSync} from 'node:zlib';
 import { test } from 'node:test';
 import { verifyDesktopRuntime, fetchDesktopRuntime, desktopRuntimeFiles, DESKTOP_DOWNLOAD_AVAILABLE, RUNTIME_SHA256 } from '../scripts/desktop-runtime.js';
 import { onRequest } from '../functions/runtime.js';
+import {createRequire} from 'node:module';
+import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+const {download} = createRequire(import.meta.url)('../云爪纪念馆/cloud-paw-api/tencent-cloudbase/runtime-download.cjs');
 
 test('desktop downloads use the verified official runtime and reject malformed archives', async () => {
   assert.equal(DESKTOP_DOWNLOAD_AVAILABLE,true);
@@ -33,38 +38,41 @@ test('retired single executable endpoint never serves the quarantined build', as
   assert.equal(result.headers.get('Cache-Control'),'no-store');
 });
 
-test('compressed runtime downloads once, expands to the pinned archive and completes progress', async()=>{
-  const previous=globalThis.fetch;let calls=0;
-  try{
-    globalThis.fetch=async url=>{calls++;assert.equal(url.pathname,'/assets/PetForge-runtime.gz');return new Response(readFileSync(new URL('../assets/PetForge-runtime.gz',import.meta.url)));};
-    const progress=[];
-    const bytes=await fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge-runtime.zip'),(done,total)=>progress.push([done,total]));
-    assert.equal(calls,1);assert.equal(bytes.length,46823896);assert.deepEqual(progress.at(-1),[90,90]);
-  }finally{globalThis.fetch=previous;}
+test('domestic endpoint serves only pinned public runtime chunks and rejects arbitrary paths', () => {
+ const directory=mkdtempSync(join(tmpdir(),'petforge-runtime-'));
+ try {
+  writeFileSync(join(directory,'manifest.json'),JSON.stringify({id:'a'.repeat(16),parts:[{size:3}]}));
+  writeFileSync(join(directory,'0.bin'),Buffer.from([1,2,3]));
+  assert.deepEqual(Buffer.from(download('/downloads/runtime/'+'a'.repeat(16)+'/0',directory).data,'base64'),Buffer.from([1,2,3]));
+  for(const path of ['/downloads/runtime/'+'b'.repeat(16)+'/0','/downloads/runtime/'+'a'.repeat(16)+'/99','/downloads/runtime/'+'a'.repeat(16)+'/../index.js','/downloads/runtime/'+'a'.repeat(16)+'/01'])assert.equal(download(path,directory),null);
+ } finally {rmSync(directory,{recursive:true,force:true});}
 });
 
-test('segmented runtime download retries a failed part and rejects corrupted bytes after assembly', async () => {
-  const original = globalThis.fetch;
-  const bytes = new Uint8Array(46823896);
-  const calls = new Map(); let corrupt = false;
-  try {
-    globalThis.fetch = async (url, options) => {
-      assert.equal(url.origin,'https://petforge-desktop.pages.dev');
-      assert.ok(url.pathname.startsWith(`/assets/runtime/${RUNTIME_SHA256.slice(0,16)}/`));
-      assert.equal(options.redirect,'error');
-      const index = Number(url.pathname.split('/').pop().replace('.bin',''));
-      calls.set(index,(calls.get(index)||0)+1);
-      if (index === 3 && calls.get(index) === 1) throw new Error('Interrupted transfer');
-      const part = bytes.slice(index*524288,(index+1)*524288);
-      if (corrupt && index === 5) part[0] ^= 1;
-      return new Response(part);
-    };
-    const progress = [];
-    await assert.rejects(fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge.exe'), (done, total) => progress.push([done,total])), /不完整/);
-    const count=Math.ceil(bytes.length/524288);
-    assert.deepEqual(progress, Array.from({length:count},(_,index)=>[index+1,count]));
-    assert.equal(calls.get(3),2);assert.equal(calls.size,count);
-    corrupt = true;
-    await assert.rejects(fetchDesktopRuntime(new URL('https://petforge-desktop.pages.dev/assets/PetForge.exe')),/不完整/);
-  } finally { globalThis.fetch = original; }
+test('domestic compressed parts retry corruption, resume cached parts and retain pinned runtime integrity', async () => {
+  const {default:manifest} = await import('../scripts/runtime-manifest.js');
+  const compressed = readFileSync(new URL('../assets/PetForge-runtime.gz',import.meta.url));
+  const saved = new Map(), calls = new Map(); let offline = false, corrupt = true;
+  const cacheStorage = {open:async()=>({match:async key=>saved.has(key)?new Response(saved.get(key)):undefined,put:async(key,response)=>saved.set(key,new Uint8Array(await response.arrayBuffer())),delete:async key=>saved.delete(key)})};
+  const fetcher = async endpoint => {
+    const url = new URL(endpoint), index = Number(url.pathname.split('/').pop().replace('.bin',''));
+    calls.set(index,(calls.get(index)||0)+1);
+    if (offline || index===8 && calls.get(index)<=3) throw new Error('Interrupted');
+    const bytes=compressed.slice(index*524288,(index+1)*524288);
+    if (corrupt && index===4) {corrupt=false;return Response.json({data:Buffer.alloc(bytes.length).toString('base64')});}
+    if (url.pathname.includes('/downloads/')) {assert.match(url.hostname,/ap-shanghai/);return Response.json({data:bytes.toString('base64')});}
+    return new Response(bytes);
+  };
+  const url=new URL('https://petforge-desktop.pages.dev/assets/PetForge-runtime.zip');
+  await assert.rejects(fetchDesktopRuntime(url,()=>{},{cacheStorage,fetcher}),/已保留/);
+  // Other in-flight workers finish before retry, as in a browser event turn.
+  await new Promise(resolve=>setTimeout(resolve,20));
+  assert.ok(saved.size>0); const progress=[];
+  const bytes=await fetchDesktopRuntime(url,(done,total)=>progress.push(done/total),{cacheStorage,fetcher});
+  assert.equal(bytes.length,46823896);assert.equal(saved.size,manifest.parts.length);
+  assert.equal(progress.at(-1),1);assert.ok(progress.every((n,i)=>!i||n>=progress[i-1]));
+  const before=[...calls.values()].reduce((a,b)=>a+b,0);offline=true;
+  assert.equal((await fetchDesktopRuntime(url,()=>{},{cacheStorage,fetcher})).length,46823896);
+  assert.equal([...calls.values()].reduce((a,b)=>a+b,0),before);
+  const key=saved.keys().next().value;saved.set(key,new Uint8Array(7));
+  await assert.rejects(fetchDesktopRuntime(url,()=>{},{cacheStorage,fetcher}),/继续下载/);
 });

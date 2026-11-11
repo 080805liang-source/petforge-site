@@ -1,3 +1,4 @@
+import manifest from './runtime-manifest.js';
 export const RUNTIME_SHA256 = 'fd0c291650ece2cc38b62631d3f52c00d3f0c1b3bb04b533462d8c2bbfd64ff1';
 export const DESKTOP_DOWNLOAD_AVAILABLE = true;
 export const DESKTOP_DOWNLOAD_NOTICE = '';
@@ -9,43 +10,67 @@ export async function verifyDesktopRuntime(bytes) {
   return bytes;
 }
 
-export async function fetchDesktopRuntime(url, onProgress = () => {}) {
-  // One compressed transfer avoids dozens of slow connections on some networks.
-  try {
-    const response=await fetch(new URL('PetForge-runtime.gz',url),{cache:'no-store',signal:AbortSignal.timeout(120000),redirect:'error'});
-    if(!response.ok||!response.body)throw new Error('Compressed runtime unavailable');
-    const reader=response.body.pipeThrough(new DecompressionStream('gzip')).getReader(),parts=[];
-    let length=0;
-    for(;;){const part=await reader.read();if(part.done)break;length+=part.value.length;if(length>46823896){await reader.cancel();throw new Error('Runtime too large');}parts.push(part.value);onProgress(Math.min(89,Math.floor(length/46823896*90)),90);}
-    const bytes=new Uint8Array(length);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length;}
-    await verifyDesktopRuntime(bytes);onProgress(90,90);return bytes;
-  }catch{/* Older browsers and interrupted transfers can use verified parts. */}
-  let failed=false;
-  try {
-    const size = 46823896, chunkSize = 524288, count = Math.ceil(size / chunkSize);
-    const parts = new Array(count); let next = 0, completed = 0;
-    await Promise.all(Array.from({length:3}, async () => {
-      while (!failed && next < count) {
-        const index = next++, expected = Math.min(chunkSize, size - index * chunkSize);
-        const partUrl = new URL(`runtime/${RUNTIME_SHA256.slice(0,16)}/${index}.bin`, url);
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            const response = await fetch(partUrl, {cache:'no-store', signal:AbortSignal.timeout(30000), redirect:'error'});
-            if (!response.ok) throw new Error('运行核心暂时无法下载，请稍后重试。');
-            const bytes = new Uint8Array(await response.arrayBuffer());
-            if (bytes.length !== expected) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
-            if(failed)return;parts[index] = bytes; onProgress(++completed, count); break;
-          } catch (error) { if (attempt === 2){failed=true;throw error;} }
+const DOMESTIC_API = 'https://cloud-paw-vip-cn-d0eub7r110788a3-1460995143.ap-shanghai.app.tcloudbase.com/api';
+const digest = async bytes => [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(n => n.toString(16).padStart(2, '0')).join('');
+
+export async function fetchDesktopRuntime(url, onProgress = () => {}, {cacheStorage = globalThis.caches, fetcher = fetch} = {}) {
+  const cache = await cacheStorage?.open('petforge-runtime-v1').catch(() => null);
+  const parts = new Array(manifest.parts.length);
+  let next = 0, completed = 0, failed = false;
+  const valid = async (bytes, part) => bytes.length === part.size && await digest(bytes) === part.sha256;
+  await Promise.all(Array.from({length:4}, async () => {
+    while (!failed && next < parts.length) {
+      const index = next++, part = manifest.parts[index];
+      const path = `runtime-compressed/${manifest.id}/${index}.bin`;
+      const local = new URL(path, url), key = local.href;
+      let bytes;
+      try {
+        const saved = await cache?.match(key);
+        if (saved) {
+          const candidate = new Uint8Array(await saved.arrayBuffer());
+          if (await valid(candidate, part)) bytes = candidate;
+          else await cache.delete(key);
         }
+        for (let attempt = 0; !bytes && attempt < 3; attempt++) {
+          const domestic = attempt !== 1;
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 20000);
+          try {
+            const endpoint = domestic ? `${DOMESTIC_API}/downloads/runtime/${manifest.id}/${index}` : local;
+            const response = await fetcher(endpoint, {signal:controller.signal, credentials:'omit', redirect:'error', cache:'no-store'});
+            if (!response.ok) throw new Error('Download unavailable');
+            let candidate;
+            if (domestic) {
+              const packet = await response.json();
+              if (typeof packet.data !== 'string' || packet.data.length > 700000) throw new Error('Invalid download');
+              candidate = Uint8Array.from(atob(packet.data), ch => ch.charCodeAt(0));
+            } else candidate = new Uint8Array(await response.arrayBuffer());
+            if (!await valid(candidate, part)) throw new Error('Download checksum mismatch');
+            bytes = candidate;
+          } catch (error) { if (attempt === 2) throw error; }
+          finally { clearTimeout(timer); }
+        }
+        if (failed) return;
+        parts[index] = bytes;
+        completed += bytes.length;
+        onProgress(completed, manifest.size);
+        try { await cache?.put(key, new Response(bytes)); } catch { /* Storage restrictions do not block downloads. */ }
+      } catch {
+        failed = true;
+        throw new Error('下载线路暂时中断，已保留完成的部分。请点击重试，会继续下载。');
       }
-    }));
-    const bytes = new Uint8Array(size);
-    parts.forEach((part,index) => bytes.set(part,index * chunkSize));
-    return await verifyDesktopRuntime(bytes);
-  } catch (error) {
-    if (error.name === 'TimeoutError' || error.name === 'AbortError') throw new Error('运行核心下载超时，请检查网络后重试。');
-    throw error;
+    }
+  }));
+  const compressed = new Uint8Array(manifest.size);
+  let offset = 0; for (const part of parts) { compressed.set(part, offset); offset += part.length; }
+  const reader = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip')).getReader();
+  const output = new Uint8Array(46823896); offset = 0;
+  for (;;) {
+    const {done,value} = await reader.read(); if (done) break;
+    if (offset + value.length > output.length) { await reader.cancel(); throw new Error('桌宠运行核心大小异常。'); }
+    output.set(value, offset); offset += value.length;
   }
+  return verifyDesktopRuntime(output.subarray(0, offset));
 }
 
 // The release contains normal, uncompressed runtime files; no self-extraction.
