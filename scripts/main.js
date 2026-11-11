@@ -1,9 +1,9 @@
 "use strict";
-const DESKTOP_DOWNLOAD_AVAILABLE=false;
-const DESKTOP_DOWNLOAD_NOTICE='桌面下载暂时停用：新版程序被 Windows 安全检测拦截，正在排查。可继续在中间预览框使用免费 AI；不会扣除下载次数。';
+const DESKTOP_DOWNLOAD_AVAILABLE=true;
+const DESKTOP_DOWNLOAD_NOTICE='';
 
 let chatStudio;
-const chatStudioReady = import('./chat-studio.js?v=free-ai-20261110-r4').then(async ({createChatStudio}) => {
+const chatStudioReady = import('./chat-studio.js?v=download-20261111-r2').then(async ({createChatStudio}) => {
   chatStudio = await createChatStudio({onChange:() => updatePreview()});
   updatePreview();
   return chatStudio;
@@ -88,7 +88,7 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=free-ai-20261110-r4');
+    const {createPetAnimation} = await import('./pet-animation.js?v=download-20261111-r2');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -603,7 +603,7 @@ function packageReadme(config) {
 
 说明：
 
-- PetForge.exe 已包含运行环境，不需要安装 Python。
+- 已包含官方 Python 运行环境，不需要另外安装 Python。请完整保留 _internal 和所有 .py 文件。
 - 右键桌宠可以打开快捷菜单。
   - 右键选择“展开聊天”，可切换“免费 AI”“基础陪伴”和“自己的模型 / Agent”。免费 AI 每账号每天20次、每分钟3次，北京时间00:00重置，工作室赠额用完即停。基础陪伴免费离线，使用内置回复库。
   - 免费 AI 下载包包含个人聊天绑定，请勿转发；首次启动会加密保存。绑定30天过期后可在桌宠内登录网站账号续绑。
@@ -616,12 +616,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.10-free-ai-r4";
+const PETFORGE_BUILD_VERSION = "2026.11.11-download-r2";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=free-ai-20261110-r4');
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=download-20261111-r2');
   return desktopRuntimeFiles(await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在准备桌宠运行核心… ${Math.round(completed / total * 100)}%`)));
 }
 
@@ -926,7 +926,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=free-ai-20261110-r4').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=download-20261111-r2').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {

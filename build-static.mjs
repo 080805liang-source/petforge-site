@@ -1,5 +1,6 @@
 import { cp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { createHash } from 'node:crypto';
+import {gunzipSync} from 'node:zlib';
 import { contentSecurityPolicy, staticHeaders } from './security-policy.mjs';
 import {DESKTOP_DOWNLOAD_AVAILABLE} from './scripts/desktop-runtime.js';
 
@@ -18,7 +19,7 @@ for (const entry of ["index.html", "creator.html", "admin.html", "workshop.html"
 
 const pages = ['index.html', 'creator.html', 'admin.html', 'workshop.html', 'support.html', 'reset-password.html'];
 if(DESKTOP_DOWNLOAD_AVAILABLE){
-const runtime = await readFile('assets/PetForge-runtime.zip');
+const runtime = gunzipSync(await readFile('assets/PetForge-runtime.gz'));
 const runtimeId = createHash('sha256').update(runtime).digest('hex').slice(0,16);
 for (const directory of ['dist', 'dist/client', 'dist-site']) {
   const parts = `${directory}/assets/runtime/${runtimeId}`;

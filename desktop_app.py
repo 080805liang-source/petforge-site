@@ -164,7 +164,7 @@ class DesktopPet:
         self.place_window()
         self.build_menu()
         self.bind_events()
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, 'frozen', False) or (BASE_DIR / 'PetForge.exe').is_file():
             threading.Thread(target=create_desktop_shortcut, args=(BASE_DIR, self.config.get('name', '我的桌宠')), daemon=True).start()
         self.root.bind("<Destroy>", self.on_destroy, add="+")
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)

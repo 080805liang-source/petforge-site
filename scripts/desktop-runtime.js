@@ -1,20 +1,31 @@
-export const RUNTIME_SHA256 = 'e1983167aee3867604462cae8648f05daa745c34e746f94518ddd1c8c149a2db';
-export const DESKTOP_DOWNLOAD_AVAILABLE = false;
-export const DESKTOP_DOWNLOAD_NOTICE = '桌面下载暂时停用：新版程序被 Windows 安全检测拦截，正在排查。可继续在中间预览框使用免费 AI；不会扣除下载次数。';
+export const RUNTIME_SHA256 = 'fd0c291650ece2cc38b62631d3f52c00d3f0c1b3bb04b533462d8c2bbfd64ff1';
+export const DESKTOP_DOWNLOAD_AVAILABLE = true;
+export const DESKTOP_DOWNLOAD_NOTICE = '';
 
 export async function verifyDesktopRuntime(bytes) {
-  if (bytes.byteLength !== 44738453 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
+  if (bytes.byteLength !== 46823896 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
   const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('');
   if (digest !== RUNTIME_SHA256) throw new Error('桌宠运行核心安全校验失败，已停止生成，请联系管理员。');
   return bytes;
 }
 
 export async function fetchDesktopRuntime(url, onProgress = () => {}) {
+  // One compressed transfer avoids dozens of slow connections on some networks.
   try {
-    const size = 44738453, chunkSize = 524288, count = Math.ceil(size / chunkSize);
+    const response=await fetch(new URL('PetForge-runtime.gz',url),{cache:'no-store',signal:AbortSignal.timeout(120000),redirect:'error'});
+    if(!response.ok||!response.body)throw new Error('Compressed runtime unavailable');
+    const reader=response.body.pipeThrough(new DecompressionStream('gzip')).getReader(),parts=[];
+    let length=0;
+    for(;;){const part=await reader.read();if(part.done)break;length+=part.value.length;if(length>46823896){await reader.cancel();throw new Error('Runtime too large');}parts.push(part.value);onProgress(Math.min(89,Math.floor(length/46823896*90)),90);}
+    const bytes=new Uint8Array(length);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length;}
+    await verifyDesktopRuntime(bytes);onProgress(90,90);return bytes;
+  }catch{/* Older browsers and interrupted transfers can use verified parts. */}
+  let failed=false;
+  try {
+    const size = 46823896, chunkSize = 524288, count = Math.ceil(size / chunkSize);
     const parts = new Array(count); let next = 0, completed = 0;
     await Promise.all(Array.from({length:3}, async () => {
-      while (next < count) {
+      while (!failed && next < count) {
         const index = next++, expected = Math.min(chunkSize, size - index * chunkSize);
         const partUrl = new URL(`runtime/${RUNTIME_SHA256.slice(0,16)}/${index}.bin`, url);
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -23,8 +34,8 @@ export async function fetchDesktopRuntime(url, onProgress = () => {}) {
             if (!response.ok) throw new Error('运行核心暂时无法下载，请稍后重试。');
             const bytes = new Uint8Array(await response.arrayBuffer());
             if (bytes.length !== expected) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
-            parts[index] = bytes; onProgress(++completed, count); break;
-          } catch (error) { if (attempt === 2) throw error; }
+            if(failed)return;parts[index] = bytes; onProgress(++completed, count); break;
+          } catch (error) { if (attempt === 2){failed=true;throw error;} }
         }
       }
     }));
