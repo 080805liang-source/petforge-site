@@ -1,7 +1,7 @@
-const CACHE_NAME = "petforge-web-admin-entry-20261111-r1";
+const CACHE_NAME = "petforge-web-support-welcome-20261111-r1";
 const APP_SHELL = [
   "./scripts/runtime-manifest.js?v=e38c329e1ba065fc",
-  "./scripts/support-group.js?v=admin-entry-20261111-r1",
+  "./scripts/support-group.js?v=support-welcome-20261111-r1",
   "./styles/support-group.css?v=admin-entry-20261111-r1",
   "./scripts/free-chat.js",
   "./scripts/chat-package.js",
