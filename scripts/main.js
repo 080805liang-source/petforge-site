@@ -3,7 +3,7 @@ const DESKTOP_DOWNLOAD_AVAILABLE=true;
 const DESKTOP_DOWNLOAD_NOTICE='';
 
 let chatStudio;
-const chatStudioReady = import('./chat-studio.js?v=dog-bark-20261112-r1').then(async ({createChatStudio}) => {
+const chatStudioReady = import('./chat-studio.js?v=publish-dialog-20261112-r1').then(async ({createChatStudio}) => {
   chatStudio = await createChatStudio({onChange:() => updatePreview()});
   updatePreview();
   return chatStudio;
@@ -57,6 +57,13 @@ const keyboardSync = document.querySelector("#keyboard-sync");
 const interactionNote = document.querySelector("#interaction-note");
 const publishButton = document.querySelector("#publish-workshop");
 const publishStatus = document.querySelector("#publish-workshop-status");
+const publishDialog = document.querySelector('#publish-workshop-dialog');
+const publishForm = document.querySelector('#publish-workshop-form');
+const publishName = document.querySelector('#publish-workshop-name');
+const publishDescription = document.querySelector('#publish-workshop-description');
+const publishFields = document.querySelector('#publish-workshop-fields');
+const publishClose = document.querySelector('#publish-workshop-close');
+const publishNote = document.querySelector('#publish-workshop-note');
 const buildButton = document.querySelector("#build-package");
 const buildStatus = document.querySelector("#build-status");
 const encoder = new TextEncoder();
@@ -90,7 +97,7 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=dog-bark-20261112-r1');
+    const {createPetAnimation} = await import('./pet-animation.js?v=publish-dialog-20261112-r1');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -619,12 +626,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.12-dog-bark-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.12-publish-dialog-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=dog-bark-20261112-r1');
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=publish-dialog-20261112-r1');
   const bytes = await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在下载桌宠文件… ${(completed/1048576).toFixed(1)} / ${(total/1048576).toFixed(1)} MB · ${Math.round(completed / total * 100)}%（已完成部分自动保留）`));
   setStatus('运行文件校验通过，正在整理图片和聊天设置…');
   return desktopRuntimeFiles(bytes);
@@ -769,15 +776,38 @@ function blobDataUrl(blob) {
   });
 }
 
-publishButton?.addEventListener("click", async () => {
+publishButton?.addEventListener('click', () => {
+  if (imageBusy || !styledPetBlob || publishing || building) return;
+  publishName.value = petName.value.trim();
+  publishNote.textContent = '';
+  if (!publishDialog.open) publishDialog.showModal();
+});
+for (const button of [publishClose, document.querySelector('#publish-workshop-cancel')]) {
+  button?.addEventListener('click', () => { if (!publishing) publishDialog.close(); });
+}
+publishDialog?.addEventListener('cancel', event => { if (publishing) event.preventDefault(); });
+for (const field of [publishName, publishDescription]) {
+  field?.addEventListener('input', () => field.setCustomValidity(''));
+}
+publishForm?.addEventListener('submit', async event => {
+  event.preventDefault();
+  for (const field of [publishName, publishDescription]) {
+    field.value = field.value.trim();
+    const message = field === publishName ? '请填写桌宠名字。' : '请填写桌宠简介。';
+    field.setCustomValidity(field.value ? '' : (window.PETFORGE_I18N?.translate(message) || message));
+  }
+  if (!publishForm.reportValidity()) return;
   const membership = window.PetForgeMembership;
   if (!membership?.current()) { membership?.open(); return; }
-  if (imageBusy || !styledPetBlob || publishing) return;
+  if (imageBusy || !styledPetBlob || publishing || building) return;
   publishing = true;
+  publishFields.disabled = true;
+  publishClose.disabled = true;
+  document.querySelector('.studio-shell').inert = true;
   publishButton.disabled = true;
-  publishStatus.textContent = "正在发布当前图片与全部设置…";
+  publishNote.textContent = publishStatus.textContent = '正在发布，请稍候…';
   try {
-    const config = getConfig();
+    const config = { ...getConfig(), name: publishName.value };
     const bytes = await getPetPngBytes(config);
     const image = new Blob([bytes], { type: "image/png" });
     const bitmap = await createImageBitmap(image);
@@ -788,22 +818,28 @@ publishButton?.addEventListener("click", async () => {
     canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close();
     const preview = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-    const payload = JSON.stringify({ config, image: await blobDataUrl(image), preview: await blobDataUrl(preview), description: config.clickLine });
+    const payload = JSON.stringify({ config, image: await blobDataUrl(image), preview: await blobDataUrl(preview), description: publishDescription.value });
     const uploadId = crypto.randomUUID().replaceAll("-", "");
     const total = Math.ceil(payload.length / 24000);
     for (let index = 0; index < total; index++) {
       await membership.request("/workshop/upload", { method: "POST", body: JSON.stringify({ uploadId, index, total, data: payload.slice(index * 24000, (index + 1) * 24000) }) });
     }
     const result = await membership.request("/workshop", { method: "POST", body: JSON.stringify({ uploadId }) });
+    petName.value = config.name;
+    updatePreview();
+    publishDialog.close();
     publishStatus.replaceChildren(document.createTextNode("已发布，其他人可以直接使用。"));
     const link = document.createElement("a");
     link.href = `workshop.html?highlight=${encodeURIComponent(result.id)}#workshop-feed`;
     link.textContent = "查看工坊作品";
     publishStatus.append(" ", link);
   } catch (error) {
-    publishStatus.textContent = `发布失败：${error.message}`;
+    publishNote.textContent = publishStatus.textContent = `发布失败：${error.message}`;
   } finally {
     publishing = false;
+    publishFields.disabled = false;
+    publishClose.disabled = false;
+    document.querySelector('.studio-shell').inert = false;
     setImageBusy(imageBusy);
   }
 });
@@ -877,6 +913,7 @@ async function loadWorkshopTemplate() {
     animationPreset = /^animal-\d{1,12}$/.test(templateConfig.animationPreset || '') ? templateConfig.animationPreset : '';
     assetAttribution = String(templateConfig.assetAttribution || '').slice(0,8000);
     petName.value = templateConfig.name || template.title;
+    publishDescription.value = template.description || '';
     petLine.value = templateConfig.clickLine || petLine.value;
     petSize.value = templateConfig.size || petSize.value;
     petOpacity.value = templateConfig.opacity || petOpacity.value;
@@ -962,7 +999,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=dog-bark-20261112-r1').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=publish-dialog-20261112-r1').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), getPetPlayer: () => animalPreview?.player, replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {

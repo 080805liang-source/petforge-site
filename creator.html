@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="上传自己的图片，定制交互与快捷菜单，生成专属 Windows 桌宠。">
     <title>桌宠创作台 | PET FORGE</title>
-    <link rel="stylesheet" href="styles/main.css?v=dog-bark-20261112-r1">
-    <link rel="stylesheet" href="styles/membership.css?v=dog-bark-20261112-r1">
-    <link rel="stylesheet" href="styles/creator.css?v=dog-bark-20261112-r1">
-    <link rel="stylesheet" href="styles/chat-diy.css?v=dog-bark-20261112-r1">
+    <link rel="stylesheet" href="styles/main.css?v=publish-dialog-20261112-r1">
+    <link rel="stylesheet" href="styles/membership.css?v=publish-dialog-20261112-r1">
+    <link rel="stylesheet" href="styles/creator.css?v=publish-dialog-20261112-r1">
+    <link rel="stylesheet" href="styles/chat-diy.css?v=publish-dialog-20261112-r1">
     <meta name="theme-color" content="#07101a">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
-      <link rel="stylesheet" href="styles/support-group.css?v=dog-bark-20261112-r1">
-    <script src="scripts/support-group.js?v=dog-bark-20261112-r1" defer></script>
+      <link rel="stylesheet" href="styles/support-group.css?v=publish-dialog-20261112-r1">
+    <script src="scripts/support-group.js?v=publish-dialog-20261112-r1" defer></script>
   </head>
   <body class="creator-page">
     <header class="site-header">
@@ -302,7 +302,7 @@
 
             <div class="action-stack">
               <button id="build-package" class="button primary wide" type="button" disabled>生成 Windows 桌宠 ZIP <span aria-hidden="true">→</span></button>
-              <button id="publish-workshop" class="button secondary wide" type="button" disabled>一键发布到创意工坊</button>
+              <button id="publish-workshop" class="button secondary wide" type="button" disabled>发布到创意工坊</button>
               <p id="publish-workshop-status" class="interaction-intro" role="status">发布后，所有人可查看并使用当前图片、互动设置和快捷入口。</p>
             </div>
             <p id="build-status" class="panel-note" role="status">请先上传你的桌宠图片，再生成 Windows 桌宠 ZIP。公开免警告安装版正在准备 Microsoft Store。</p>
@@ -377,6 +377,22 @@
         <button id="membership-signout" class="membership-text-button" type="button">退出当前账号</button>
       </section>
     </dialog>
+    <dialog id="publish-workshop-dialog" class="membership-dialog publish-dialog" aria-labelledby="publish-workshop-title">
+      <button id="publish-workshop-close" class="membership-close" type="button" aria-label="关闭发布窗口">×</button>
+      <section class="membership-panel">
+        <h2 id="publish-workshop-title">分享你的桌宠</h2>
+        <p class="membership-intro">给它起个名字，再介绍一下它的个性和玩法。</p>
+        <form id="publish-workshop-form">
+          <fieldset id="publish-workshop-fields">
+            <label>桌宠名字<input id="publish-workshop-name" type="text" maxlength="24" placeholder="例如：爱摸头的大狗叫" required autofocus></label>
+            <label>桌宠简介<textarea id="publish-workshop-description" rows="5" maxlength="600" placeholder="介绍它的特点、互动玩法，或你想分享的小故事…" required></textarea></label>
+            <p class="publish-hint">名字最多 24 字，简介最多 600 字，会显示在工坊作品中。</p>
+            <div class="publish-actions"><button id="publish-workshop-cancel" class="button secondary" type="button">取消</button><button class="button primary" type="submit">确认发布</button></div>
+          </fieldset>
+        </form>
+        <p id="publish-workshop-note" class="membership-note" role="status"></p>
+      </section>
+    </dialog>
     <dialog id="chat-theme-dialog" class="chat-theme-dialog" aria-labelledby="chat-theme-title">
       <header><h2 id="chat-theme-title">给聊天选一件外套</h2><button id="chat-theme-close" type="button" aria-label="完成样式选择">×</button></header>
       <p>200 款装扮，25 个分类。猫咪、兔兔、花园、星空、甜品与异形漫画等插画气泡可用于真实对话，网页预览与桌面共用装饰图片。</p>
@@ -407,11 +423,11 @@
     </dialog>
     <footer><span>PET FORGE</span><span>给你的桌面，一点陪伴。</span><a href="support.html">帮助与支持</a><span>© 2026</span></footer>
     <script src="scripts/supabase-config.js?v=security-20261108-r2"></script>
-    <script src="scripts/session.js?v=dog-bark-20261112-r1"></script>
-    <script src="scripts/i18n.js?v=dog-bark-20261112-r1" defer></script>
-    <script src="scripts/pwa.js?v=dog-bark-20261112-r1" defer></script>
-    <script src="scripts/membership.js?v=dog-bark-20261112-r1" defer></script>
-    <script src="scripts/main.js?v=dog-bark-20261112-r1" defer></script>
+    <script src="scripts/session.js?v=publish-dialog-20261112-r1"></script>
+    <script src="scripts/i18n.js?v=publish-dialog-20261112-r1" defer></script>
+    <script src="scripts/pwa.js?v=publish-dialog-20261112-r1" defer></script>
+    <script src="scripts/membership.js?v=publish-dialog-20261112-r1" defer></script>
+    <script src="scripts/main.js?v=publish-dialog-20261112-r1" defer></script>
     <script src="scripts/analytics.js?v=admin-dashboard-20261107-r2" defer></script>
   </body>
 </html>

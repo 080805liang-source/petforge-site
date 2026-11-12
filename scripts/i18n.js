@@ -1,5 +1,18 @@
 (function () {
   const rows = [
+    ["发布到创意工坊", "Publish to Workshop", "工房に公開", "Pubblica nel Workshop", "Publicar en el Taller", "Publier dans l’atelier"],
+    ["分享你的桌宠", "Share your pet", "ペットをシェア", "Condividi il tuo pet", "Comparte tu mascota", "Partagez votre compagnon"],
+    ["给它起个名字，再介绍一下它的个性和玩法。", "Give it a name and describe its personality and interactions.", "名前を付けて、性格や遊び方を紹介しましょう。", "Dagli un nome e descrivi il suo carattere e le interazioni.", "Ponle un nombre y describe su personalidad y sus interacciones.", "Donnez-lui un nom et décrivez sa personnalité et ses interactions."],
+    ["桌宠名字", "Pet name", "ペットの名前", "Nome del pet", "Nombre de la mascota", "Nom du compagnon"],
+    ["桌宠简介", "Pet description", "ペットの紹介", "Descrizione del pet", "Descripción de la mascota", "Description du compagnon"],
+    ["名字最多 24 字，简介最多 600 字，会显示在工坊作品中。", "Up to 24 characters for the name and 600 for the description. Both appear in Workshop.", "名前は24文字、紹介は600文字まで。どちらも工房に表示されます。", "Massimo 24 caratteri per il nome e 600 per la descrizione. Entrambi appaiono nel Workshop.", "Hasta 24 caracteres para el nombre y 600 para la descripción. Ambos aparecen en el Taller.", "24 caractères maximum pour le nom et 600 pour la description. Les deux apparaissent dans l’atelier."],
+    ["确认发布", "Confirm publication", "公開を確定", "Conferma pubblicazione", "Confirmar publicación", "Confirmer la publication"],
+    ["关闭发布窗口", "Close publication window", "公開画面を閉じる", "Chiudi finestra di pubblicazione", "Cerrar ventana de publicación", "Fermer la fenêtre de publication"],
+    ["例如：爱摸头的大狗叫", "For example: a dog who loves pats", "例：なでられるのが好きな犬", "Ad esempio: un cane che ama le carezze", "Por ejemplo: un perro al que le gustan las caricias", "Par exemple : un chien qui aime les caresses"],
+    ["介绍它的特点、互动玩法，或你想分享的小故事…", "Describe its traits, interactions, or a story you want to share…", "特徴や遊び方、伝えたい小さな物語を紹介…", "Descrivi le sue caratteristiche, le interazioni o una storia da condividere…", "Describe sus características, interacciones o una historia que quieras compartir…", "Décrivez ses traits, ses interactions ou une histoire à partager…"],
+    ["请填写桌宠名字。", "Please enter a pet name.", "ペットの名前を入力してください。", "Inserisci il nome del pet.", "Introduce el nombre de la mascota.", "Saisissez le nom du compagnon."],
+    ["请填写桌宠简介。", "Please enter a pet description.", "ペットの紹介を入力してください。", "Inserisci una descrizione del pet.", "Introduce una descripción de la mascota.", "Saisissez la description du compagnon."],
+    ["正在发布，请稍候…", "Publishing, please wait…", "公開中です。しばらくお待ちください…", "Pubblicazione in corso, attendi…", "Publicando, espera…", "Publication en cours, veuillez patienter…"],
     ["取消", "Cancel", "キャンセル", "Annulla", "Cancelar", "Annuler"],
     ["请选择喜欢的聊天框", "Choose your chat style", "好きなチャットスタイルを選択", "Scegli lo stile della chat", "Elige tu estilo de chat", "Choisissez votre style de discussion"],
     ["确定使用", "Use this style", "このスタイルを使用", "Usa questo stile", "Usar este estilo", "Utiliser ce style"],
