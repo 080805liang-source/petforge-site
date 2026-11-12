@@ -94,7 +94,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     const player=getPetPlayer();
     if (player?.interactive) {
       player.click(performance.now());
-      say({pet:'摸摸头～我先站好。',angry:'点得太快啦！拿小木棍再点我一下。',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
+      say({pet:'摸摸头～我先站好。',angry:'汪汪汪(生气，怒吼）',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
       announce('大狗互动：'+player.state);return;
     }
     if (!playPetAction('pet')) animate(config.clickAnimation);

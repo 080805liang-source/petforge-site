@@ -384,7 +384,7 @@ class DesktopPet:
             self.cancel_pending_click()
             self.pet_animation.click(time.perf_counter())
             self.update_animation(time.perf_counter())
-            self.show_bubble({'pet': '摸摸头～我先站好。', 'angry': '点得太快啦！拿小木棍再点我一下。', 'calm': '好啦，冷静一下，等会儿继续跟着你。'}.get(self.pet_animation.state, ''), 1800)
+            self.show_bubble({'pet': '摸摸头～我先站好。', 'angry': '汪汪汪(生气，怒吼）', 'calm': '好啦，冷静一下，等会儿继续跟着你。'}.get(self.pet_animation.state, ''), 1800)
             return
         if self.double_click_pending:
             self.double_click_pending = False
