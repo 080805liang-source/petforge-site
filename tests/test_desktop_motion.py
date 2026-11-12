@@ -87,6 +87,23 @@ def pet():
 
 
 class DesktopMotionTests(unittest.TestCase):
+    def test_desktop_only_keeps_own_chat_visible_and_rejects_other_apps(self):
+        instance = pet()
+        instance.root.winfo_id = lambda: 10
+        foreground = {'pid': 999999, 'class': 'OtherApp'}
+        def process_id(_handle, result):
+            result._obj.value = foreground['pid']
+        def class_name(_handle, result, _length):
+            result.value = foreground['class']
+        user = SimpleNamespace(GetForegroundWindow=lambda: 20, GetAncestor=lambda handle, _flag: handle,
+                               GetWindowThreadProcessId=process_id, GetClassNameW=class_name)
+        with patch('desktop_app.ctypes.windll.user32', user), patch('desktop_app.os.getpid', lambda: 123):
+            self.assertFalse(instance.is_desktop_foreground())
+            foreground['class'] = 'Progman'
+            self.assertTrue(instance.is_desktop_foreground())
+            foreground.update(pid=123, **{'class': 'TkTopLevel'})
+            self.assertTrue(instance.is_desktop_foreground())
+
     def test_animal_body_uses_sixty_fps_and_pauses_while_held(self):
         instance = pet()
         instance.chat_panel = SimpleNamespace(visible=True, window=SimpleNamespace(winfo_exists=lambda: True))

@@ -3,7 +3,7 @@ const DESKTOP_DOWNLOAD_AVAILABLE=true;
 const DESKTOP_DOWNLOAD_NOTICE='';
 
 let chatStudio;
-const chatStudioReady = import('./chat-studio.js?v=admin-entry-20261111-r1').then(async ({createChatStudio}) => {
+const chatStudioReady = import('./chat-studio.js?v=big-dog-20261112-r1').then(async ({createChatStudio}) => {
   chatStudio = await createChatStudio({onChange:() => updatePreview()});
   updatePreview();
   return chatStudio;
@@ -90,7 +90,7 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=admin-entry-20261111-r1');
+    const {createPetAnimation} = await import('./pet-animation.js?v=big-dog-20261112-r1');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -150,7 +150,7 @@ function getConfig() {
     leaveEffect: leaveEffect.value,
     idleBehavior: idleBehavior.value,
     doubleClickEffect: doubleClickEffect.value,
-    cursorFollowMode: animationPreset ? 'none' : cursorFollowMode.value,
+    cursorFollowMode: animationPreset && !animalPreview?.player.interactive ? 'none' : cursorFollowMode.value,
     proactiveFrequency: proactiveFrequency.value,
     keyboardReaction: keyboardReaction.value,
     wanderEnabled: Boolean(wanderEnabled.checked),
@@ -246,9 +246,10 @@ function safeName(name) {
 }
 
 function updatePreview() {
-  cursorFollowMode.closest('label').hidden = Boolean(animationPreset);
-  cursorFollowMode.disabled = Boolean(animationPreset);
-  if (animationPreset) cursorFollowMode.value = 'none';
+  const fixedAnimal = Boolean(animationPreset && !animalPreview?.player.interactive);
+  cursorFollowMode.closest('label').hidden = fixedAnimal;
+  cursorFollowMode.disabled = fixedAnimal;
+  if (fixedAnimal) cursorFollowMode.value = 'none';
   const size = Number(petSize.value);
   const opacity = Number(petOpacity.value);
   previewPet.style.opacity = String(opacity / 100);
@@ -618,12 +619,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.11-admin-entry-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.12-big-dog-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=admin-entry-20261111-r1');
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=big-dog-20261112-r1');
   const bytes = await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在下载桌宠文件… ${(completed/1048576).toFixed(1)} / ${(total/1048576).toFixed(1)} MB · ${Math.round(completed / total * 100)}%（已完成部分自动保留）`));
   setStatus('运行文件校验通过，正在整理图片和聊天设置…');
   return desktopRuntimeFiles(bytes);
@@ -657,6 +658,11 @@ async function buildPackageInBrowser() {
     if (!metaResponse.ok || !atlasResponse.ok) throw new Error('动物动作素材下载失败，请重试。');
     const meta = await metaResponse.json();
     if (!Number.isInteger(meta.count) || meta.count < 2 || meta.count > 120) throw new Error('动物动作文件无效。');
+    if (meta.interaction?.type === 'four-state-dog') {
+      const cursorResponse=await fetch(new URL('assets/play-stick.cur',document.baseURI));
+      if (!cursorResponse.ok) throw new Error('互动光标下载失败，请重试。');
+      extraFiles.push({name:'assets/play-stick.cur',data:new Uint8Array(await cursorResponse.arrayBuffer())});
+    }
     let atlas = await atlasResponse.blob();
     // Export the same chosen size for every frame, including after resizing.
     {
@@ -920,6 +926,7 @@ async function loadWorkshopTemplate() {
     styledPetBlob = imageBlob;
     showStyledPet(imageBlob);
     await loadAnimalPreview(animationPreset);
+    if (animalPreview?.player.interactive) cursorFollowMode.value = templateConfig.cursorFollowMode || 'follow';
     workshopTemplateId = templateId;
     sharedImageSize = Number(templateConfig.size);
     cutoutStatus.textContent = "已使用作品原图与配置，不会重复抠图或叠加滤镜。";
@@ -955,8 +962,8 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=admin-entry-20261111-r1').then(({createInteractivePreview}) => {
-    interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
+  import('./interactive-preview.js?v=big-dog-20261112-r1').then(({createInteractivePreview}) => {
+    interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), getPetPlayer: () => animalPreview?.player, replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {
     document.querySelector('#preview-feedback').textContent = '互动预览未能加载，请刷新后重试。';

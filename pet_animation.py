@@ -14,8 +14,38 @@ class PetAnimation:
         self.has_actions = all(key in self.clips for key in ('idle', 'pet', 'play', 'sleep'))
         self.state = 'idle'
         self.started = None
+        self.interactive = meta.get('interaction', {}).get('type') == 'four-state-dog' and all(key in self.clips for key in ('idle', 'pet', 'angry', 'calm'))
+        self.clicks = []
+        self.until = 0
+        self.resume_at = 0
+
+    def click(self, now):
+        if not self.interactive:
+            return False
+        self.frame(now)
+        if self.state == 'calm':
+            return True
+        if self.state == 'angry':
+            self.state, duration = 'calm', 2.2
+            self.clicks = []
+        else:
+            self.clicks = [at for at in self.clicks if now - at <= 2]
+            self.clicks.append(now)
+            self.state, duration = ('angry', 8) if len(self.clicks) >= 4 else ('pet', 1.6)
+        self.started = now
+        self.until = now + duration
+        self.resume_at = self.until + .7
+        return True
+
+    def paused(self, now):
+        if not self.interactive:
+            return False
+        self.frame(now)
+        return now < self.resume_at
 
     def play(self, name, now):
+        if self.interactive and name in ('pet', 'play'):
+            return self.click(now)
         state = 'idle' if name == 'wake' else name
         if state not in self.clips:
             return False
@@ -23,6 +53,10 @@ class PetAnimation:
         return True
 
     def frame(self, now):
+        if self.interactive and self.state != 'idle' and now >= self.until:
+            self.state, self.started = 'idle', now
+            if now >= self.resume_at:
+                self.clicks = []
         if self.started is None:
             self.started = now
         clip = self.clips.get(self.state)

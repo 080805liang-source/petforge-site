@@ -8,6 +8,34 @@ sys.path.insert(0, str(root))
 from pet_animation import PetAnimation
 
 class PetAnimationTests(unittest.TestCase):
+    def test_dog_four_states_burst_timeout_and_movement_resume(self):
+        meta = json.loads((root / 'assets/workshop/animals/animal-900000103-animation.json').read_text())
+        p = PetAnimation(meta)
+        self.assertTrue(p.interactive)
+        self.assertEqual(p.frame(0), 0)
+        p.click(1)
+        self.assertEqual(p.frame(1.1), 1)
+        self.assertTrue(p.paused(2.7))
+        self.assertEqual(p.frame(2.7), 0)
+        self.assertFalse(p.paused(3.4))
+        for at in (5, 5.2, 5.4, 5.6):
+            p.click(at)
+        self.assertEqual(p.frame(5.7), 2)
+        self.assertTrue(p.paused(5.7))
+        p.click(5.8)
+        self.assertEqual(p.frame(5.9), 3)
+        p.click(6)
+        self.assertEqual(p.state, 'calm')
+        self.assertEqual(p.frame(8.1), 0)
+        self.assertFalse(p.paused(8.8))
+        for at in (10, 10.2, 10.4, 10.6):
+            p.click(at)
+        self.assertEqual(p.state, 'angry')
+        self.assertEqual(p.frame(19), 0)
+        self.assertFalse(p.paused(19.5))
+        p.click(30); p.click(33); p.click(36); p.click(39)
+        self.assertEqual(p.state, 'pet', 'Separated clicks must not trigger the burst')
+
     def test_exported_clips_switch_and_return_to_idle(self):
         for key in ('animal-900000101', 'animal-900000102'):
             meta = json.loads((root / f'assets/workshop/animals/{key}-animation.json').read_text())

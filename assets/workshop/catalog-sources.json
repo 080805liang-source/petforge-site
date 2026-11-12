@@ -310,5 +310,11 @@
     "title": "大橘猫 · 软乎乎的陪伴",
     "category": "animal",
     "source": "形象来源：StockCake 免费写实AI图片\n素材页面：https://stockcake.com/i/fluffy-ginger-cat_5329406_2174161\n许可：CC0，https://stockcake.com/info/license\n处理：本地BiRefNet透明抠图、局部二维变形、眨眼、独立互动状态。不是实拍动作、三维模型或抖音原作者的宠物。\n互动：单击摸头、双击逗玩、闭眼休息/叫醒、拖动移动、本地聊天。默认无阴影、不跟随鼠标；不包含行走或趴卧动作。\nBiRefNet (MIT): https://github.com/ZhengPeng7/BiRefNet\n"
+  },
+  {
+    "id": "pf-curated-animal-900000103",
+    "title": "大狗 · 摸头与小木棍",
+    "category": "animal",
+    "source": "素材：用户提供的四张大狗图片，按用户要求制作并发布。\n处理：本地背景分离、手工清理腿间地面，保留原图中的互动手势；没有生成替代狗图。\n交互：2秒内4次点击→第三状态，小木棍点击→第四状态；恢复后跟随鼠标。仅桌面显示、默认不置顶。\n"
   }
 ]

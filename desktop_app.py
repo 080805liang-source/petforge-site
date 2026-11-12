@@ -341,13 +341,16 @@ class DesktopPet:
         if not self.pointer_down:
             self.track_cursor(min(now - self.last_frame_at, .2))
         self.last_frame_at = now
+        if getattr(self, 'pet_animation', None) and self.pet_animation.interactive:
+            self.update_animation(now)
         self.static_timer = self.root.after(100, self.static_tick)
 
     def bind_events(self) -> None:
         self.canvas.bind("<ButtonPress-1>", self.start_drag)
         self.canvas.bind("<B1-Motion>", self.drag)
         self.canvas.bind("<ButtonRelease-1>", self.release_left)
-        self.canvas.bind("<Double-Button-1>", self.double_click)
+        if not (self.pet_animation and self.pet_animation.interactive):
+            self.canvas.bind("<Double-Button-1>", self.double_click)
         self.canvas.bind("<Button-3>", self.open_menu)
         self.canvas.bind("<Enter>", self.on_hover)
         self.canvas.bind("<Leave>", self.on_leave)
@@ -376,6 +379,12 @@ class DesktopPet:
         self.drag_target = None
         if self.dragged:
             self.dragged = False
+            return
+        if getattr(self, 'pet_animation', None) and self.pet_animation.interactive:
+            self.cancel_pending_click()
+            self.pet_animation.click(time.perf_counter())
+            self.update_animation(time.perf_counter())
+            self.show_bubble({'pet': '摸摸头～我先站好。', 'angry': '点得太快啦！拿小木棍再点我一下。', 'calm': '好啦，冷静一下，等会儿继续跟着你。'}.get(self.pet_animation.state, ''), 1800)
             return
         if self.double_click_pending:
             self.double_click_pending = False
@@ -455,6 +464,11 @@ class DesktopPet:
         if not getattr(self, 'animation_frames', None) or self.pointer_down:
             return
         index = self.pet_animation.frame(now)
+        if self.pet_animation.interactive:
+            cursor = ('@' + (BASE_DIR / 'assets' / 'play-stick.cur').as_posix(),) if self.pet_animation.state == 'angry' else ''
+            if cursor != getattr(self, 'action_cursor', None):
+                self.canvas.configure(cursor=cursor)
+                self.action_cursor = cursor
         if index != self.animation_frame_index:
             self.animation_frame_index = index
             self.canvas.itemconfigure(self.pet_id, image=self.animation_frames[index])
@@ -550,7 +564,8 @@ class DesktopPet:
         return None
 
     def track_cursor(self, delta: float) -> None:
-        if self.is_chat_open():
+        player = getattr(self, 'pet_animation', None)
+        if self.is_chat_open() or (player and player.paused(time.perf_counter())):
             self.cursor_offset = (0, 0)
             return
         cursor = self.cursor_position()
@@ -729,7 +744,8 @@ class DesktopPet:
         self.wander_timer = None
         if not self.motion_enabled:
             return
-        if self.config.get("wanderEnabled", False) and not self.dragged and not self.desktop_hidden and not self.is_chat_open():
+        player = getattr(self, 'pet_animation', None)
+        if self.config.get("wanderEnabled", False) and not self.dragged and not self.desktop_hidden and not self.is_chat_open() and not (player and player.paused(time.perf_counter())):
             screen_w = self.root.winfo_screenwidth()
             screen_h = self.root.winfo_screenheight()
             x = random.randint(24, max(24, screen_w - self.width - 24))
@@ -753,6 +769,11 @@ class DesktopPet:
         root_handle = user32.GetAncestor(self.root.winfo_id(), 2)
         foreground_root = user32.GetAncestor(foreground, 2)
         if root_handle == foreground_root:
+            return True
+        # Chat and settings belong to this pet too; typing there is still desktop use.
+        process = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(foreground, ctypes.byref(process))
+        if process.value == os.getpid():
             return True
         class_name = ctypes.create_unicode_buffer(256)
         user32.GetClassNameW(foreground, class_name, len(class_name))

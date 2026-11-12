@@ -33,7 +33,7 @@ export function pickReply(topics, text, topic = 'default', random = Math.random)
   return replies[Math.min(replies.length - 1, Math.floor(random() * replies.length))];
 }
 
-export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame, playPetAction = () => false, hasPetActions = () => false, replyWithModel, chatGeneration = () => 0}) {
+export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame, playPetAction = () => false, hasPetActions = () => false, getPetPlayer = () => null, replyWithModel, chatGeneration = () => 0}) {
   const shell = document.querySelector('[data-preview-shell]'), actor = document.querySelector('#preview-actor');
   const image = document.querySelector('#preview-pet'), canvas = document.querySelector('#preview-animal');
   const bubble = document.querySelector('#preview-bubble'), particles = document.querySelector('#preview-particles');
@@ -91,6 +91,12 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   }
   function singleClick() {
     if (!hasImage()) return;
+    const player=getPetPlayer();
+    if (player?.interactive) {
+      player.click(performance.now());
+      say({pet:'摸摸头～我先站好。',angry:'点得太快啦！拿小木棍再点我一下。',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
+      announce('大狗互动：'+player.state);return;
+    }
     if (!playPetAction('pet')) animate(config.clickAnimation);
     if (config.clickParticles) burst();
     say(clickCount++ === 0 ? config.clickLine : config.status === 'sleeping' ? '困了就歇一会儿，我陪你。' : config.clickLine);
@@ -99,6 +105,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   function doubleClick() {
     clearTimeout(clickTimer);
     if (!hasImage()) return;
+    if (getPetPlayer()?.interactive) return;
     if (playPetAction('play')) { say('再陪我玩一会儿吧。'); announce('逗玩互动已播放'); return; }
     const effect = config.doubleClickEffect;
     if (effect === 'spin') { animate('spin'); burst(true); say('转个圈给你看！'); }
@@ -133,8 +140,11 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   }
   function draw(now, delta) {
     if (!position || !bounds) return;
+    const player=getPetPlayer(), dog=player?.interactive;
+    const paused=dog && player.paused(now);
+    actor.style.cursor=dog && player.state==='angry' ? 'url("assets/play-stick.png") 5 5, pointer' : '';
     // Cursor response is a selected interaction, rather than ambient animation.
-    if (!drag && now >= hiddenUntil && chat.hidden) position = stepPosition(position,pointer,bounds,config,delta);
+    if (!drag && now >= hiddenUntil && chat.hidden && !paused) position = stepPosition(position,pointer,bounds,dog ? {...config,animationPreset:''} : config,delta);
     let x = 0, y = 0;
     const moving = config.motionEnabled && !reducedMotion.matches;
     if (moving && !drag) {
@@ -156,7 +166,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
         }
       }
       if (now < typingUntil && config.keyboardReaction !== 'quiet') { x += Math.sin(now / 35) * 4; y += Math.abs(Math.cos(now / 35)) * 4; }
-      if (config.wanderEnabled && !pointer && now >= nextWander && !hovered) {
+      if (config.wanderEnabled && !pointer && now >= nextWander && !hovered && !paused && chat.hidden) {
         position = constrainPosition({x:12 + Math.random() * (bounds.width - bounds.petWidth - 24),y:52 + Math.random() * (bounds.height - bounds.petHeight - 90)},bounds);
         nextWander = now + 22000 + Math.random() * 20000;
         if (config.hoverBubble) say('换个地方陪你。',1800);
@@ -308,6 +318,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   actor.addEventListener('click',event => {
     if (cancelledClick) { cancelledClick = false; return; }
     clearTimeout(clickTimer);
+    if (getPetPlayer()?.interactive) { singleClick();return; }
     if (event.detail < 2) clickTimer = setTimeout(singleClick,210);
   });
   actor.addEventListener('dblclick',doubleClick);
