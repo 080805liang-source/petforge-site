@@ -95,6 +95,12 @@ class DesktopPet:
         self.root.attributes("-topmost", bool(self.config.get("alwaysOnTop", False)))
         self.desktop_only = bool(self.config.get("desktopOnly", False))
         self.desktop_hidden = False
+        # A desktop click outside the transparent pet window silently toggles
+        # a local pause.  It is intentionally not persisted or announced.
+        self.blank_paused = False
+        self.blank_button_down = False
+        self.blank_click_timer = None
+        self.blank_com_initialized = sys.platform.startswith('win') and ctypes.windll.ole32.CoInitialize(None) >= 0
         opacity = max(0.25, min(1.0, float(self.config.get("opacity", 100)) / 100))
         self.root.attributes("-alpha", opacity)
 
@@ -169,6 +175,7 @@ class DesktopPet:
         self.root.bind("<Destroy>", self.on_destroy, add="+")
         self.show_bubble("单击互动 · 双击亲近 · 拖动移动 · 右键更多", 3200)
         self.set_motion_enabled(bool(self.config.get("motionEnabled", True)))
+        self.blank_click_timer = self.root.after(30, self.poll_blank_desktop_click)
         if self.desktop_only and sys.platform.startswith("win"):
             self.root.after(250, self.sync_desktop_visibility)
 
@@ -305,9 +312,13 @@ class DesktopPet:
             self.save_preferences()
 
     def on_destroy(self, event: tk.Event) -> None:
-        if event.widget == self.root and self.timer_precision:
-            ctypes.windll.winmm.timeEndPeriod(1)
-            self.timer_precision = False
+        if event.widget == self.root:
+            if self.timer_precision:
+                ctypes.windll.winmm.timeEndPeriod(1)
+                self.timer_precision = False
+            if self.blank_com_initialized:
+                ctypes.windll.ole32.CoUninitialize()
+                self.blank_com_initialized = False
 
     def frame(self) -> None:
         self.frame_timer = None
@@ -316,6 +327,10 @@ class DesktopPet:
         now = time.perf_counter()
         delta = min(now - self.last_frame_at, .1)
         self.last_frame_at = now
+        if self.blank_paused:
+            self.next_frame_at = now + FRAME_SECONDS
+            self.frame_timer = self.root.after(max(1, math.ceil(FRAME_SECONDS * 1000)), self.frame)
+            return
         if self.pointer_down and self.drag_target is not None:
             self.move_window(*self.drag_target)
         elif not self.pointer_down:
@@ -341,10 +356,10 @@ class DesktopPet:
         if self.motion_enabled:
             return
         now = time.perf_counter()
-        if not self.pointer_down:
+        if not self.blank_paused and not self.pointer_down:
             self.track_cursor(min(now - self.last_frame_at, .2))
         self.last_frame_at = now
-        if getattr(self, 'pet_animation', None) and self.pet_animation.interactive:
+        if not self.blank_paused and getattr(self, 'pet_animation', None) and self.pet_animation.interactive:
             self.update_animation(now)
         self.static_timer = self.root.after(100, self.static_tick)
 
@@ -360,6 +375,9 @@ class DesktopPet:
         self.root.bind("<Escape>", lambda _event: self.root.destroy())
 
     def start_drag(self, event: tk.Event) -> None:
+        # Clicking the pet is an explicit way to leave the silent blank-area
+        # pause before dragging or starting its normal interaction.
+        self.set_blank_paused(False)
         self.drag_start = (event.x_root, event.y_root)
         self.drag_origin = (self.root.winfo_x(), self.root.winfo_y())
         self.pointer_down = True
@@ -591,7 +609,7 @@ class DesktopPet:
 
     def track_cursor(self, delta: float) -> None:
         player = getattr(self, 'pet_animation', None)
-        if self.is_chat_open() or (player and player.paused(time.perf_counter())):
+        if self.blank_paused or self.is_chat_open() or (player and player.paused(time.perf_counter())):
             self.cursor_offset = (0, 0)
             return
         cursor = self.cursor_position()
@@ -667,7 +685,7 @@ class DesktopPet:
             self.keyboard_timer = self.root.after(90, self.track_keyboard)
 
     def start_typing_effect(self) -> None:
-        if not self.motion_enabled or self.typing_active or self.motion_active or self.dragged:
+        if self.blank_paused or not self.motion_enabled or self.typing_active or self.motion_active or self.dragged:
             return
         self.typing_active = True
         self.typing_started = time.perf_counter()
@@ -730,6 +748,8 @@ class DesktopPet:
 
     def on_hover(self, _event: tk.Event) -> None:
         self.hovered = True
+        if self.blank_paused:
+            return
         if not self.motion_enabled:
             if self.config.get("hoverBubble", True):
                 self.show_bubble("我在这里，安静陪着你。", 1800)
@@ -749,7 +769,7 @@ class DesktopPet:
         if self.aura_id is not None:
             self.canvas.delete(self.aura_id)
             self.aura_id = None
-        if not self.motion_enabled or self.is_chat_open():
+        if self.blank_paused or not self.motion_enabled or self.is_chat_open():
             return
         effect = self.config.get("leaveEffect", "stay")
         if effect == "goodbye":
@@ -771,7 +791,7 @@ class DesktopPet:
         if not self.motion_enabled:
             return
         player = getattr(self, 'pet_animation', None)
-        if self.config.get("wanderEnabled", False) and not self.dragged and not self.desktop_hidden and not self.is_chat_open() and not (player and player.paused(time.perf_counter())):
+        if self.config.get("wanderEnabled", False) and not self.blank_paused and not self.dragged and not self.desktop_hidden and not self.is_chat_open() and not (player and player.paused(time.perf_counter())):
             screen_w = self.root.winfo_screenwidth()
             screen_h = self.root.winfo_screenheight()
             x = random.randint(24, max(24, screen_w - self.width - 24))
@@ -787,8 +807,87 @@ class DesktopPet:
         self.root.attributes("-topmost", not current)
         self.show_bubble("已始终置顶" if not current else "已取消始终置顶", 1800)
 
+    def set_blank_paused(self, paused: bool) -> None:
+        if paused == self.blank_paused:
+            return
+        now = time.perf_counter()
+        self.blank_paused = paused
+        if paused:
+            self.blank_paused_at = now
+            self.cursor_offset = (0, 0)
+            self.play_interaction_sound(stop=True)
+            self.clear_bubble()
+            return
+        elapsed = now - self.blank_paused_at
+        for field in ('motion_started', 'typing_started', 'idle_started', 'next_idle_action'):
+            if hasattr(self, field):
+                setattr(self, field, getattr(self, field) + elapsed)
+        for particle in self.particles:
+            particle['start'] += elapsed
+        player = self.pet_animation
+        if player:
+            if player.started is not None:
+                player.started += elapsed
+            player.until += elapsed
+            player.resume_at += elapsed
+            player.clicks = [at + elapsed for at in player.clicks]
+        self.last_frame_at = now
+
+    def is_blank_desktop_point(self, x: int, y: int) -> bool:
+        user32 = ctypes.windll.user32
+        user32.WindowFromPoint.argtypes = [wintypes.POINT]
+        user32.WindowFromPoint.restype = wintypes.HWND
+        user32.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+        user32.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
+        user32.GetAncestor.restype = wintypes.HWND
+        handle = user32.WindowFromPoint(wintypes.POINT(x, y))
+        class_name = ctypes.create_unicode_buffer(256)
+        user32.GetClassNameW(handle, class_name, len(class_name))
+        if class_name.value in {'Progman', 'WorkerW'}:
+            return True
+        if class_name.value != 'SysListView32':
+            return False
+        # The desktop list owns both icons and the empty area. Accessibility
+        # hit testing distinguishes them without selecting or intercepting either.
+        desktop = user32.GetAncestor(handle, 2)
+        user32.GetClassNameW(desktop, class_name, len(class_name))
+        if class_name.value not in {'Progman', 'WorkerW'}:
+            return False
+        accessible = ctypes.c_void_p()
+        child = ctypes.create_string_buffer(24)  # VARIANT: 24 bytes on Win64.
+        hit_test = ctypes.windll.oleacc.AccessibleObjectFromPoint
+        hit_test.argtypes = [wintypes.POINT, ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p]
+        hit_test.restype = ctypes.c_long
+        result = hit_test(
+            wintypes.POINT(x, y), ctypes.byref(accessible), ctypes.byref(child))
+        if result or not accessible.value:
+            return False
+        try:
+            child_type = ctypes.c_ushort.from_buffer(child).value
+            child_id = ctypes.c_long.from_buffer(child, 8).value
+            return child_type == 3 and child_id == 0  # VT_I4 / CHILDID_SELF
+        finally:
+            table = ctypes.cast(accessible, ctypes.POINTER(ctypes.POINTER(ctypes.c_void_p))).contents
+            ctypes.WINFUNCTYPE(wintypes.ULONG, ctypes.c_void_p)(table[2])(accessible)
+
+    def poll_blank_desktop_click(self) -> None:
+        self.blank_click_timer = None
+        if sys.platform.startswith('win'):
+            down = bool(ctypes.windll.user32.GetAsyncKeyState(1) & 0x8000)
+            if down and not self.blank_button_down and not self.pointer_down:
+                point = self.cursor_position()
+                if point and self.is_blank_desktop_point(*point):
+                    self.set_blank_paused(not self.blank_paused)
+            self.blank_button_down = down
+        self.blank_click_timer = self.root.after(30, self.poll_blank_desktop_click)
+
     def is_desktop_foreground(self) -> bool:
         user32 = ctypes.windll.user32
+        user32.GetForegroundWindow.restype = wintypes.HWND
+        user32.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
+        user32.GetAncestor.restype = wintypes.HWND
+        user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+        user32.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
         foreground = user32.GetForegroundWindow()
         if not foreground:
             return True

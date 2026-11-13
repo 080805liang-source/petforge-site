@@ -1,4 +1,5 @@
 import sys
+import ctypes
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -75,6 +76,9 @@ def pet():
     instance.typing_active = False
     instance.dragged = False
     instance.pointer_down = False
+    instance.blank_paused = False
+    instance.blank_button_down = False
+    instance.pet_animation = None
     instance.drag_target = None
     instance.timer_precision = False
     instance.frame_timer = None
@@ -87,6 +91,83 @@ def pet():
 
 
 class DesktopMotionTests(unittest.TestCase):
+    def test_blank_hit_test_excludes_desktop_icons_and_application_windows(self):
+        instance=pet()
+        point_class=['SysListView32']; root_class=['Progman']; child_id=[0]; released=[]
+        release=ctypes.WINFUNCTYPE(ctypes.c_ulong,ctypes.c_void_p)(lambda _pointer: released.append(True) or 1)
+        table=(ctypes.c_void_p*3)(0,0,ctypes.cast(release,ctypes.c_void_p).value)
+        accessible=(ctypes.c_void_p*1)(ctypes.addressof(table))
+        def hit_test(_point,pointer,child):
+            pointer._obj.value=ctypes.addressof(accessible)
+            ctypes.c_ushort.from_buffer(child._obj).value=3
+            ctypes.c_long.from_buffer(child._obj,8).value=child_id[0]
+            return 0
+        def class_name(handle,result,_size):
+            result.value=point_class[0] if handle==10 else root_class[0]
+        user=SimpleNamespace(WindowFromPoint=lambda _point:10,GetClassNameW=class_name,GetAncestor=lambda *_args:20)
+        with patch('desktop_app.ctypes.windll',SimpleNamespace(user32=user,oleacc=SimpleNamespace(AccessibleObjectFromPoint=hit_test))):
+            self.assertTrue(instance.is_blank_desktop_point(800,500))
+            child_id[0]=4
+            self.assertFalse(instance.is_blank_desktop_point(800,500))
+            self.assertEqual(len(released),2)
+            child_id[0]=0;root_class[0]='CabinetWClass'
+            self.assertFalse(instance.is_blank_desktop_point(800,500))
+            for name in ('TkTopLevel','Shell_TrayWnd','Chrome_WidgetWin_1'):
+                point_class[0]=name
+                self.assertFalse(instance.is_blank_desktop_point(800,500))
+            point_class[0]='WorkerW'
+            self.assertTrue(instance.is_blank_desktop_point(800,500))
+
+    def test_blank_pause_freezes_follow_and_frames_without_announcing_or_saving(self):
+        instance = pet()
+        instance.show_bubble = lambda *_args: self.fail('Pause must be silent')
+        instance.save_preferences = lambda: self.fail('Pause is local state')
+        instance.clear_bubble = lambda: None
+        instance.play_interaction_sound = lambda **_kwargs: None
+        instance.pet_animation = SimpleNamespace(started=2, until=5, resume_at=5.7, clicks=[2])
+        instance.motion_started = 2
+        instance.last_frame_at = 2
+        with patch('desktop_app.time.perf_counter', return_value=3):
+            instance.set_blank_paused(True)
+            instance.motion_enabled = True
+            before = instance.canvas.draws
+            instance.frame()
+            self.assertEqual(instance.canvas.draws, before)
+            self.assertTrue(instance.frame_timer)
+            del instance.track_cursor
+            instance.cursor_position = lambda: self.fail('Paused pet must not follow')
+            instance.track_cursor(.1)
+        with patch('desktop_app.time.perf_counter', return_value=13):
+            instance.set_blank_paused(False)
+        self.assertEqual(instance.pet_animation.started, 12)
+        self.assertEqual(instance.pet_animation.until, 15)
+        self.assertEqual(instance.pet_animation.resume_at, 15.7)
+        self.assertEqual(instance.pet_animation.clicks, [12])
+        self.assertEqual(instance.motion_started, 12)
+
+    def test_blank_click_toggles_once_per_press_and_ignores_other_windows(self):
+        instance = pet()
+        instance.cursor_position = lambda: (800, 500)
+        blank = [True]
+        instance.is_blank_desktop_point = lambda *_args: blank[0]
+        toggles = []
+        instance.set_blank_paused = lambda value: (toggles.append(value), setattr(instance, 'blank_paused', value))
+        key = SimpleNamespace(GetAsyncKeyState=lambda _key: 0x8000)
+        with patch('desktop_app.sys.platform','win32'), patch('desktop_app.ctypes.windll',SimpleNamespace(user32=key),create=True):
+            instance.poll_blank_desktop_click()
+            instance.poll_blank_desktop_click()
+            self.assertEqual(toggles,[True])
+            key.GetAsyncKeyState=lambda _key: 0
+            instance.poll_blank_desktop_click()
+            blank[0]=False;key.GetAsyncKeyState=lambda _key: 0x8000
+            instance.poll_blank_desktop_click()
+            self.assertEqual(toggles,[True])
+            key.GetAsyncKeyState=lambda _key: 0
+            instance.poll_blank_desktop_click()
+            blank[0]=True;key.GetAsyncKeyState=lambda _key: 0x8000
+            instance.poll_blank_desktop_click()
+            self.assertEqual(toggles,[True,False])
+
     def test_desktop_only_keeps_own_chat_visible_and_rejects_other_apps(self):
         instance = pet()
         instance.root.winfo_id = lambda: 10

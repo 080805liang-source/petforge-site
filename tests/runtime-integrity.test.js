@@ -20,7 +20,7 @@ test('desktop downloads use the verified official runtime and reject malformed a
   assert.equal(await verifyDesktopRuntime(released),released);
   assert.ok(desktopRuntimeFiles(released).some(file=>file.name==='_internal/pythonw.exe'));
   assert.ok(desktopRuntimeFiles(released).some(file=>file.name==='free_ai.py'));
-  const bytes=new Uint8Array(46834021);bytes[0]=0x50;bytes[1]=0x4b;
+  const bytes=new Uint8Array(46839340);bytes[0]=0x50;bytes[1]=0x4b;
   await assert.rejects(verifyDesktopRuntime(bytes), /安全校验失败/);
   await assert.rejects(verifyDesktopRuntime(bytes.slice(0,-1)), /不完整/);
   const archive=(names)=>{
@@ -68,10 +68,10 @@ test('domestic compressed parts retry corruption, resume cached parts and retain
   await new Promise(resolve=>setTimeout(resolve,20));
   assert.ok(saved.size>0); const progress=[];
   const bytes=await fetchDesktopRuntime(url,(done,total)=>progress.push(done/total),{cacheStorage,fetcher});
-  assert.equal(bytes.length,46834021);assert.equal(saved.size,manifest.parts.length);
+  assert.equal(bytes.length,46839340);assert.equal(saved.size,manifest.parts.length);
   assert.equal(progress.at(-1),1);assert.ok(progress.every((n,i)=>!i||n>=progress[i-1]));
   const before=[...calls.values()].reduce((a,b)=>a+b,0);offline=true;
-  assert.equal((await fetchDesktopRuntime(url,()=>{},{cacheStorage,fetcher})).length,46834021);
+  assert.equal((await fetchDesktopRuntime(url,()=>{},{cacheStorage,fetcher})).length,46839340);
   assert.equal([...calls.values()].reduce((a,b)=>a+b,0),before);
   const key=saved.keys().next().value;saved.set(key,new Uint8Array(7));
   await assert.rejects(fetchDesktopRuntime(url,()=>{},{cacheStorage,fetcher}),/继续下载/);
