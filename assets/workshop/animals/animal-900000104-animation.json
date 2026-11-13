@@ -7,7 +7,7 @@
   "fps": 15,
   "clips": {
     "idle": {
-      "start": 0,
+      "start": 228,
       "count": 1,
       "fps": 1,
       "loop": true

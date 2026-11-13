@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-web-nailong-20261113-r4";
+const CACHE_NAME = "petforge-web-nailong-idle-20261113-r1";
 const APP_SHELL = [
   "./scripts/runtime-manifest.js?v=022d2d9f27e09dde",
   "./scripts/support-group.js?v=nailong-20261113-r4",

@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createPetAnimation} from '../scripts/pet-animation.js';
 
-test('the video pet stays on its first frame, plays once without restarting, then resumes following',()=>{
+test('the video pet stays on its neutral standing frame, plays once without restarting, then resumes following',()=>{
   const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000104-animation.json',import.meta.url)));
   const p=createPetAnimation(meta),duration=meta.clips.pet.count/meta.clips.pet.fps*1000;
-  assert.equal(p.clickClip,true);assert.equal(p.frame(0),0);assert.equal(p.frame(60000),0);
+  assert.equal(p.clickClip,true);assert.equal(p.frame(0),228);assert.equal(p.frame(60000),228);
   assert.equal(p.click(61000),true);assert.equal(p.frame(61500),8);
   assert.equal(p.click(62000),false);assert.equal(p.frame(62000),16);
   assert.equal(p.paused(61000+duration-1),true);
-  assert.equal(p.frame(61000+duration+1),0);assert.equal(p.paused(61000+duration+1),true);
+  assert.equal(p.frame(61000+duration+1),228);assert.equal(p.paused(61000+duration+1),true);
   assert.equal(p.paused(61000+duration+701),false);
   assert.equal(p.click(80000),true);assert.equal(p.frame(80000),1);
 });
