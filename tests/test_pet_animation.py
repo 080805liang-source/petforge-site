@@ -8,6 +8,23 @@ sys.path.insert(0, str(root))
 from pet_animation import PetAnimation
 
 class PetAnimationTests(unittest.TestCase):
+    def test_video_pet_first_frame_one_shot_and_repeat_clicks(self):
+        meta = json.loads((root / 'assets/workshop/animals/animal-900000104-animation.json').read_text())
+        p = PetAnimation(meta)
+        duration = meta['clips']['pet']['count'] / meta['clips']['pet']['fps']
+        self.assertTrue(p.click_clip)
+        self.assertEqual(p.frame(60), 0)
+        self.assertTrue(p.click(61))
+        self.assertEqual(p.frame(61.5), 8)
+        self.assertFalse(p.click(62))
+        self.assertEqual(p.frame(62), 16)
+        self.assertTrue(p.paused(61 + duration - .01))
+        self.assertEqual(p.frame(61 + duration + .01), 0)
+        self.assertTrue(p.paused(61 + duration + .01))
+        self.assertFalse(p.paused(61 + duration + .71))
+        self.assertTrue(p.click(80))
+        self.assertEqual(p.frame(80), 1)
+
     def test_dog_four_states_burst_timeout_and_movement_resume(self):
         meta = json.loads((root / 'assets/workshop/animals/animal-900000103-animation.json').read_text())
         p = PetAnimation(meta)

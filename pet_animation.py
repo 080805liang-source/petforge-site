@@ -14,7 +14,8 @@ class PetAnimation:
         self.has_actions = all(key in self.clips for key in ('idle', 'pet', 'play', 'sleep'))
         self.state = 'idle'
         self.started = None
-        self.interactive = meta.get('interaction', {}).get('type') == 'four-state-dog' and all(key in self.clips for key in ('idle', 'pet', 'angry', 'calm'))
+        self.click_clip = meta.get('interaction', {}).get('type') == 'click-clip' and all(key in self.clips for key in ('idle', 'pet'))
+        self.interactive = self.click_clip or (meta.get('interaction', {}).get('type') == 'four-state-dog' and all(key in self.clips for key in ('idle', 'pet', 'angry', 'calm')))
         self.clicks = []
         self.until = 0
         self.resume_at = 0
@@ -23,6 +24,13 @@ class PetAnimation:
         if not self.interactive:
             return False
         self.frame(now)
+        if self.click_clip:
+            if self.state != 'idle':
+                return False
+            self.state, self.started = 'pet', now
+            self.until = now + self.clips['pet']['count'] / self.clips['pet']['fps']
+            self.resume_at = self.until + .7
+            return True
         if self.state == 'calm':
             return True
         if self.state == 'angry':

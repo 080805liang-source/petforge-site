@@ -48,6 +48,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   let hovered = false, lastHover = 0, lastGreeting = 0, nextWander = 0, clickCount = 0, lastPositionSetting;
   let lastPreset, lastImage, cancelledClick = false, chatBusy = false, windowOpen = false;
   let chatHistory=[], requestController, lastChatGeneration;
+  let interactionAudio;
 
   function say(text, duration = 3500) {
     clearTimeout(bubbleTimer);
@@ -93,9 +94,14 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     if (!hasImage()) return;
     const player=getPetPlayer();
     if (player?.interactive) {
-      player.click(performance.now());
-      say({pet:'摸摸头～我先站好。',angry:'汪汪汪(生气，怒吼）',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
-      announce('大狗互动：'+player.state);return;
+      if (!player.click(performance.now())) return;
+      if (player.clickClip && config.soundHint && player.audioUrl) {
+        interactionAudio?.pause();
+        interactionAudio = new Audio(player.audioUrl);
+        interactionAudio.play().catch(() => {});
+      }
+      say(player.clickClip ? config.clickLine : {pet:'摸摸头～我先站好。',angry:'汪汪汪(生气，怒吼）',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
+      announce(player.clickClip ? config.clickLine : '大狗互动：'+player.state);return;
     }
     if (!playPetAction('pet')) animate(config.clickAnimation);
     if (config.clickParticles) burst();
@@ -203,7 +209,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     const motionText = config.motionEnabled ? '暂停动态试用' : '开启动态试用';
     motionButton.textContent = window.PETFORGE_I18N?.translate(motionText) || motionText;
     motionButton.setAttribute('aria-pressed',String(config.motionEnabled));
-    note.textContent = !ready ? '上传图片后开始互动' : config.animationPreset ? '单击摸头 · 双击逗玩 · 右键更多互动' : ({look:'在框内移动鼠标，看看它的回应',follow:'在框内移动鼠标，它会慢慢靠近',playful:'把鼠标移近，看看它往哪儿躲',none:'试试点击、双击或拖动它'}[config.cursorFollowMode]);
+    note.textContent = !ready ? '上传图片后开始互动' : getPetPlayer()?.clickClip ? config.interactionNote : config.animationPreset ? '单击摸头 · 双击逗玩 · 右键更多互动' : ({look:'在框内移动鼠标，看看它的回应',follow:'在框内移动鼠标，它会慢慢靠近',playful:'把鼠标移近，看看它往哪儿躲',none:'试试点击、双击或拖动它'}[config.cursorFollowMode]);
     if (!ready || document.hidden) {
       cancelAnimationFrame(frame); frame = 0;
       if (!ready) { bubble.hidden = true; particles.replaceChildren(); closeChat(false); }
@@ -215,7 +221,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     else position = constrainPosition(position,bounds);
     lastImage = image.src; lastPreset = config.animationPreset; lastPositionSetting = config.position;
     if (!config.motionEnabled) { action = null; typingUntil = 0; hiddenUntil = 0; particles.replaceChildren(); }
-    if (changedImage) { clickCount = 0; requestController?.abort(); chatHistory=[]; chatLog.replaceChildren(); say(config.clickLine); }
+    if (changedImage) { interactionAudio?.pause(); clickCount = 0; requestController?.abort(); chatHistory=[]; chatLog.replaceChildren(); say(config.clickLine); }
     if (windowOpen && config.desktopOnly) { bubble.hidden = true; closeChat(false); menu.hidden = true; }
     draw(performance.now(),0);
     if (!frame) { lastFrame = performance.now(); frame = requestAnimationFrame(tick); }
@@ -363,7 +369,10 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     if (control.id === 'click-particles' && config.clickParticles) burst();
     if (control.id === 'keyboard-sync' || control.id === 'keyboard-reaction') typePreview();
     if (control.id === 'wander-enabled' && config.wanderEnabled) nextWander = performance.now();
-    if (control.id === 'sound-hint' && config.soundHint) say('桌宠不会擅自播放声音。');
+    if (control.id === 'sound-hint') {
+      if (!config.soundHint) interactionAudio?.pause();
+      else say(getPetPlayer()?.clickClip ? config.interactionNote : '桌宠不会擅自播放声音。');
+    }
   }));
   new ResizeObserver(sync).observe(shell);
   reducedMotion.addEventListener('change',sync);

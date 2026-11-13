@@ -1,5 +1,7 @@
 (function () {
   const rows = [
+    ["点击播放笑声", "Play laughter on click", "クリックで笑い声を再生", "Riproduci risate al clic", "Reproducir risas al hacer clic", "Jouer le rire au clic"],
+    ["只在点击时播放，关闭即可静音", "Plays only on click; switch off to mute", "クリック時のみ再生。オフでミュート", "Solo al clic; disattiva per silenziare", "Solo al hacer clic; desactiva para silenciar", "Au clic uniquement ; désactivez pour couper le son"],
     ["发布到创意工坊", "Publish to Workshop", "工房に公開", "Pubblica nel Workshop", "Publicar en el Taller", "Publier dans l’atelier"],
     ["分享你的桌宠", "Share your pet", "ペットをシェア", "Condividi il tuo pet", "Comparte tu mascota", "Partagez votre compagnon"],
     ["给它起个名字，再介绍一下它的个性和玩法。", "Give it a name and describe its personality and interactions.", "名前を付けて、性格や遊び方を紹介しましょう。", "Dagli un nome e descrivi il suo carattere e le interazioni.", "Ponle un nombre y describe su personalidad y sus interacciones.", "Donnez-lui un nom et décrivez sa personnalité et ses interactions."],

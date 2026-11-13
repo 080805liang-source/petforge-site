@@ -30,7 +30,7 @@ function addMotionPreview(post, media, image) {
       bitmap=atlas;
       canvas.width=meta.width;canvas.height=meta.height;const context=canvas.getContext('2d');const started=performance.now();
       canvas.hidden=false;image.hidden=true;button.textContent='停止预览';
-      const idle=meta.clips?.idle || {start:0,count:meta.count,fps:meta.fps};
+      const idle=(meta.interaction?.type==='click-clip' ? meta.clips?.pet : meta.clips?.idle) || {start:0,count:meta.count,fps:meta.fps};
       const draw=now=>{if(!playing || current!==token)return;const i=idle.start+Math.floor((now-started)*idle.fps/1000)%idle.count;context.clearRect(0,0,meta.width,meta.height);context.drawImage(atlas,i%meta.columns*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,0,0,meta.width,meta.height);frameId=requestAnimationFrame(draw);};
       frameId=requestAnimationFrame(draw);
     } catch {stop();button.textContent='重试预览';}

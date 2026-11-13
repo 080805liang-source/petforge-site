@@ -5,14 +5,20 @@ export function createPetAnimation(meta) {
     if (Number.isInteger(clip.start) && Number.isInteger(clip.count) && clip.start >= 0 && clip.count > 0 && clip.start + clip.count <= meta.count && Number.isFinite(clip.fps) && clip.fps > 0 && clip.fps <= 60) clips[name] = clip;
   }
   let state = 'idle', started = null;
-  const interactive = meta.interaction?.type === 'four-state-dog' && ['idle','pet','angry','calm'].every(key=>clips[key]);
+  const clickClip = meta.interaction?.type === 'click-clip' && ['idle','pet'].every(key=>clips[key]);
+  const interactive = clickClip || (meta.interaction?.type === 'four-state-dog' && ['idle','pet','angry','calm'].every(key=>clips[key]));
   let clicks=[], until=0, resumeAt=0;
   return {
     interactive,
+    clickClip,
     get state() { return state; },
     click(now) {
       if (!interactive) return false;
       this.frame(now);
+      if (clickClip) {
+        if (state!=='idle') return false;
+        state='pet';started=now;until=now+clips.pet.count/clips.pet.fps*1000;resumeAt=until+700;return true;
+      }
       if (state==='calm') return true;
       let duration;
       if (state==='angry') { state='calm';duration=2200;clicks=[]; }

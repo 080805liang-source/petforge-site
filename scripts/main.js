@@ -3,7 +3,7 @@ const DESKTOP_DOWNLOAD_AVAILABLE=true;
 const DESKTOP_DOWNLOAD_NOTICE='';
 
 let chatStudio;
-const chatStudioReady = import('./chat-studio.js?v=publish-dialog-20261112-r1').then(async ({createChatStudio}) => {
+const chatStudioReady = import('./chat-studio.js?v=nailong-20261113-r4').then(async ({createChatStudio}) => {
   chatStudio = await createChatStudio({onChange:() => updatePreview()});
   updatePreview();
   return chatStudio;
@@ -97,10 +97,11 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=publish-dialog-20261112-r1');
+    const {createPetAnimation} = await import('./pet-animation.js?v=nailong-20261113-r4');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
+    if (animalPreview.player.clickClip && meta.interaction?.audio === 'laugh.wav') animalPreview.player.audioUrl = `${prefix}-laugh.wav`;
     previewAnimal.width = meta.width; previewAnimal.height = meta.height;
     updatePreview();
   } catch (_) { /* The still preview and package retry remain available. */ }
@@ -253,6 +254,9 @@ function safeName(name) {
 }
 
 function updatePreview() {
+  const hasClipSound = Boolean(animalPreview?.player.clickClip);
+  document.querySelector('#sound-hint-title').textContent = hasClipSound ? '点击播放笑声' : '显示静音提示';
+  document.querySelector('#sound-hint-description').textContent = hasClipSound ? '只在点击时播放，关闭即可静音' : '桌宠不会擅自播放声音，避免打扰';
   const fixedAnimal = Boolean(animationPreset && !animalPreview?.player.interactive);
   cursorFollowMode.closest('label').hidden = fixedAnimal;
   cursorFollowMode.disabled = fixedAnimal;
@@ -626,12 +630,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.12-publish-dialog-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.13-nailong-r4";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=publish-dialog-20261112-r1');
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=nailong-20261113-r4');
   const bytes = await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在下载桌宠文件… ${(completed/1048576).toFixed(1)} / ${(total/1048576).toFixed(1)} MB · ${Math.round(completed / total * 100)}%（已完成部分自动保留）`));
   setStatus('运行文件校验通过，正在整理图片和聊天设置…');
   return desktopRuntimeFiles(bytes);
@@ -664,7 +668,12 @@ async function buildPackageInBrowser() {
     const [metaResponse, atlasResponse] = await Promise.all([fetch(new URL(`${prefix}-animation.json`,document.baseURI)),fetch(new URL(`${prefix}-atlas.webp`,document.baseURI))]);
     if (!metaResponse.ok || !atlasResponse.ok) throw new Error('动物动作素材下载失败，请重试。');
     const meta = await metaResponse.json();
-    if (!Number.isInteger(meta.count) || meta.count < 2 || meta.count > 120) throw new Error('动物动作文件无效。');
+    if (!Number.isInteger(meta.count) || meta.count < 2 || meta.count > 240) throw new Error('动物动作文件无效。');
+    if (meta.interaction?.type === 'click-clip' && meta.interaction.audio === 'laugh.wav') {
+      const audioResponse=await fetch(new URL(`${prefix}-laugh.wav`,document.baseURI));
+      if (!audioResponse.ok) throw new Error('互动声音下载失败，请重试。');
+      extraFiles.push({name:'assets/interaction.wav',data:new Uint8Array(await audioResponse.arrayBuffer())});
+    }
     if (meta.interaction?.type === 'four-state-dog') {
       const cursorResponse=await fetch(new URL('assets/play-stick.cur',document.baseURI));
       if (!cursorResponse.ok) throw new Error('互动光标下载失败，请重试。');
@@ -999,7 +1008,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=publish-dialog-20261112-r1').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=nailong-20261113-r4').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), getPetPlayer: () => animalPreview?.player, replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {

@@ -228,6 +228,9 @@ class DesktopPet:
         self.motion_var = tk.BooleanVar(value=bool(self.config.get("motionEnabled", True)))
         self.menu.add_checkbutton(label="显示柔和阴影", variable=self.shadow_var, command=lambda: self.set_shadow_enabled(self.shadow_var.get(), persist=True))
         self.menu.add_checkbutton(label=f"动态模式（目标 {TARGET_FPS} 帧/秒）", variable=self.motion_var, command=lambda: self.set_motion_enabled(self.motion_var.get(), persist=True))
+        if self.pet_animation and self.pet_animation.click_clip:
+            self.sound_var = tk.BooleanVar(value=self.config.get('soundHint', True))
+            self.menu.add_checkbutton(label='点击播放笑声', variable=self.sound_var, command=self.toggle_interaction_sound)
         self.menu.add_command(label="隐藏 10 秒", command=self.hide_temporarily)
         self.menu.add_command(label="切换始终置顶", command=self.toggle_topmost)
         self.menu.add_command(label="退出桌宠", command=self.root.destroy)
@@ -382,9 +385,14 @@ class DesktopPet:
             return
         if getattr(self, 'pet_animation', None) and self.pet_animation.interactive:
             self.cancel_pending_click()
-            self.pet_animation.click(time.perf_counter())
+            if not self.pet_animation.click(time.perf_counter()):
+                return
             self.update_animation(time.perf_counter())
-            self.show_bubble({'pet': '摸摸头～我先站好。', 'angry': '汪汪汪(生气，怒吼）', 'calm': '好啦，冷静一下，等会儿继续跟着你。'}.get(self.pet_animation.state, ''), 1800)
+            if self.pet_animation.click_clip:
+                self.play_interaction_sound()
+                self.show_bubble(self.config.get('clickLine', '哈哈哈哈！'), 1800)
+            else:
+                self.show_bubble({'pet': '摸摸头～我先站好。', 'angry': '汪汪汪(生气，怒吼）', 'calm': '好啦，冷静一下，等会儿继续跟着你。'}.get(self.pet_animation.state, ''), 1800)
             return
         if self.double_click_pending:
             self.double_click_pending = False
@@ -444,7 +452,7 @@ class DesktopPet:
         try:
             meta = json.loads((BASE_DIR / 'assets' / 'animation.json').read_text(encoding='utf-8'))
             width, height, count, columns = (int(meta[key]) for key in ('width', 'height', 'count', 'columns'))
-            if not (32 <= width <= 512 and 32 <= height <= 512 and 2 <= count <= 120 and 1 <= columns <= 16):
+            if not (32 <= width <= 512 and 32 <= height <= 512 and 2 <= count <= 240 and 1 <= columns <= 16):
                 return
             atlas = tk.PhotoImage(file=BASE_DIR / 'assets' / 'pet-atlas.png')
             if atlas.width() < width * columns or atlas.height() < height * math.ceil(count / columns):
@@ -472,6 +480,24 @@ class DesktopPet:
         if index != self.animation_frame_index:
             self.animation_frame_index = index
             self.canvas.itemconfigure(self.pet_id, image=self.animation_frames[index])
+
+    def play_interaction_sound(self, stop: bool = False) -> None:
+        if sys.platform.startswith('win'):
+            import winsound
+            audio = BASE_DIR / 'assets' / 'interaction.wav'
+            try:
+                if stop:
+                    winsound.PlaySound(None, 0)
+                elif self.config.get('soundHint', True) and audio.is_file():
+                    winsound.PlaySound(str(audio), winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT)
+            except RuntimeError:
+                pass
+
+    def toggle_interaction_sound(self) -> None:
+        self.config['soundHint'] = self.sound_var.get()
+        if not self.sound_var.get():
+            self.play_interaction_sound(stop=True)
+        self.save_preferences()
 
     def interact(self, close: bool = False) -> None:
         self.pending_click = None
