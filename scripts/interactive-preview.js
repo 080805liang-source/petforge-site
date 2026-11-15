@@ -356,7 +356,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
   windowToggle.addEventListener('click',toggleWindow);
   document.querySelector('#preview-window-close').addEventListener('click',toggleWindow);
   document.addEventListener('keydown',event => {
-    if (event.isComposing || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) return;
+    if (event.isComposing || event.repeat || event.ctrlKey || event.metaKey || event.altKey || typeof event.key !== 'string' || event.key.length !== 1) return;
     if (shell.contains(document.activeElement) || pointer) typePreview();
   });
   document.querySelectorAll('.function-panel select, .function-panel input, #pet-animation').forEach(control => control.addEventListener('change',() => {

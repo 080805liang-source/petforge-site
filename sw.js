@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-web-availability-20261115-r1";
+const CACHE_NAME = "petforge-web-availability-20261115-r2";
 const APP_SHELL = [
   "./scripts/runtime-manifest.js?v=689cfddb3836fefd",
   "./scripts/support-group.js?v=blank-pause-20261113-r1",
@@ -23,7 +23,7 @@ const APP_SHELL = [
   "./styles/membership.css?v=blank-pause-20261113-r1",
   "./styles/workshop.css?v=pixel-20261109-r3",
   "./assets/workshop-pixel-room.svg",
-  "./scripts/i18n.js?v=availability-20261115-r1",
+  "./scripts/i18n.js?v=availability-20261115-r2",
   "./styles/cat-home.css?v=kitten-ready-20261024-r2",
   "./styles/support.css?v=support-20261024-r1",
   "./styles/creator.css?v=blank-pause-20261113-r1",
@@ -42,8 +42,8 @@ const APP_SHELL = [
   "./assets/voxel-kitten-preview.svg",
   "./assets/feature-cat-white-20261027.png",
   "./assets/desktop-pet-scene.webp",
-  "./scripts/main.js?v=blank-pause-20261113-r1",
-  "./scripts/interactive-preview.js?v=blank-pause-20261113-r1",
+  "./scripts/main.js?v=availability-20261115-r2",
+  "./scripts/interactive-preview.js?v=availability-20261115-r2",
   "./scripts/pet-animation.js?v=blank-pause-20261113-r1",
   "./scripts/background-removal.js?v=outline-20261107-r1",
   "./scripts/background-worker.js?v=outline-20261107-r1",

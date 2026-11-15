@@ -1008,7 +1008,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=blank-pause-20261113-r1').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=availability-20261115-r2').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), getPetPlayer: () => animalPreview?.player, replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {

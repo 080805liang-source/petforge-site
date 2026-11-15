@@ -77,7 +77,8 @@ function previewFixture({reducedMotion=false,petActions=false,replyWithModel,cha
   const cursorSetting=get('#cursor-follow-mode');cursorSetting.id='cursor-follow-mode';
   const config={name:'测试桌宠',size:100,position:'bottom-right',motionEnabled:true,cursorFollowMode:'none',idleBehavior:'still',clickAnimation:'jump',clickParticles:true,doubleClickEffect:'cuddle',keyboardSync:true,keyboardReaction:'bongo',customShortcuts:[],proactiveFrequency:'quiet'};
   let now=1000,nextFrame;const timeouts=[];
-  const document={hidden:false,querySelector:get,querySelectorAll:selector=>selector==='[data-preview-action]'?controls:[setting,cursorSetting],addEventListener(){},createElement:()=>new Element(),createTextNode:text=>({textContent:text})};
+  const documentEvents={};
+  const document={hidden:false,querySelector:get,querySelectorAll:selector=>selector==='[data-preview-action]'?controls:[setting,cursorSetting],addEventListener:(name,fn)=>{(documentEvents[name] ||= []).push(fn);},createElement:()=>new Element(),createTextNode:text=>({textContent:text})};
   const actions=[];let rendered=0;
   const context=vm.createContext({document,window:{},performance:{now:()=>now},matchMedia:()=>({matches:reducedMotion,addEventListener(){}}),ResizeObserver:class{observe(){}},setTimeout:fn=>timeouts.push(fn),clearTimeout(){},requestAnimationFrame:fn=>{nextFrame=fn;return 1;},cancelAnimationFrame(){},Math,Event,AbortController,AbortSignal,fetch:async()=>({ok:true,json:async()=>({topics:{default:{replies:['<script>plain text reply</script>']}}})})});
   vm.runInContext(readFileSync(new URL('../scripts/interactive-preview.js',import.meta.url),'utf8').replaceAll('export ',''),context);
@@ -85,8 +86,14 @@ function previewFixture({reducedMotion=false,petActions=false,replyWithModel,cha
   context.playPetAction=name=>{if(!petActions||!config.motionEnabled)return false;actions.push(name);return true;};context.hasPetActions=()=>petActions;
   context.replyWithModel=replyWithModel;context.chatGeneration=chatGeneration;
   vm.runInContext('var preview=createInteractivePreview({getConfig,hasImage,renderAnimalFrame,playPetAction,hasPetActions,replyWithModel,chatGeneration})',context);
-  return {get,controls,config,setting,actions,rendered:()=>rendered,sync:()=>vm.runInContext('preview.sync()',context),frame:()=>{now+=20;nextFrame(now);}};
+  return {get,controls,config,setting,actions,key:event=>documentEvents.keydown.forEach(fn=>fn(event)),rendered:()=>rendered,sync:()=>vm.runInContext('preview.sync()',context),frame:()=>{now+=20;nextFrame(now);}};
 }
+
+test('preview ignores keyboard events without a key value',()=>{
+  const p=previewFixture();
+  assert.doesNotThrow(()=>p.key({}));
+  assert.doesNotThrow(()=>p.key({key:null}));
+});
 
 test('photo pet clicks trigger separate actions with reduced motion and pause freezes atlas rendering', async () => {
   const p=previewFixture({reducedMotion:true,petActions:true});

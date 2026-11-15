@@ -1,5 +1,6 @@
 (function () {
   const rows = [
+    ["连接超时，请检查网络后重试。", "Connection timed out. Check your network and try again.", "接続がタイムアウトしました。回線を確認して再試行してください。", "Connessione scaduta. Controlla la rete e riprova.", "Conexión agotada. Comprueba la red e inténtalo de nuevo.", "Connexion expirée. Vérifiez le réseau et réessayez."],
     ["访问慢？查看备用入口", "Slow to load? Try the backup site", "読み込みが遅い場合はこちら", "Caricamento lento? Prova il sito alternativo", "¿Carga lenta? Prueba el sitio alternativo", "Chargement lent ? Essayez le site de secours"],
     ["网站打不开或连接超时", "Site unavailable or connection timed out", "サイトに接続できない・タイムアウト", "Sito non disponibile o connessione scaduta", "Sitio no disponible o conexión agotada", "Site inaccessible ou connexion expirée"],
     ["切换访问入口", "Try another site address", "別のアクセス先を試す", "Prova un altro indirizzo", "Prueba otra dirección", "Essayer une autre adresse"],
