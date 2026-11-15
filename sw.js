@@ -1,4 +1,4 @@
-const CACHE_NAME = "petforge-web-blank-pause-20261113-r1";
+const CACHE_NAME = "petforge-web-availability-20261115-r1";
 const APP_SHELL = [
   "./scripts/runtime-manifest.js?v=689cfddb3836fefd",
   "./scripts/support-group.js?v=blank-pause-20261113-r1",
@@ -23,7 +23,7 @@ const APP_SHELL = [
   "./styles/membership.css?v=blank-pause-20261113-r1",
   "./styles/workshop.css?v=pixel-20261109-r3",
   "./assets/workshop-pixel-room.svg",
-  "./scripts/i18n.js?v=blank-pause-20261113-r1",
+  "./scripts/i18n.js?v=availability-20261115-r1",
   "./styles/cat-home.css?v=kitten-ready-20261024-r2",
   "./styles/support.css?v=support-20261024-r1",
   "./styles/creator.css?v=blank-pause-20261113-r1",
@@ -51,9 +51,9 @@ const APP_SHELL = [
   "./scripts/membership.js?v=blank-pause-20261113-r1",
   "./scripts/admin.js?v=security-20261108-r2",
   "./scripts/analytics.js?v=admin-dashboard-20261107-r2",
-  "./scripts/workshop.js?v=identity-20261108-r1",
+  "./scripts/workshop.js?v=availability-20261115-r1",
   "./scripts/supabase-config.js?v=security-20261108-r2",
-  "./scripts/session.js?v=blank-pause-20261113-r1",
+  "./scripts/session.js?v=availability-20261115-r1",
   "./scripts/desktop-runtime.js?v=blank-pause-20261113-r1",
   "./scripts/pwa.js?v=blank-pause-20261113-r1",
   "./assets/creator-studio-3d.png",
@@ -62,8 +62,12 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+  // Cache only small entry pages at install. Fetch large tools and media on use.
+  const entries = APP_SHELL.filter(path => /^\.\/(?:index|creator|workshop|support|reset-password)\.html$/.test(path));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => Promise.allSettled(entries.map(async path => {
+    const response = await fetch(path, { signal: AbortSignal.timeout(8000), cache: 'reload' });
+    if (response.ok) await cache.put(path, response);
+  }))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
@@ -79,8 +83,22 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     const page = new URL(request.url).pathname.split("/").pop().replace(/\.html$/, '');
+    if (!['', 'index', 'creator', 'workshop', 'support', 'reset-password'].includes(page)) return;
     const fallback = ["creator", "workshop", "support", "reset-password"].includes(page) ? `./${page}.html` : "./index.html";
-    event.respondWith(fetch(request).catch(() => caches.match(fallback)));
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request, { signal: AbortSignal.timeout(8000) });
+        if (response.ok) {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(fallback, copy)));
+          return response;
+        }
+        if (response.status < 500) return response;
+        return (await caches.match(fallback)) || response;
+      } catch (_) {
+        return (await caches.match(fallback)) || new Response('网络暂时无法连接，请稍后重试。', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+      }
+    })());
     return;
   }
 
@@ -90,7 +108,7 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then((cached) => cached || fetch(request).then((response) => {
       if (response.ok) {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));
       }
       return response;
     }))

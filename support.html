@@ -10,9 +10,9 @@
     <link rel="stylesheet" href="styles/support.css?v=support-20261024-r1">
     <meta name="theme-color" content="#fbfcfb">
     <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
-    <script src="scripts/i18n.js?v=blank-pause-20261113-r1" defer></script>
+    <script src="scripts/i18n.js?v=availability-20261115-r1" defer></script>
     <script src="scripts/supabase-config.js?v=security-20261108-r2"></script>
-    <script src="scripts/session.js?v=blank-pause-20261113-r1"></script>
+    <script src="scripts/session.js?v=availability-20261115-r1"></script>
   </head>
   <body class="support-page cat-home">
     <header class="site-header support-header">
@@ -37,6 +37,11 @@
       </section>
 
       <div class="support-faq-wrap">
+        <section class="faq-group" aria-labelledby="faq-access-title">
+          <h2 id="faq-access-title">网站打不开或连接超时</h2>
+          <details open><summary>切换访问入口</summary><div class="faq-answer"><p>如果当前网络无法连接主站，可尝试<a href="https://080805liang-source.github.io/petforge-site/">备用入口</a>，或返回<a href="https://petforge-desktop.pages.dev/">主站入口</a>。切换后使用原账号登录，会员和工坊作品共用。</p></div></details>
+          <details><summary>仍然提示 ERR_CONNECTION_TIMED_OUT？</summary><div class="faq-answer"><p>请尝试手机流量或另一条网络，并向站主提供打不开的网址、发生时间和运营商。</p><p>访问过的页面在短暂断网时可显示缓存；登录、兑换、聊天和发布作品仍需要网络。请求超时后不会自动重复提交。</p></div></details>
+        </section>
         <section class="faq-group" aria-labelledby="faq-download-title">
           <h2 id="faq-download-title">下载与 Windows 安全</h2>
           <details><summary>点击“生成”后没有看到下载文件？</summary><div class="faq-answer"><p>先确认已上传图片、已登录，且会员有效或账号还有可用次数。生成完成后，浏览器会下载一个 ZIP 文件。</p><p>打开 Edge 或 Chrome 的下载列表，检查是否被浏览器暂停；如提示允许多个文件下载，请允许本站下载。仍没有文件时，清除失败下载记录后刷新页面再试，并检查系统“下载”文件夹。</p></div></details>

@@ -10,7 +10,7 @@ const responseHeaders = {
 const sessionCookie = (token = '') => `${COOKIE}=${token}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${token ? 604800 : 0}`;
 const json = (body, status, extra = {}) => new Response(JSON.stringify(body), { status, headers: { ...responseHeaders, ...extra } });
 
-export async function onRequest({ request }) {
+export async function onRequest({ request, waitUntil }) {
   const url = new URL(request.url);
   const method = request.method;
   if (!['GET', 'POST', 'PUT', 'DELETE'].includes(method)) return json({ error: '请求方法不受支持。' }, 405);
@@ -40,6 +40,15 @@ export async function onRequest({ request }) {
   const token = /^[a-zA-Z0-9_-]{1,256}$/.test(rawToken || '') ? rawToken : '';
   if (migration && !token) return json({ error: '请重新登录。' }, 401);
   const logout = url.pathname === '/api/auth/logout' && method === 'POST';
+  // Only anonymous public listings may be shared. Account data and writes bypass this cache.
+  const edgeCache = method === 'GET' && url.pathname === '/api/workshop' && !token ? globalThis.caches?.default : undefined;
+  const cacheKey = new Request(request.url);
+  if (edgeCache) {
+    try {
+      const cached = await edgeCache.match(cacheKey);
+      if (cached) return new Response(cached.body, { headers: { ...responseHeaders, 'X-PetForge-Cache': 'HIT' } });
+    } catch (_) { /* Cache outages must not block the upstream. */ }
+  }
   try {
     const upstream = await fetch(`${UPSTREAM}${migration ? '/api/me' : url.pathname + url.search}`, {
       method: migration ? 'GET' : method,
@@ -57,6 +66,12 @@ export async function onRequest({ request }) {
       if (!/^[a-f0-9]{64}$/.test(data.token || '')) return json({ error: '登录服务返回异常。' }, 502);
       extra['Set-Cookie'] = sessionCookie(data.token);
       delete data.token;
+    }
+    if (edgeCache && upstream.status === 200 && Array.isArray(data.posts)) {
+      const cached = json(data, 200, { 'Cache-Control': 'public, max-age=15' });
+      const store = edgeCache.put(cacheKey, cached).catch(() => {});
+      if (waitUntil) waitUntil(store); else await store;
+      extra['X-PetForge-Cache'] = 'MISS';
     }
     return json(data, upstream.status, extra);
   } catch (error) {

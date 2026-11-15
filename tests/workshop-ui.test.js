@@ -17,7 +17,7 @@ function card(fetchImage = async () => ({ ok: true, json: async () => ({ post: {
     createElement: tag => new Element(tag),
     querySelector: selector => { if (!elements.has(selector)) elements.set(selector, new Element("div")); return elements.get(selector); },
   };
-  const context = vm.createContext({ document, URLSearchParams, location: { search: "" }, window: { PETFORGE_MEMBERSHIP: { apiUrl: "https://api.example" }, PetForgeMembership: {current:()=>options.user,request:options.request}, confirm:options.confirm || (()=>true), addEventListener() {} },
+  const context = vm.createContext({ document, URLSearchParams, AbortController, AbortSignal, location: { search: "" }, window: { PETFORGE_MEMBERSHIP: { apiUrl: "https://api.example" }, PetForgeMembership: {current:()=>options.user,request:options.request}, confirm:options.confirm || (()=>true), addEventListener() {} },
     fetch: url => url.includes("/workshop?") ? Promise.resolve({ ok: true, json: async () => ({ posts: [], total: 0 }) }) : fetchImage(url) });
   vm.runInContext(source, context);
   const article = vm.runInContext('createCard({id:"sample", authorId:"owner", title:"我的桌宠", author:"创作者", description:"你好", preview:"data:image/png;base64,preview"})', context);

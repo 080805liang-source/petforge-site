@@ -9,6 +9,7 @@ test('primary-site sessions migrate legacy storage once and never save new crede
   const window = { PETFORGE_MEMBERSHIP: { cookieSession: true, apiUrl: '/api', sessionKey: 'session' } };
   runInNewContext(readFileSync(new URL('../scripts/session.js', import.meta.url), 'utf8'), {
     window,
+    AbortSignal,
     localStorage: { getItem: () => 'old-token', removeItem: key => removed.push(key), setItem() { throw new Error('No browser credential storage'); } },
     fetch: async (url, options) => { requests.push({ url, options }); return Response.json(url.endsWith('/auth/session') ? { signedIn: true } : { user: { id: 'user' } }); }
   });

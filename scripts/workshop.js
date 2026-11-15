@@ -8,6 +8,7 @@ const more = document.querySelector("#workshop-more");
 const category = document.querySelector('#workshop-category');
 const api = window.PETFORGE_MEMBERSHIP.apiUrl;
 let posts = [], total = 0, requestId = 0;
+let activeRequest;
 let stopMotionPreview = () => {};
 
 function addMotionPreview(post, media, image) {
@@ -51,7 +52,7 @@ function createCard(post) {
     if (!retried) {
       retried = true;
       try {
-        const response = await fetch(`${api}/workshop/${encodeURIComponent(post.id)}`);
+        const response = await fetch(`${api}/workshop/${encodeURIComponent(post.id)}`, { signal: AbortSignal.timeout(15000) });
         const result = await response.json();
         if (!response.ok || !result.post?.image) throw new Error("Missing image");
         image.src = result.post.image;
@@ -103,15 +104,17 @@ function render() {
 }
 
 async function loadPosts(append = false) {
+  activeRequest?.abort();
+  activeRequest = new AbortController();
   const id = ++requestId; more.disabled = true; setStatus("正在加载创意工坊...");
   try {
-    const response = await fetch(`${api}/workshop?sort=${encodeURIComponent(sort.value)}&category=${encodeURIComponent(category?.value || '')}&q=${encodeURIComponent(search.value.trim())}&offset=${append ? posts.length : 0}&limit=24`);
+    const response = await fetch(`${api}/workshop?sort=${encodeURIComponent(sort.value)}&category=${encodeURIComponent(category?.value || '')}&q=${encodeURIComponent(search.value.trim())}&offset=${append ? posts.length : 0}&limit=24`, { signal: AbortSignal.any([activeRequest.signal, AbortSignal.timeout(15000)]) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "创意工坊暂时无法连接，请稍后重试。");
     if (id !== requestId) return;
     posts = append ? [...posts, ...result.posts] : result.posts; total = result.total; render();
     setStatus(total ? `已发现 ${total} 个公开作品` : "工坊已就绪，等待第一位创作者。");
-  } catch (error) { if (id !== requestId) return; empty.hidden = true; setStatus(error.message, true); }
+  } catch (error) { if (id !== requestId) return; empty.hidden = true; setStatus(error.name === 'TimeoutError' ? '连接超时，请检查网络后重试。' : error.message, true); }
   finally { if (id === requestId) more.disabled = false; }
 }
 let searchTimer;
