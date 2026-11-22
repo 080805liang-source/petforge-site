@@ -8,6 +8,27 @@ sys.path.insert(0, str(root))
 from pet_animation import PetAnimation
 
 class PetAnimationTests(unittest.TestCase):
+    def test_white_blob_click_cycle_sleep_and_wake(self):
+        meta = json.loads((root / 'assets/workshop/animals/animal-900000106-animation.json').read_text())
+        p = PetAnimation(meta)
+        self.assertTrue(p.interactive)
+        self.assertEqual(p.frame(0), 0)
+        self.assertTrue(p.click(1))
+        self.assertEqual(p.frame(1), 1)
+        self.assertTrue(p.click(1.5))
+        self.assertEqual(p.frame(1.5), 2)
+        self.assertTrue(p.click(2))
+        self.assertEqual(p.frame(2), 0)
+        self.assertEqual(p.frame(61.999), 0)
+        self.assertEqual(p.frame(62), 3)
+        self.assertTrue(p.paused(62))
+        self.assertEqual(p.frame(90), 3)
+        self.assertTrue(p.click(90.1))
+        self.assertEqual(p.frame(90.1), 0)
+        self.assertTrue(p.paused(90.1))
+        self.assertFalse(p.paused(90.81))
+        self.assertEqual(p.frame(150.1), 3)
+
     def test_video_pet_neutral_idle_one_shot_and_repeat_clicks(self):
         meta = json.loads((root / 'assets/workshop/animals/animal-900000104-animation.json').read_text())
         p = PetAnimation(meta)

@@ -15,6 +15,21 @@ test('the video pet stays on its neutral standing frame, plays once without rest
   assert.equal(p.click(80000),true);assert.equal(p.frame(80000),1);
 });
 
+test('the white blob cycles three click poses, sleeps after inactivity and wakes on click',()=>{
+  const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000106-animation.json',import.meta.url)));
+  const p=createPetAnimation(meta);
+  assert.equal(p.interactive,true);assert.equal(p.cycleSleep,true);assert.equal(p.frame(0),0);
+  assert.equal(p.click(1000),true);assert.equal(p.frame(1000),1);
+  assert.equal(p.click(1500),true);assert.equal(p.frame(1500),2);
+  assert.equal(p.click(2000),true);assert.equal(p.frame(2000),0);
+  assert.equal(p.frame(61999),0);assert.equal(p.paused(61999),false);
+  assert.equal(p.frame(62000),3);assert.equal(p.paused(62000),true);
+  assert.equal(p.frame(90000),3);
+  assert.equal(p.click(90001),true);assert.equal(p.frame(90001),0);assert.equal(p.paused(90001),true);
+  assert.equal(p.paused(90701),false);
+  assert.equal(p.frame(150001),3);
+});
+
 test('the four photo dog pauses, counts physical clicks, resolves the stick interaction and resumes',()=>{
   const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000103-animation.json',import.meta.url)));
   const p=createPetAnimation(meta);

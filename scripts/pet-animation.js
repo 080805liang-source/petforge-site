@@ -6,15 +6,24 @@ export function createPetAnimation(meta) {
   }
   let state = 'idle', started = null;
   const clickClip = meta.interaction?.type === 'click-clip' && ['idle','pet'].every(key=>clips[key]);
-  const interactive = clickClip || (meta.interaction?.type === 'four-state-dog' && ['idle','pet','angry','calm'].every(key=>clips[key]));
+  const poses = ['idle','pose2','pose3'];
+  const cycleSleep = meta.interaction?.type === 'click-cycle-sleep' && [...poses,'sleep'].every(key=>clips[key]);
+  const seconds = meta.interaction?.idleSeconds;
+  const idleTimeout = (Number.isFinite(seconds) && seconds >= 1 && seconds <= 86400 ? seconds : 60) * 1000;
+  const interactive = cycleSleep || clickClip || (meta.interaction?.type === 'four-state-dog' && ['idle','pet','angry','calm'].every(key=>clips[key]));
   let clicks=[], until=0, resumeAt=0;
   return {
     interactive,
     clickClip,
+    cycleSleep,
     get state() { return state; },
     click(now) {
       if (!interactive) return false;
       this.frame(now);
+      if (cycleSleep) {
+        state = state === 'sleep' ? 'idle' : poses[(poses.indexOf(state) + 1) % poses.length];
+        started=now;resumeAt=now+700;return true;
+      }
       if (clickClip) {
         if (state!=='idle') return false;
         state='pet';started=now;until=now+clips.pet.count/clips.pet.fps*1000;resumeAt=until+700;return true;
@@ -28,7 +37,7 @@ export function createPetAnimation(meta) {
       }
       started=now;until=now+duration;resumeAt=until+700;return true;
     },
-    paused(now) { if(!interactive)return false;this.frame(now);return now<resumeAt; },
+    paused(now) { if(!interactive)return false;this.frame(now);return (cycleSleep && state==='sleep') || now<resumeAt; },
     hasActions: Boolean(clips.idle && clips.pet && clips.play && clips.sleep),
     play(name, now) {
       if (interactive && ['pet','play'].includes(name)) return this.click(now);
@@ -38,6 +47,11 @@ export function createPetAnimation(meta) {
       return true;
     },
     frame(now) {
+      if (cycleSleep) {
+        started ??= now;
+        if (now-started >= idleTimeout) state='sleep';
+        return clips[state].start;
+      }
       if (interactive && state!=='idle' && now>=until) { state='idle';started=now;if(now>=resumeAt)clicks=[]; }
       started ??= now;
       let clip = clips[state];

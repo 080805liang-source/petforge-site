@@ -100,8 +100,8 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
         interactionAudio = new Audio(player.audioUrl);
         interactionAudio.play().catch(() => {});
       }
-      say(player.clickClip ? config.clickLine : {pet:'摸摸头～我先站好。',angry:'汪汪汪(生气，怒吼）',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
-      announce(player.clickClip ? config.clickLine : '大狗互动：'+player.state);return;
+      say(player.clickClip || player.cycleSleep ? config.clickLine : {pet:'摸摸头～我先站好。',angry:'汪汪汪(生气，怒吼）',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
+      announce(player.cycleSleep ? '表情已切换' : player.clickClip ? config.clickLine : '大狗互动：'+player.state);return;
     }
     if (!playPetAction('pet')) animate(config.clickAnimation);
     if (config.clickParticles) burst();
@@ -189,7 +189,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     keyboard.hidden = !(moving && config.keyboardSync && now < typingUntil);
     bubble.style.left = `${clamp(visible.x - 15,12,Math.max(12,bounds.width - Math.min(240,bounds.width * .8) - 12))}px`;
     bubble.style.top = `${Math.max(45,visible.y - bubble.offsetHeight - 12)}px`;
-    if (config.motionEnabled) renderAnimalFrame(now);
+    if (config.motionEnabled || player?.cycleSleep) renderAnimalFrame(now);
   }
   function tick(now) {
     frame = 0;
@@ -209,7 +209,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     const motionText = config.motionEnabled ? '暂停动态试用' : '开启动态试用';
     motionButton.textContent = window.PETFORGE_I18N?.translate(motionText) || motionText;
     motionButton.setAttribute('aria-pressed',String(config.motionEnabled));
-    note.textContent = !ready ? '上传图片后开始互动' : getPetPlayer()?.clickClip ? config.interactionNote : config.animationPreset ? '单击摸头 · 双击逗玩 · 右键更多互动' : ({look:'在框内移动鼠标，看看它的回应',follow:'在框内移动鼠标，它会慢慢靠近',playful:'把鼠标移近，看看它往哪儿躲',none:'试试点击、双击或拖动它'}[config.cursorFollowMode]);
+    note.textContent = !ready ? '上传图片后开始互动' : getPetPlayer()?.clickClip || getPetPlayer()?.cycleSleep ? config.interactionNote : config.animationPreset ? '单击摸头 · 双击逗玩 · 右键更多互动' : ({look:'在框内移动鼠标，看看它的回应',follow:'在框内移动鼠标，它会慢慢靠近',playful:'把鼠标移近，看看它往哪儿躲',none:'试试点击、双击或拖动它'}[config.cursorFollowMode]);
     if (!ready || document.hidden) {
       cancelAnimationFrame(frame); frame = 0;
       if (!ready) { bubble.hidden = true; particles.replaceChildren(); closeChat(false); }

@@ -15,7 +15,11 @@ class PetAnimation:
         self.state = 'idle'
         self.started = None
         self.click_clip = meta.get('interaction', {}).get('type') == 'click-clip' and all(key in self.clips for key in ('idle', 'pet'))
-        self.interactive = self.click_clip or (meta.get('interaction', {}).get('type') == 'four-state-dog' and all(key in self.clips for key in ('idle', 'pet', 'angry', 'calm')))
+        self.poses = ('idle', 'pose2', 'pose3')
+        self.cycle_sleep = meta.get('interaction', {}).get('type') == 'click-cycle-sleep' and all(key in self.clips for key in (*self.poses, 'sleep'))
+        seconds = meta.get('interaction', {}).get('idleSeconds', 60)
+        self.idle_timeout = seconds if isinstance(seconds, (int, float)) and 1 <= seconds <= 86400 else 60
+        self.interactive = self.cycle_sleep or self.click_clip or (meta.get('interaction', {}).get('type') == 'four-state-dog' and all(key in self.clips for key in ('idle', 'pet', 'angry', 'calm')))
         self.clicks = []
         self.until = 0
         self.resume_at = 0
@@ -24,6 +28,10 @@ class PetAnimation:
         if not self.interactive:
             return False
         self.frame(now)
+        if self.cycle_sleep:
+            self.state = 'idle' if self.state == 'sleep' else self.poses[(self.poses.index(self.state) + 1) % len(self.poses)]
+            self.started, self.resume_at = now, now + .7
+            return True
         if self.click_clip:
             if self.state != 'idle':
                 return False
@@ -49,7 +57,7 @@ class PetAnimation:
         if not self.interactive:
             return False
         self.frame(now)
-        return now < self.resume_at
+        return (self.cycle_sleep and self.state == 'sleep') or now < self.resume_at
 
     def play(self, name, now):
         if self.interactive and name in ('pet', 'play'):
@@ -61,6 +69,12 @@ class PetAnimation:
         return True
 
     def frame(self, now):
+        if self.cycle_sleep:
+            if self.started is None:
+                self.started = now
+            if now - self.started >= self.idle_timeout:
+                self.state = 'sleep'
+            return self.clips[self.state]['start']
         if self.interactive and self.state != 'idle' and now >= self.until:
             self.state, self.started = 'idle', now
             if now >= self.resume_at:

@@ -1,0 +1,39 @@
+{
+  "version": 3,
+  "width": 320,
+  "height": 320,
+  "columns": 4,
+  "count": 4,
+  "fps": 1,
+  "clips": {
+    "idle": {
+      "start": 0,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose2": {
+      "start": 1,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose3": {
+      "start": 2,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "sleep": {
+      "start": 3,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    }
+  },
+  "interaction": {
+    "type": "click-cycle-sleep",
+    "idleSeconds": 60
+  },
+  "technique": "Four user-provided poses, original pixels with locally closed-outline masks; no generated replacement."
+}
