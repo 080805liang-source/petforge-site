@@ -1,4 +1,4 @@
-import { removeEdgeBackground, extractOutlinedSubject, applySubjectMask, subjectBounds } from "./background-matte.js?v=outline-20261107-r1";
+import { removeEdgeBackground, extractOutlinedSubject, applySubjectMask, subjectBounds, refineSubjectEdges } from "./background-matte.js?v=usagi-20261124-r1";
 
 const MODEL = new URL("../assets/models/u2netp.onnx", import.meta.url).href;
 const RUNTIME = new URL("./vendor/onnx/", import.meta.url).href;
@@ -68,18 +68,15 @@ self.onmessage = async ({ data: { blob, mode } }) => {
     bitmap.close();
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
     const fast = removeEdgeBackground(pixels);
-    if (fast?.kind === "transparent") {
-      subjectBounds(pixels.data, canvas.width, canvas.height);
-      self.postMessage({ blob, kind: "transparent" });
-      return;
-    }
-    const outline = extractOutlinedSubject(pixels);
-    const result = outline ? outline.data : mode === "auto" && fast ? fast.data : applySubjectMask(pixels.data, await smartMask(canvas), canvas.width, canvas.height);
+    const transparent = fast?.kind === "transparent";
+    const outline = transparent ? null : extractOutlinedSubject(pixels);
+    const mask = transparent ? pixels.data : outline ? outline.data : mode === "auto" && fast ? fast.data : applySubjectMask(pixels.data, await smartMask(canvas), canvas.width, canvas.height);
+    const result = refineSubjectEdges(mask, canvas.width, canvas.height);
     const bounds = subjectBounds(result, canvas.width, canvas.height);
     context.putImageData(new ImageData(result, canvas.width, canvas.height), 0, 0);
     const cropped = new OffscreenCanvas(bounds.width, bounds.height);
     cropped.getContext("2d").drawImage(canvas, bounds.left, bounds.top, bounds.width, bounds.height, 0, 0, bounds.width, bounds.height);
-    self.postMessage({ blob: await cropped.convertToBlob({ type: "image/png" }), kind: "cutout" });
+    self.postMessage({ blob: await cropped.convertToBlob({ type: "image/png" }), kind: transparent ? "transparent" : "cutout" });
   } catch (error) {
     self.postMessage({ error: error.message || "cutout-failed" });
   }

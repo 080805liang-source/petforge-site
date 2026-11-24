@@ -6,8 +6,8 @@ export function createPetAnimation(meta) {
   }
   let state = 'idle', started = null;
   const clickClip = meta.interaction?.type === 'click-clip' && ['idle','pet'].every(key=>clips[key]);
-  const poses = ['idle','pose2','pose3'];
-  const cycleSleep = meta.interaction?.type === 'click-cycle-sleep' && [...poses,'sleep'].every(key=>clips[key]);
+  const poses = Array.isArray(meta.interaction?.poses) ? meta.interaction.poses : ['idle','pose2','pose3'];
+  const cycleSleep = meta.interaction?.type === 'click-cycle-sleep' && poses.length >= 2 && poses.length <= 239 && poses[0] === 'idle' && !poses.includes('sleep') && new Set(poses).size === poses.length && [...poses,'sleep'].every(key=>typeof key==='string' && clips[key]);
   const seconds = meta.interaction?.idleSeconds;
   const idleTimeout = (Number.isFinite(seconds) && seconds >= 1 && seconds <= 86400 ? seconds : 60) * 1000;
   const interactive = cycleSleep || clickClip || (meta.interaction?.type === 'four-state-dog' && ['idle','pet','angry','calm'].every(key=>clips[key]));

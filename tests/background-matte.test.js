@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { removeEdgeBackground, extractOutlinedSubject, applySubjectMask, subjectBounds } from "../scripts/background-matte.js";
+import { removeEdgeBackground, extractOutlinedSubject, applySubjectMask, subjectBounds, refineSubjectEdges } from "../scripts/background-matte.js";
 
 function image(width = 30, height = 30, color = [255, 255, 255, 255]) {
   const data = new Uint8ClampedArray(width * height * 4);
@@ -9,6 +9,21 @@ function image(width = 30, height = 30, color = [255, 255, 255, 255]) {
 }
 function pixel(image, x, y, color) { image.data.set(color, (y * image.width + x) * 4); }
 const alpha = (data, width, x, y) => data[(y * width + x) * 4 + 3];
+
+test('edge refinement removes faint residue, feathers inward and preserves interior paint',()=>{
+  const source=image(10,10,[10,20,30,0]);
+  for(let y=2;y<8;y++)for(let x=2;x<8;x++)pixel(source,x,y,[250,245,240,255]);
+  pixel(source,0,0,[0,0,0,8]);
+  const result=refineSubjectEdges(source.data,10,10);
+  assert.equal(alpha(result,10,0,0),0);
+  assert.ok(alpha(result,10,2,2)<255);
+  assert.equal(alpha(result,10,4,4),255);
+  for(let p=0;p<100;p++){
+    assert.ok(result[p*4+3]<=source.data[p*4+3]);
+    assert.deepEqual(result.slice(p*4,p*4+3),source.data.slice(p*4,p*4+3));
+  }
+  assert.equal(alpha(source.data,10,0,0),8);
+});
 
 test("removes connected white background and preserves the enclosed white character", () => {
   const source = image();

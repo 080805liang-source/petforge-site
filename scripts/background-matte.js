@@ -1,4 +1,20 @@
 // Pure pixel operations shared by the cutout worker and regression tests.
+export function refineSubjectEdges(data, width, height) {
+  const result = new Uint8ClampedArray(data);
+  for (let y=0;y<height;y++) for (let x=0;x<width;x++) {
+    const p=y*width+x, alpha=data[p*4+3];
+    if (!alpha) continue;
+    let sum=0;
+    for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) {
+      const xx=x+dx,yy=y+dy;
+      if(xx>=0 && xx<width && yy>=0 && yy<height) sum+=data[(yy*width+xx)*4+3]*(dx===0?2:1)*(dy===0?2:1);
+    }
+    // Feather inward only: retain paint and thin details without growing a halo.
+    result[p*4+3]=alpha<16 ? 0 : Math.min(alpha,Math.round(alpha*.65+sum/16*.35));
+  }
+  return result;
+}
+
 export function removeEdgeBackground({ data, width, height }) {
   const border = [];
   for (let x = 0; x < width; x++) border.push(x, (height - 1) * width + x);

@@ -15,8 +15,12 @@ class PetAnimation:
         self.state = 'idle'
         self.started = None
         self.click_clip = meta.get('interaction', {}).get('type') == 'click-clip' and all(key in self.clips for key in ('idle', 'pet'))
-        self.poses = ('idle', 'pose2', 'pose3')
-        self.cycle_sleep = meta.get('interaction', {}).get('type') == 'click-cycle-sleep' and all(key in self.clips for key in (*self.poses, 'sleep'))
+        self.poses = meta.get('interaction', {}).get('poses', ['idle', 'pose2', 'pose3'])
+        self.cycle_sleep = (meta.get('interaction', {}).get('type') == 'click-cycle-sleep'
+                            and isinstance(self.poses, list) and 2 <= len(self.poses) <= 239
+                            and self.poses[0] == 'idle' and 'sleep' not in self.poses
+                            and all(isinstance(key, str) and key in self.clips for key in self.poses)
+                            and len(set(self.poses)) == len(self.poses) and 'sleep' in self.clips)
         seconds = meta.get('interaction', {}).get('idleSeconds', 60)
         self.idle_timeout = seconds if isinstance(seconds, (int, float)) and 1 <= seconds <= 86400 else 60
         self.interactive = self.cycle_sleep or self.click_clip or (meta.get('interaction', {}).get('type') == 'four-state-dog' and all(key in self.clips for key in ('idle', 'pet', 'angry', 'calm')))

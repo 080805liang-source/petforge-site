@@ -1,10 +1,10 @@
-import manifest from './runtime-manifest.js?v=8da6afa15d0306d2';
-export const RUNTIME_SHA256 = 'cd966a5a6ba6ef17f9e7b2368ce0efb242cae8138855f7fd22257c70bc5f3cb6';
+import manifest from './runtime-manifest.js?v=012dec48544331ba';
+export const RUNTIME_SHA256 = '541aece8c7bd4930e70861afe8c0235e04fcdf27cd58c8f225e03613b77b60ad';
 export const DESKTOP_DOWNLOAD_AVAILABLE = true;
 export const DESKTOP_DOWNLOAD_NOTICE = '';
 
 export async function verifyDesktopRuntime(bytes) {
-  if (bytes.byteLength !== 46840554 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
+  if (bytes.byteLength !== 46841447 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error('桌宠运行核心文件不完整，请刷新后重试。');
   const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('');
   if (digest !== RUNTIME_SHA256) throw new Error('桌宠运行核心安全校验失败，已停止生成，请联系管理员。');
   return bytes;
@@ -64,7 +64,7 @@ export async function fetchDesktopRuntime(url, onProgress = () => {}, {cacheStor
   const compressed = new Uint8Array(manifest.size);
   let offset = 0; for (const part of parts) { compressed.set(part, offset); offset += part.length; }
   const reader = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip')).getReader();
-  const output = new Uint8Array(46840554); offset = 0;
+  const output = new Uint8Array(46841447); offset = 0;
   for (;;) {
     const {done,value} = await reader.read(); if (done) break;
     if (offset + value.length > output.length) { await reader.cancel(); throw new Error('桌宠运行核心大小异常。'); }

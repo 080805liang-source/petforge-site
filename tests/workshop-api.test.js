@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { createAdminTestApi } from './helpers/admin-api-fixture.js';
 
 const png = `data:image/png;base64,${readFileSync(new URL('../assets/pwa-icon-192.png', import.meta.url)).toString('base64')}`;
-const config = { name: '像素小猫', size: 100, opacity: 100, clickLine: '你好', motionEnabled: false, shadow: false, visualStyle: 'chrome', keyboardSync: false, alwaysOnTop: true, customShortcuts: [{ label: '微信', type: 'app', target: 'weixin://', appPaths: ['%ProgramFiles%\\WeChat\\WeChat.exe'] }], safeRendering: true };
+const config = { name: '像素小猫', size: 100, opacity: 100, clickLine: '你好', cursorFollowMode: 'follow', motionEnabled: false, shadow: false, visualStyle: 'chrome', keyboardSync: false, alwaysOnTop: true, customShortcuts: [{ label: '微信', type: 'app', target: 'weixin://', appPaths: ['%ProgramFiles%\\WeChat\\WeChat.exe'] }], safeRendering: true };
 const payload = () => ({ config: structuredClone(config), image: png, preview: png, description: '测试配置' });
 
 test('public chat templates retain appearance and discard private keys, endpoints and provider settings',async()=>{
@@ -56,6 +56,7 @@ test('publishing requires login; public readers receive the same PNG and complet
   assert.equal(result.body.post.config.keyboardSync, false);
   assert.equal(result.body.post.config.safeRendering, false);
   assert.equal(result.body.post.config.targetFps, 120);
+  assert.equal(result.body.post.config.cursorFollowMode, 'none');
   assert.equal(result.body.post.config.customShortcuts[0].target, 'weixin://');
   assert.equal(result.body.post.config.customShortcuts[0].label, '微信');
   assert.ok(result.body.post.config.customShortcuts[0].appPaths.includes('%ProgramFiles%\\Tencent\\WeChat\\WeChat.exe'));

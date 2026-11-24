@@ -10,6 +10,8 @@ import time
 import webbrowser
 import ctypes
 import threading
+import io
+from PIL import Image
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox, simpledialog
@@ -38,6 +40,21 @@ CONFIG_PATH = BASE_DIR / "config.json"
 IMAGE_PATH = BASE_DIR / "assets" / "pet.png"
 TARGET_FPS = 120
 FRAME_SECONDS = 1 / TARGET_FPS
+
+
+def desktop_image(image):
+    """Avoid color-key black fringes: Tk/Win32 cannot show partial PNG alpha."""
+    result = image.convert('RGBA')
+    result.putalpha(result.getchannel('A').point(lambda value: 255 if value >= 128 else 0))
+    return result
+
+
+def load_desktop_photo(path):
+    with Image.open(path) as image:
+        prepared = desktop_image(image)
+    data = io.BytesIO()
+    prepared.save(data, format='PNG')
+    return tk.PhotoImage(data=data.getvalue())
 
 
 def transparent_color(photo) -> str:
@@ -105,8 +122,8 @@ class DesktopPet:
         self.root.attributes("-alpha", opacity)
 
         try:
-            self.photo = tk.PhotoImage(file=IMAGE_PATH)
-        except tk.TclError as exc:
+            self.photo = load_desktop_photo(IMAGE_PATH)
+        except (OSError, tk.TclError) as exc:
             self.root.destroy()
             fail(f"无法加载桌宠图片：{exc}")
 
@@ -476,7 +493,7 @@ class DesktopPet:
             width, height, count, columns = (int(meta[key]) for key in ('width', 'height', 'count', 'columns'))
             if not (32 <= width <= 512 and 32 <= height <= 512 and 2 <= count <= 240 and 1 <= columns <= 16):
                 return
-            atlas = tk.PhotoImage(file=BASE_DIR / 'assets' / 'pet-atlas.png')
+            atlas = load_desktop_photo(BASE_DIR / 'assets' / 'pet-atlas.png')
             if atlas.width() < width * columns or atlas.height() < height * math.ceil(count / columns):
                 return
             for index in range(count):

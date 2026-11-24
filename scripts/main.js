@@ -97,7 +97,7 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=white-blob-20261122-r1');
+    const {createPetAnimation} = await import('./pet-animation.js?v=usagi-20261124-r1');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -578,7 +578,7 @@ async function preparePetImage() {
     if (!/^image\/(png|jpeg|webp)$/.test(source.type) || source.size > 20 * 1024 * 1024) throw new Error("invalid-image");
     const mode = petBackground.value;
     if (mode !== "original") {
-      backgroundModule ||= await import("./background-removal.js?v=outline-20261107-r1");
+      backgroundModule ||= await import("./background-removal.js?v=usagi-20261124-r1");
       if (requestId !== imageRequestId) return;
     }
     const result = mode === "original" ? { blob: source, kind: "original" } : await backgroundModule.cutoutImage(source, mode, (phase) => {
@@ -630,12 +630,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.22-white-blob-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.24-usagi-r1";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=white-blob-20261122-r1');
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=usagi-20261124-r1');
   const bytes = await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在下载桌宠文件… ${(completed/1048576).toFixed(1)} / ${(total/1048576).toFixed(1)} MB · ${Math.round(completed / total * 100)}%（已完成部分自动保留）`));
   setStatus('运行文件校验通过，正在整理图片和聊天设置…');
   return desktopRuntimeFiles(bytes);
@@ -972,7 +972,7 @@ async function loadWorkshopTemplate() {
     styledPetBlob = imageBlob;
     showStyledPet(imageBlob);
     await loadAnimalPreview(animationPreset);
-    if (animalPreview?.player.interactive) cursorFollowMode.value = templateConfig.cursorFollowMode || 'follow';
+    if (animalPreview?.player.interactive) cursorFollowMode.value = templateConfig.cursorFollowMode || 'none';
     workshopTemplateId = templateId;
     sharedImageSize = Number(templateConfig.size);
     cutoutStatus.textContent = "已使用作品原图与配置，不会重复抠图或叠加滤镜。";

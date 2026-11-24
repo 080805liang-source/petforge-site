@@ -30,6 +30,16 @@ test('the white blob cycles three click poses, sleeps after inactivity and wakes
   assert.equal(p.frame(150001),3);
 });
 
+test('Usagi cycles all seven poses once per click, sleeps and wakes',()=>{
+  const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000107-animation.json',import.meta.url)));
+  const p=createPetAnimation(meta);assert.equal(p.interactive,true);assert.equal(p.frame(0),0);
+  for(let i=1;i<=14;i++){assert.equal(p.click(i*1000),true);assert.equal(p.frame(i*1000),i%7);}
+  assert.equal(p.frame(73999),0);assert.equal(p.frame(74000),7);assert.equal(p.paused(74000),true);
+  p.click(75000);assert.equal(p.frame(75000),0);
+  const invalid=createPetAnimation({...meta,interaction:{...meta.interaction,poses:['idle','sleep']}});
+  assert.equal(invalid.interactive,false);
+});
+
 test('the four photo dog pauses, counts physical clicks, resolves the stick interaction and resumes',()=>{
   const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000103-animation.json',import.meta.url)));
   const p=createPetAnimation(meta);

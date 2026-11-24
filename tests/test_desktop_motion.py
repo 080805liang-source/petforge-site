@@ -6,7 +6,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from desktop_app import DesktopPet, motion_offset, transparent_color
+from desktop_app import DesktopPet, motion_offset, transparent_color, desktop_image
+from PIL import Image
 
 
 class Canvas:
@@ -91,6 +92,16 @@ def pet():
 
 
 class DesktopMotionTests(unittest.TestCase):
+    def test_color_key_display_removes_partial_alpha_fringe_without_changing_art(self):
+        image = Image.new('RGBA', (4, 1))
+        colors = [(11,22,33,0), (50,60,70,40), (80,90,100,170), (255,255,255,255)]
+        image.putdata(colors)
+        prepared = desktop_image(image)
+        actual = [prepared.getpixel((x, 0)) for x in range(4)]
+        self.assertEqual([p[3] for p in actual], [0,0,255,255])
+        self.assertEqual([p[:3] for p in actual], [p[:3] for p in colors])
+        self.assertEqual([image.getpixel((x, 0)) for x in range(4)], colors)
+
     def test_blank_hit_test_excludes_desktop_icons_and_application_windows(self):
         instance=pet()
         point_class=['SysListView32']; root_class=['Progman']; child_id=[0]; released=[]
