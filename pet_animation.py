@@ -21,20 +21,43 @@ class PetAnimation:
                             and self.poses[0] == 'idle' and 'sleep' not in self.poses
                             and all(isinstance(key, str) and key in self.clips for key in self.poses)
                             and len(set(self.poses)) == len(self.poses) and 'sleep' in self.clips)
+        anger = meta.get('interaction', {}).get('anger')
+        self.burst = (anger if self.cycle_sleep and 'angry' in self.clips and isinstance(anger, dict)
+                      and isinstance(anger.get('afterCycles'), int) and anger['afterCycles'] > 0
+                      and isinstance(anger.get('clicks'), int) and anger['clicks'] > 1
+                      and isinstance(anger.get('windowSeconds'), (int, float)) and anger['windowSeconds'] > 0
+                      and isinstance(anger.get('durationSeconds'), (int, float)) and anger['durationSeconds'] > 0
+                      else None)
         seconds = meta.get('interaction', {}).get('idleSeconds', 60)
         self.idle_timeout = seconds if isinstance(seconds, (int, float)) and 1 <= seconds <= 86400 else 60
         self.interactive = self.cycle_sleep or self.click_clip or (meta.get('interaction', {}).get('type') == 'four-state-dog' and all(key in self.clips for key in ('idle', 'pet', 'angry', 'calm')))
         self.clicks = []
         self.until = 0
         self.resume_at = 0
+        self.pose_clicks = 0
+        self.rapid_clicks = []
 
     def click(self, now):
         if not self.interactive:
             return False
         self.frame(now)
         if self.cycle_sleep:
-            self.state = 'idle' if self.state == 'sleep' else self.poses[(self.poses.index(self.state) + 1) % len(self.poses)]
-            self.started, self.resume_at = now, now + .7
+            if self.state == 'angry':
+                return False
+            if self.state == 'sleep':
+                self.state, self.pose_clicks, self.rapid_clicks = 'idle', 0, []
+            else:
+                self.state = self.poses[(self.poses.index(self.state) + 1) % len(self.poses)]
+                self.pose_clicks += 1
+                if self.burst and self.pose_clicks > len(self.poses) * self.burst['afterCycles']:
+                    self.rapid_clicks = [at for at in self.rapid_clicks if now - at <= self.burst['windowSeconds']]
+                    self.rapid_clicks.append(now)
+                    if len(self.rapid_clicks) >= self.burst['clicks']:
+                        self.state = 'angry'
+                        self.until = now + self.burst['durationSeconds']
+                        self.pose_clicks, self.rapid_clicks = 0, []
+            self.started = now
+            self.resume_at = self.until + .7 if self.state == 'angry' else now + .7
             return True
         if self.click_clip:
             if self.state != 'idle':
@@ -61,7 +84,7 @@ class PetAnimation:
         if not self.interactive:
             return False
         self.frame(now)
-        return (self.cycle_sleep and self.state == 'sleep') or now < self.resume_at
+        return (self.cycle_sleep and self.state in ('sleep', 'angry')) or now < self.resume_at
 
     def play(self, name, now):
         if self.interactive and name in ('pet', 'play'):
@@ -76,8 +99,10 @@ class PetAnimation:
         if self.cycle_sleep:
             if self.started is None:
                 self.started = now
-            if now - self.started >= self.idle_timeout:
-                self.state = 'sleep'
+            if self.state == 'angry' and now >= self.until:
+                self.state, self.started = 'idle', self.until
+            if self.state != 'angry' and now - self.started >= self.idle_timeout:
+                self.state, self.pose_clicks, self.rapid_clicks = 'sleep', 0, []
             return self.clips[self.state]['start']
         if self.interactive and self.state != 'idle' and now >= self.until:
             self.state, self.started = 'idle', now

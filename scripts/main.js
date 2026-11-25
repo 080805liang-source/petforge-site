@@ -97,7 +97,7 @@ async function loadAnimalPreview(key) {
     const prefix = `assets/workshop/animals/${key}`;
     const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=usagi-20261124-r1');
+    const {createPetAnimation} = await import('./pet-animation.js?v=joke-bear-20261125-r1');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -635,7 +635,7 @@ const PETFORGE_BUILD_VERSION = "2026.11.24-usagi-r1";
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=usagi-20261124-r1');
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=joke-bear-20261125-r1');
   const bytes = await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在下载桌宠文件… ${(completed/1048576).toFixed(1)} / ${(total/1048576).toFixed(1)} MB · ${Math.round(completed / total * 100)}%（已完成部分自动保留）`));
   setStatus('运行文件校验通过，正在整理图片和聊天设置…');
   return desktopRuntimeFiles(bytes);

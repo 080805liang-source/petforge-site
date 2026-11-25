@@ -427,7 +427,7 @@ class DesktopPet:
                 self.play_interaction_sound()
                 self.show_bubble(self.config.get('clickLine', '哈哈哈哈！'), 1800)
             elif self.pet_animation.cycle_sleep:
-                self.show_bubble(self.config.get('clickLine', ''), 1800)
+                self.show_bubble('别再点啦！' if self.pet_animation.state == 'angry' else self.config.get('clickLine', ''), 1800)
             else:
                 self.show_bubble({'pet': '摸摸头～我先站好。', 'angry': '汪汪汪(生气，怒吼）', 'calm': '好啦，冷静一下，等会儿继续跟着你。'}.get(self.pet_animation.state, ''), 1800)
             return

@@ -1,6 +1,6 @@
-const CACHE_NAME = "petforge-web-usagi-20261124-r1";
+const CACHE_NAME = "petforge-web-joke-bear-20261125-r1";
 const APP_SHELL = [
-  "./scripts/runtime-manifest.js?v=012dec48544331ba",
+  "./scripts/runtime-manifest.js?v=4ba454de4fd97f38",
   "./scripts/support-group.js?v=blank-pause-20261113-r1",
   "./styles/support-group.css?v=blank-pause-20261113-r1",
   "./scripts/free-chat.js",
@@ -42,9 +42,9 @@ const APP_SHELL = [
   "./assets/voxel-kitten-preview.svg",
   "./assets/feature-cat-white-20261027.png",
   "./assets/desktop-pet-scene.webp",
-  "./scripts/main.js?v=usagi-20261124-r1",
+  "./scripts/main.js?v=joke-bear-20261125-r1",
   "./scripts/interactive-preview.js?v=white-blob-20261122-r1",
-  "./scripts/pet-animation.js?v=usagi-20261124-r1",
+  "./scripts/pet-animation.js?v=joke-bear-20261125-r1",
   "./scripts/background-removal.js?v=usagi-20261124-r1",
   "./scripts/background-worker.js?v=usagi-20261124-r1",
   "./scripts/background-matte.js?v=usagi-20261124-r1",
@@ -54,7 +54,7 @@ const APP_SHELL = [
   "./scripts/workshop.js?v=usagi-20261124-r1",
   "./scripts/supabase-config.js?v=security-20261108-r2",
   "./scripts/session.js?v=availability-20261115-r1",
-  "./scripts/desktop-runtime.js?v=usagi-20261124-r1",
+  "./scripts/desktop-runtime.js?v=joke-bear-20261125-r1",
   "./scripts/pwa.js?v=blank-pause-20261113-r1",
   "./assets/creator-studio-3d.png",
   "./assets/pwa-icon-192.png",

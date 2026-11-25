@@ -8,10 +8,12 @@ export function createPetAnimation(meta) {
   const clickClip = meta.interaction?.type === 'click-clip' && ['idle','pet'].every(key=>clips[key]);
   const poses = Array.isArray(meta.interaction?.poses) ? meta.interaction.poses : ['idle','pose2','pose3'];
   const cycleSleep = meta.interaction?.type === 'click-cycle-sleep' && poses.length >= 2 && poses.length <= 239 && poses[0] === 'idle' && !poses.includes('sleep') && new Set(poses).size === poses.length && [...poses,'sleep'].every(key=>typeof key==='string' && clips[key]);
+  const anger = meta.interaction?.anger;
+  const burst = cycleSleep && clips.angry && Number.isInteger(anger?.afterCycles) && anger.afterCycles > 0 && Number.isInteger(anger?.clicks) && anger.clicks > 1 && Number.isFinite(anger?.windowSeconds) && anger.windowSeconds > 0 && Number.isFinite(anger?.durationSeconds) && anger.durationSeconds > 0 ? anger : null;
   const seconds = meta.interaction?.idleSeconds;
   const idleTimeout = (Number.isFinite(seconds) && seconds >= 1 && seconds <= 86400 ? seconds : 60) * 1000;
   const interactive = cycleSleep || clickClip || (meta.interaction?.type === 'four-state-dog' && ['idle','pet','angry','calm'].every(key=>clips[key]));
-  let clicks=[], until=0, resumeAt=0;
+  let clicks=[], until=0, resumeAt=0, poseClicks=0, rapidClicks=[];
   return {
     interactive,
     clickClip,
@@ -21,8 +23,16 @@ export function createPetAnimation(meta) {
       if (!interactive) return false;
       this.frame(now);
       if (cycleSleep) {
-        state = state === 'sleep' ? 'idle' : poses[(poses.indexOf(state) + 1) % poses.length];
-        started=now;resumeAt=now+700;return true;
+        if (state === 'angry') return false;
+        if (state === 'sleep') { state='idle';poseClicks=0;rapidClicks=[]; }
+        else {
+          state=poses[(poses.indexOf(state)+1)%poses.length];poseClicks++;
+          if (burst && poseClicks > poses.length*burst.afterCycles) {
+            rapidClicks=rapidClicks.filter(at=>now-at<=burst.windowSeconds*1000);rapidClicks.push(now);
+            if (rapidClicks.length>=burst.clicks) { state='angry';until=now+burst.durationSeconds*1000;poseClicks=0;rapidClicks=[]; }
+          }
+        }
+        started=now;resumeAt=state==='angry'?until+700:now+700;return true;
       }
       if (clickClip) {
         if (state!=='idle') return false;
@@ -37,7 +47,7 @@ export function createPetAnimation(meta) {
       }
       started=now;until=now+duration;resumeAt=until+700;return true;
     },
-    paused(now) { if(!interactive)return false;this.frame(now);return (cycleSleep && state==='sleep') || now<resumeAt; },
+    paused(now) { if(!interactive)return false;this.frame(now);return (cycleSleep && (state==='sleep'||state==='angry')) || now<resumeAt; },
     hasActions: Boolean(clips.idle && clips.pet && clips.play && clips.sleep),
     play(name, now) {
       if (interactive && ['pet','play'].includes(name)) return this.click(now);
@@ -49,7 +59,8 @@ export function createPetAnimation(meta) {
     frame(now) {
       if (cycleSleep) {
         started ??= now;
-        if (now-started >= idleTimeout) state='sleep';
+        if (state==='angry' && now>=until) { state='idle';started=until; }
+        if (state!=='angry' && now-started >= idleTimeout) { state='sleep';poseClicks=0;rapidClicks=[]; }
         return clips[state].start;
       }
       if (interactive && state!=='idle' && now>=until) { state='idle';started=now;if(now>=resumeAt)clicks=[]; }

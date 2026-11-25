@@ -8,6 +8,32 @@ sys.path.insert(0, str(root))
 from pet_animation import PetAnimation
 
 class PetAnimationTests(unittest.TestCase):
+    def test_joke_bear_anger_requires_three_cycles_then_rapid_burst(self):
+        meta = json.loads((root / 'assets/workshop/animals/animal-900000109-animation.json').read_text())
+        p = PetAnimation(meta)
+        self.assertEqual(p.frame(0), 0)
+        for i in range(1, 13):
+            self.assertTrue(p.click(i))
+            self.assertEqual(p.frame(i), i % 4)
+        for i in range(1, 4):
+            self.assertTrue(p.click(12 + i * .1))
+            self.assertNotEqual(p.state, 'angry')
+        self.assertTrue(p.click(12.4))
+        self.assertEqual(p.frame(12.4), 4)
+        self.assertTrue(p.paused(12.4))
+        self.assertFalse(p.click(12.5))
+        self.assertEqual(p.frame(16.4), 0)
+        self.assertTrue(p.paused(17.099))
+        self.assertFalse(p.paused(17.1))
+        self.assertEqual(p.frame(196.4), 5)
+        self.assertTrue(p.click(196.5))
+        self.assertEqual(p.frame(196.5), 0)
+        self.assertTrue(p.click(197))
+        self.assertEqual(p.frame(197), 1)
+        idle = PetAnimation(meta)
+        self.assertEqual(idle.frame(0), 0)
+        self.assertEqual(idle.frame(180), 5)
+
     def test_hachiware_six_click_poses_sleep_and_wake(self):
         meta = json.loads((root / 'assets/workshop/animals/animal-900000108-animation.json').read_text())
         p = PetAnimation(meta)

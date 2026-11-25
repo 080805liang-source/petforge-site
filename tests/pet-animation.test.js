@@ -48,6 +48,19 @@ test('Hachiware cycles six poses, sleeps after 60 seconds and wakes on click',()
   assert.equal(p.click(73000),true);assert.equal(p.frame(73000),0);
 });
 
+test('Joke Bear needs three complete cycles and a fresh rapid burst before anger',()=>{
+  const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000109-animation.json',import.meta.url)));
+  const p=createPetAnimation(meta);assert.equal(p.frame(0),0);
+  for(let i=1;i<=12;i++){assert.equal(p.click(i*1000),true);assert.equal(p.frame(i*1000),i%4);}
+  for(let i=1;i<=3;i++){assert.equal(p.click(12000+i*100),true);assert.notEqual(p.state,'angry');}
+  assert.equal(p.click(12400),true);assert.equal(p.frame(12400),4);assert.equal(p.paused(12400),true);
+  assert.equal(p.click(12500),false);assert.equal(p.frame(16400),0);
+  assert.equal(p.paused(17099),true);assert.equal(p.paused(17100),false);
+  assert.equal(p.frame(196400),5);assert.equal(p.click(196500),true);assert.equal(p.frame(196500),0);
+  assert.equal(p.click(197000),true);assert.equal(p.frame(197000),1);
+  const idle=createPetAnimation(meta);assert.equal(idle.frame(0),0);assert.equal(idle.frame(180000),5);
+});
+
 test('the four photo dog pauses, counts physical clicks, resolves the stick interaction and resumes',()=>{
   const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000103-animation.json',import.meta.url)));
   const p=createPetAnimation(meta);

@@ -1,0 +1,63 @@
+{
+  "version": 3,
+  "width": 320,
+  "height": 320,
+  "columns": 4,
+  "count": 6,
+  "fps": 1,
+  "clips": {
+    "idle": {
+      "start": 0,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose2": {
+      "start": 1,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose3": {
+      "start": 2,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose4": {
+      "start": 3,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "angry": {
+      "start": 4,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "sleep": {
+      "start": 5,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    }
+  },
+  "interaction": {
+    "type": "click-cycle-sleep",
+    "idleSeconds": 180,
+    "poses": [
+      "idle",
+      "pose2",
+      "pose3",
+      "pose4"
+    ],
+    "anger": {
+      "afterCycles": 3,
+      "clicks": 4,
+      "windowSeconds": 2,
+      "durationSeconds": 4
+    }
+  },
+  "technique": "Six user-supplied screenshots; transparent cutouts with original color and linework preserved."
+}
