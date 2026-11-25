@@ -43,7 +43,11 @@ class PetAnimation:
         self.frame(now)
         if self.cycle_sleep:
             if self.state == 'angry':
-                return False
+                if not self.burst:
+                    return False
+                self.until = now + self.burst['durationSeconds']
+                self.started, self.resume_at = now, self.until + .7
+                return True
             if self.state == 'sleep':
                 self.state, self.pose_clicks, self.rapid_clicks = 'idle', 0, []
             else:

@@ -24,14 +24,14 @@ function addMotionPreview(post, media, image) {
     stopMotionPreview();stopMotionPreview=stop;playing=true;button.textContent='加载动作…';const current=++token;
     try {
       const prefix=`assets/workshop/animals/${key}`;
-      const [response,atlasResponse]=await Promise.all([fetch(`${prefix}-animation.json`),fetch(`${prefix}-atlas.webp`)]);
+      const [response,atlasResponse]=await Promise.all([fetch(`${prefix}-animation.json?v=ears-anger-20261125-r3`,{cache:'reload'}),fetch(`${prefix}-atlas.webp?v=ears-anger-20261125-r3`,{cache:'reload'})]);
       if(!response.ok || !atlasResponse.ok)throw Error('preview');
       const meta=await response.json(),atlas=await createImageBitmap(await atlasResponse.blob());
       if(current!==token){atlas.close();return;}
       bitmap=atlas;
       canvas.width=meta.width;canvas.height=meta.height;const context=canvas.getContext('2d');const started=performance.now();
       canvas.hidden=false;image.hidden=true;button.textContent='停止预览';
-      const idle=(meta.interaction?.type==='click-cycle-sleep' ? {start:0,count:meta.count,fps:.7} : meta.interaction?.type==='click-clip' ? meta.clips?.pet : meta.clips?.idle) || {start:0,count:meta.count,fps:meta.fps};
+      const idle=(meta.interaction?.type==='click-cycle-sleep' ? {start:0,count:meta.interaction.poses?.length || meta.count,fps:.7} : meta.interaction?.type==='click-clip' ? meta.clips?.pet : meta.clips?.idle) || {start:0,count:meta.count,fps:meta.fps};
       const draw=now=>{if(!playing || current!==token)return;const i=idle.start+Math.floor((now-started)*idle.fps/1000)%idle.count;context.clearRect(0,0,meta.width,meta.height);context.drawImage(atlas,i%meta.columns*meta.width,Math.floor(i/meta.columns)*meta.height,meta.width,meta.height,0,0,meta.width,meta.height);frameId=requestAnimationFrame(draw);};
       frameId=requestAnimationFrame(draw);
     } catch {stop();button.textContent='重试预览';}

@@ -92,6 +92,22 @@ def pet():
 
 
 class DesktopMotionTests(unittest.TestCase):
+    def test_angry_cursor_is_reserved_for_the_dog_interaction(self):
+        instance = pet()
+        cursors = []
+        instance.canvas = SimpleNamespace(configure=lambda **kwargs: cursors.append(kwargs['cursor']),
+                                          itemconfigure=lambda *_args, **_kwargs: None)
+        instance.animation_frames = [object() for _ in range(5)]
+        instance.animation_frame_index = 0
+        instance.action_cursor = None
+        instance.pet_animation = SimpleNamespace(frame=lambda _now: 4, interactive=True, state='angry')
+        instance.animation_meta = {'interaction': {'type': 'click-cycle-sleep'}}
+        instance.update_animation(1)
+        self.assertEqual(cursors, [''])
+        instance.animation_meta = {'interaction': {'type': 'four-state-dog'}}
+        instance.update_animation(2)
+        self.assertIn('play-stick.cur', cursors[-1][0])
+
     def test_color_key_display_removes_partial_alpha_fringe_without_changing_art(self):
         image = Image.new('RGBA', (4, 1))
         colors = [(11,22,33,0), (50,60,70,40), (80,90,100,170), (255,255,255,255)]

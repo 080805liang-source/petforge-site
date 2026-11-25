@@ -2,12 +2,22 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from PIL import Image
 
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root))
 from pet_animation import PetAnimation
 
 class PetAnimationTests(unittest.TestCase):
+    def test_hachiware_keeps_blue_ears_opaque_in_every_daytime_frame(self):
+        atlas = Image.open(root / 'assets/workshop/animals/animal-900000108-atlas.webp').convert('RGBA')
+        for index in range(6):
+            frame = atlas.crop((index % 4 * 320, index // 4 * 320,
+                                index % 4 * 320 + 320, index // 4 * 320 + 320))
+            blue = sum(1 for r, g, b, a in frame.get_flattened_data()
+                       if b > r + 12 and g > r + 5 and g < 205 and a > 200)
+            self.assertGreater(blue, 4000, f'frame {index + 1} lost its blue ears')
+
     def test_joke_bear_anger_requires_three_cycles_then_rapid_burst(self):
         meta = json.loads((root / 'assets/workshop/animals/animal-900000109-animation.json').read_text())
         p = PetAnimation(meta)
@@ -15,13 +25,14 @@ class PetAnimationTests(unittest.TestCase):
         for i in range(1, 13):
             self.assertTrue(p.click(i))
             self.assertEqual(p.frame(i), i % 4)
-        for i in range(1, 4):
+        for i in range(1, 3):
             self.assertTrue(p.click(12 + i * .1))
             self.assertNotEqual(p.state, 'angry')
+        self.assertTrue(p.click(12.3))
+        self.assertEqual(p.frame(12.3), 4)
+        self.assertTrue(p.paused(12.3))
         self.assertTrue(p.click(12.4))
-        self.assertEqual(p.frame(12.4), 4)
-        self.assertTrue(p.paused(12.4))
-        self.assertFalse(p.click(12.5))
+        self.assertEqual(p.frame(16.3), 4)
         self.assertEqual(p.frame(16.4), 0)
         self.assertTrue(p.paused(17.099))
         self.assertFalse(p.paused(17.1))
@@ -30,6 +41,16 @@ class PetAnimationTests(unittest.TestCase):
         self.assertEqual(p.frame(196.5), 0)
         self.assertTrue(p.click(197))
         self.assertEqual(p.frame(197), 1)
+        spaced = PetAnimation(meta)
+        spaced.frame(0)
+        for i in range(1, 13):
+            spaced.click(i)
+        spaced.click(20)
+        spaced.click(26.001)
+        spaced.click(26.05)
+        self.assertNotEqual(spaced.state, 'angry')
+        spaced.click(26.1)
+        self.assertEqual(spaced.state, 'angry')
         idle = PetAnimation(meta)
         self.assertEqual(idle.frame(0), 0)
         self.assertEqual(idle.frame(180), 5)

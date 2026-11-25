@@ -512,7 +512,8 @@ class DesktopPet:
             return
         index = self.pet_animation.frame(now)
         if self.pet_animation.interactive:
-            cursor = ('@' + (BASE_DIR / 'assets' / 'play-stick.cur').as_posix(),) if self.pet_animation.state == 'angry' else ''
+            dog_anger = self.animation_meta.get('interaction', {}).get('type') == 'four-state-dog' and self.pet_animation.state == 'angry'
+            cursor = ('@' + (BASE_DIR / 'assets' / 'play-stick.cur').as_posix(),) if dog_anger else ''
             if cursor != getattr(self, 'action_cursor', None):
                 self.canvas.configure(cursor=cursor)
                 self.action_cursor = cursor

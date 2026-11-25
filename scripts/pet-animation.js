@@ -12,10 +12,12 @@ export function createPetAnimation(meta) {
   const burst = cycleSleep && clips.angry && Number.isInteger(anger?.afterCycles) && anger.afterCycles > 0 && Number.isInteger(anger?.clicks) && anger.clicks > 1 && Number.isFinite(anger?.windowSeconds) && anger.windowSeconds > 0 && Number.isFinite(anger?.durationSeconds) && anger.durationSeconds > 0 ? anger : null;
   const seconds = meta.interaction?.idleSeconds;
   const idleTimeout = (Number.isFinite(seconds) && seconds >= 1 && seconds <= 86400 ? seconds : 60) * 1000;
-  const interactive = cycleSleep || clickClip || (meta.interaction?.type === 'four-state-dog' && ['idle','pet','angry','calm'].every(key=>clips[key]));
+  const fourStateDog = meta.interaction?.type === 'four-state-dog' && ['idle','pet','angry','calm'].every(key=>clips[key]);
+  const interactive = cycleSleep || clickClip || fourStateDog;
   let clicks=[], until=0, resumeAt=0, poseClicks=0, rapidClicks=[];
   return {
     interactive,
+    fourStateDog,
     clickClip,
     cycleSleep,
     get state() { return state; },
@@ -23,7 +25,7 @@ export function createPetAnimation(meta) {
       if (!interactive) return false;
       this.frame(now);
       if (cycleSleep) {
-        if (state === 'angry') return false;
+        if (state === 'angry') { if(!burst)return false;until=now+burst.durationSeconds*1000;started=now;resumeAt=until+700;return true; }
         if (state === 'sleep') { state='idle';poseClicks=0;rapidClicks=[]; }
         else {
           state=poses[(poses.indexOf(state)+1)%poses.length];poseClicks++;

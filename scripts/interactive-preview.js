@@ -100,7 +100,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
         interactionAudio = new Audio(player.audioUrl);
         interactionAudio.play().catch(() => {});
       }
-      say(player.clickClip || player.cycleSleep ? config.clickLine : {pet:'摸摸头～我先站好。',angry:'汪汪汪(生气，怒吼）',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
+      say(player.cycleSleep && player.state === 'angry' ? '别再点啦！' : player.clickClip || player.cycleSleep ? config.clickLine : {pet:'摸摸头～我先站好。',angry:'汪汪汪(生气，怒吼）',calm:'好啦，冷静一下，等会儿继续跟着你。'}[player.state]);
       announce(player.cycleSleep ? '表情已切换' : player.clickClip ? config.clickLine : '大狗互动：'+player.state);return;
     }
     if (!playPetAction('pet')) animate(config.clickAnimation);
@@ -148,7 +148,7 @@ export function createInteractivePreview({getConfig, hasImage, renderAnimalFrame
     if (!position || !bounds) return;
     const player=getPetPlayer(), dog=player?.interactive;
     const paused=dog && player.paused(now);
-    actor.style.cursor=dog && player.state==='angry' ? 'url("assets/play-stick.png") 5 5, pointer' : '';
+    actor.style.cursor=player?.fourStateDog && player.state==='angry' ? 'url("assets/play-stick.png") 5 5, pointer' : '';
     // Cursor response is a selected interaction, rather than ambient animation.
     if (!drag && now >= hiddenUntil && chat.hidden && !paused) position = stepPosition(position,pointer,bounds,dog ? {...config,animationPreset:''} : config,delta);
     let x = 0, y = 0;

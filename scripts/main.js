@@ -95,9 +95,9 @@ async function loadAnimalPreview(key) {
   if (!key || !previewAnimal) return;
   try {
     const prefix = `assets/workshop/animals/${key}`;
-    const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json`), fetch(`${prefix}-atlas.webp`)]);
+    const [metadata, atlas] = await Promise.all([fetch(`${prefix}-animation.json?v=${PETFORGE_BUILD_VERSION}`,{cache:'reload'}), fetch(`${prefix}-atlas.webp?v=${PETFORGE_BUILD_VERSION}`,{cache:'reload'})]);
     if (!metadata.ok || !atlas.ok) return;
-    const {createPetAnimation} = await import('./pet-animation.js?v=joke-bear-20261125-r1');
+    const {createPetAnimation} = await import('./pet-animation.js?v=ears-anger-20261125-r3');
     const meta = await metadata.json(), bitmap = await createImageBitmap(await atlas.blob());
     if (key !== animationPreset) { bitmap.close(); return; }
     animalPreview = { meta, bitmap, player: createPetAnimation(meta) };
@@ -630,12 +630,12 @@ function packageReadme(config) {
 `;
 }
 
-const PETFORGE_BUILD_VERSION = "2026.11.24-usagi-r1";
+const PETFORGE_BUILD_VERSION = "2026.11.25-ears-anger-r3";
 
 async function getDesktopAppBytes() {
   const appUrl = new URL('assets/PetForge-runtime.zip', document.baseURI);
   appUrl.searchParams.set("v", PETFORGE_BUILD_VERSION);
-  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=joke-bear-20261125-r1');
+  const { fetchDesktopRuntime, desktopRuntimeFiles } = await import('./desktop-runtime.js?v=ears-anger-20261125-r3');
   const bytes = await fetchDesktopRuntime(appUrl, (completed, total) => setStatus(`正在下载桌宠文件… ${(completed/1048576).toFixed(1)} / ${(total/1048576).toFixed(1)} MB · ${Math.round(completed / total * 100)}%（已完成部分自动保留）`));
   setStatus('运行文件校验通过，正在整理图片和聊天设置…');
   return desktopRuntimeFiles(bytes);
@@ -665,7 +665,7 @@ async function buildPackageInBrowser() {
   if (config.animationPreset) {
     if (!/^animal-\d{1,12}$/.test(config.animationPreset)) throw new Error('动物动作配置无效。');
     const prefix = `assets/workshop/animals/${config.animationPreset}`;
-    const [metaResponse, atlasResponse] = await Promise.all([fetch(new URL(`${prefix}-animation.json`,document.baseURI)),fetch(new URL(`${prefix}-atlas.webp`,document.baseURI))]);
+    const [metaResponse, atlasResponse] = await Promise.all([fetch(new URL(`${prefix}-animation.json?v=${PETFORGE_BUILD_VERSION}`,document.baseURI),{cache:'reload'}),fetch(new URL(`${prefix}-atlas.webp?v=${PETFORGE_BUILD_VERSION}`,document.baseURI),{cache:'reload'})]);
     if (!metaResponse.ok || !atlasResponse.ok) throw new Error('动物动作素材下载失败，请重试。');
     const meta = await metaResponse.json();
     if (!Number.isInteger(meta.count) || meta.count < 2 || meta.count > 240) throw new Error('动物动作文件无效。');
@@ -1008,7 +1008,7 @@ window.addEventListener("petforge:membership-change", (event) => {
 loadWorkshopTemplate();
 
 if (document.querySelector('#preview-actor')) {
-  import('./interactive-preview.js?v=white-blob-20261122-r1').then(({createInteractivePreview}) => {
+  import('./interactive-preview.js?v=ears-anger-20261125-r3').then(({createInteractivePreview}) => {
     interactivePreview = createInteractivePreview({getConfig, hasImage: () => Boolean(styledPetBlob), renderAnimalFrame, playPetAction, hasPetActions: () => Boolean(animalPreview?.player.hasActions), getPetPlayer: () => animalPreview?.player, replyWithModel:async(history,signal)=>{await chatStudioReady;if(!chatStudio)throw new Error('聊天设置未能加载，请刷新。');return chatStudio.reply(history,signal);}, chatGeneration:()=>chatStudio?.clearHistoryToken()});
     updatePreview();
   }).catch(() => {
