@@ -40,6 +40,14 @@ test('Usagi cycles all seven poses once per click, sleeps and wakes',()=>{
   assert.equal(invalid.interactive,false);
 });
 
+test('Hachiware cycles six poses, sleeps after 60 seconds and wakes on click',()=>{
+  const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000108-animation.json',import.meta.url)));
+  const p=createPetAnimation(meta);assert.equal(p.interactive,true);assert.equal(p.frame(0),0);
+  for(let i=1;i<=12;i++){assert.equal(p.click(i*1000),true);assert.equal(p.frame(i*1000),i%6);}
+  assert.equal(p.frame(71999),0);assert.equal(p.frame(72000),6);assert.equal(p.paused(72000),true);
+  assert.equal(p.click(73000),true);assert.equal(p.frame(73000),0);
+});
+
 test('the four photo dog pauses, counts physical clicks, resolves the stick interaction and resumes',()=>{
   const meta=JSON.parse(readFileSync(new URL('../assets/workshop/animals/animal-900000103-animation.json',import.meta.url)));
   const p=createPetAnimation(meta);

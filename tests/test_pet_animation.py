@@ -8,6 +8,20 @@ sys.path.insert(0, str(root))
 from pet_animation import PetAnimation
 
 class PetAnimationTests(unittest.TestCase):
+    def test_hachiware_six_click_poses_sleep_and_wake(self):
+        meta = json.loads((root / 'assets/workshop/animals/animal-900000108-animation.json').read_text())
+        p = PetAnimation(meta)
+        self.assertTrue(p.interactive)
+        self.assertEqual(p.frame(0), 0)
+        for i in range(1, 13):
+            self.assertTrue(p.click(i))
+            self.assertEqual(p.frame(i), i % 6)
+        self.assertEqual(p.frame(71.999), 0)
+        self.assertEqual(p.frame(72), 6)
+        self.assertTrue(p.paused(72))
+        self.assertTrue(p.click(73))
+        self.assertEqual(p.frame(73), 0)
+
     def test_usagi_seven_click_poses_sleep_and_wake(self):
         meta = json.loads((root / 'assets/workshop/animals/animal-900000107-animation.json').read_text())
         p = PetAnimation(meta)

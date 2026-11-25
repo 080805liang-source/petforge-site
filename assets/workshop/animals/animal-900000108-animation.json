@@ -1,0 +1,65 @@
+{
+  "version": 3,
+  "width": 320,
+  "height": 320,
+  "columns": 4,
+  "count": 7,
+  "fps": 1,
+  "clips": {
+    "idle": {
+      "start": 0,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose2": {
+      "start": 1,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose3": {
+      "start": 2,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose4": {
+      "start": 3,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose5": {
+      "start": 4,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "pose6": {
+      "start": 5,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    },
+    "sleep": {
+      "start": 6,
+      "count": 1,
+      "fps": 1,
+      "loop": true
+    }
+  },
+  "interaction": {
+    "type": "click-cycle-sleep",
+    "idleSeconds": 60,
+    "poses": [
+      "idle",
+      "pose2",
+      "pose3",
+      "pose4",
+      "pose5",
+      "pose6"
+    ]
+  },
+  "technique": "Seven user-supplied frames; local transparent cutouts with refined edges and original linework."
+}
